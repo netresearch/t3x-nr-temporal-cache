@@ -8,7 +8,6 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -226,25 +225,17 @@ final class CacheIntegrationTest extends FunctionalTestCase
     /**
      * Create ModifyCacheLifetimeForPageEvent compatible with both TYPO3 12 and 13
      *
-     * TYPO3 12: __construct(int $cacheLifetime)
-     * TYPO3 13: __construct(int $cacheLifetime, int $pageId, array $pageRecord, array $renderingInstructions, Context $context)
+     * Both TYPO3 12 and 13 require 5 parameters:
+     * __construct(int $cacheLifetime, int $pageId, array $pageRecord, array $renderingInstructions, Context $context)
      */
     private function createCacheLifetimeEvent(int $cacheLifetime): ModifyCacheLifetimeForPageEvent
     {
-        $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
-
-        if ($typo3Version->getMajorVersion() >= 13) {
-            // TYPO3 13+ requires 5 parameters
-            return new ModifyCacheLifetimeForPageEvent(
-                $cacheLifetime,
-                1,
-                [],
-                [],
-                $this->get(Context::class)
-            );
-        }
-
-        // TYPO3 12 only takes 1 parameter
-        return new ModifyCacheLifetimeForPageEvent($cacheLifetime);
+        return new ModifyCacheLifetimeForPageEvent(
+            cacheLifetime: $cacheLifetime,
+            pageId: 1,
+            pageRecord: ['uid' => 1],
+            renderingInstructions: [],
+            context: $this->get(Context::class)
+        );
     }
 }
