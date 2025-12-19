@@ -73,6 +73,10 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Initialize language service for backend (required for ModuleTemplate)
         $GLOBALS['LANG'] = $this->get(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
 
+        // Set up global request for TYPO3 13+ ConfigurationManager compatibility
+        // This must be done BEFORE getting the controller from DI
+        $GLOBALS['TYPO3_REQUEST'] = $this->createRequest();
+
         // Initialize services
         $this->configuration = $this->get(ExtensionConfiguration::class);
         $this->repository = $this->get(TemporalContentRepository::class);
