@@ -9,6 +9,7 @@ use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
 use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
+use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -66,6 +67,9 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
 
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
+
+        // Set up TYPO3_REQUEST for TYPO3 13 compatibility (ConfigurationManager requires request)
+        $GLOBALS['TYPO3_REQUEST'] = new ServerRequest('https://example.com/', 'GET');
 
         // Initialize services
         $this->configuration = $this->get(ExtensionConfiguration::class);
