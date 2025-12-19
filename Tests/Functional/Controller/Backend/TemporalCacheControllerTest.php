@@ -7,18 +7,12 @@ namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
-use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
-use Netresearch\TemporalCache\Service\Backend\PermissionService;
-use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
-use Netresearch\TemporalCache\Service\HarmonizationService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Http\ServerRequest;
-use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Routing\Route;
+use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
+use TYPO3\CMS\Extbase\Mvc\Request as ExtbaseRequest;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -83,19 +77,9 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         $this->configuration = $this->get(ExtensionConfiguration::class);
         $this->repository = $this->get(TemporalContentRepository::class);
 
-        // Initialize controller
-        $this->controller = new TemporalCacheController(
-            $this->get(ModuleTemplateFactory::class),
-            $this->configuration,
-            $this->repository,
-            $this->get(TemporalCacheStatisticsService::class),
-            $this->get(HarmonizationAnalysisService::class),
-            $this->get(HarmonizationService::class),
-            $this->get(PermissionService::class),
-            $this->get(CacheManager::class),
-            $this->get(IconFactory::class),
-            $this->get(PageRenderer::class)
-        );
+        // Get controller from DI container to ensure all dependencies are injected
+        // (including ResponseFactory required by ActionController)
+        $this->controller = $this->get(TemporalCacheController::class);
     }
 
     // =========================================================================
@@ -385,6 +369,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     /**     */
     public function testWizardActionReturnsSuccessfulResponse(): void
     {
+        $request = $this->createRequest();
+
         $response = $this->controller->wizardAction($request);
 
         self::assertInstanceOf(ResponseInterface::class, $response);
@@ -706,7 +692,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
 
     private function createRequest(): ServerRequestInterface
     {
-        $request = new ServerRequest(
+        $serverRequest = new ServerRequest(
             'http://localhost',
             'GET'
         );
@@ -716,20 +702,41 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         $route->setOption('packageName', 'nr_temporal_cache');
 
         // Add required backend request attributes
-        $request = $request->withAttribute('applicationType', \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_BE);
-        $request = $request->withAttribute('route', $route);
-        $request = $request->withAttribute('module', null);
-        $request = $request->withAttribute('moduleData', null);
+        $serverRequest = $serverRequest->withAttribute('applicationType', \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_BE);
+        $serverRequest = $serverRequest->withAttribute('route', $route);
+        $serverRequest = $serverRequest->withAttribute('module', null);
+        $serverRequest = $serverRequest->withAttribute('moduleData', null);
 
-        return $request;
+        // Create extbase request parameters for FlashMessages ViewHelper compatibility
+        $extbaseRequestParameters = new ExtbaseRequestParameters();
+        $extbaseRequestParameters->setControllerExtensionName('NrTemporalCache');
+        $extbaseRequestParameters->setControllerName('TemporalCache');
+        $extbaseRequestParameters->setControllerActionName('dashboard');
+        $extbaseRequestParameters->setPluginName('TemporalCache');
+
+        $serverRequest = $serverRequest->withAttribute('extbase', $extbaseRequestParameters);
+
+        // Wrap in extbase request for full compatibility
+        return new ExtbaseRequest($serverRequest);
     }
 
     private function createRequestWithBody(array $body): ServerRequestInterface
     {
-        return (new ServerRequest(
+        $serverRequest = (new ServerRequest(
             'http://localhost',
             'POST'
         ))->withParsedBody($body);
+
+        // Create extbase request parameters
+        $extbaseRequestParameters = new ExtbaseRequestParameters();
+        $extbaseRequestParameters->setControllerExtensionName('NrTemporalCache');
+        $extbaseRequestParameters->setControllerName('TemporalCache');
+        $extbaseRequestParameters->setControllerActionName('harmonize');
+        $extbaseRequestParameters->setPluginName('TemporalCache');
+
+        $serverRequest = $serverRequest->withAttribute('extbase', $extbaseRequestParameters);
+
+        return new ExtbaseRequest($serverRequest);
     }
 
     private function parseJsonResponse(ResponseInterface $response): array
