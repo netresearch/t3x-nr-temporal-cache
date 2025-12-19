@@ -48,18 +48,14 @@ final class HarmonizeCommandTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function commandHasCorrectName(): void
+    /**     */
+    public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:harmonize', $this->subject->getName());
     }
 
-    /**
-     * @test
-     */
-    public function executeWithHarmonizationDisabledReturnsFailure(): void
+    /**     */
+    public function testExecuteWithHarmonizationDisabledReturnsFailure(): void
     {
         $this->setupInputDefaults(true);
         $this->output->method('isDecorated')->willReturn(false);
@@ -74,10 +70,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidTableNameReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidTableNameReturnsFailure(): void
     {
         $this->setupInputDefaultsWithTable('invalid_table', true);
         $this->output->method('isDecorated')->willReturn(false);
@@ -92,10 +86,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithNoTemporalContentReturnsSuccess(): void
+    /**     */
+    public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
         $this->output->method('isDecorated')->willReturn(false);
@@ -122,10 +114,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeInDryRunModeDoesNotModifyDatabase(): void
+    /**     */
+    public function testExecuteInDryRunModeDoesNotModifyDatabase(): void
     {
         $this->setupInputDefaults(true);
         $this->output->method('isDecorated')->willReturn(false);
@@ -172,10 +162,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeInLiveModeWithoutConfirmationCancels(): void
+    /**     */
+    public function testExecuteInLiveModeWithoutConfirmationCancels(): void
     {
         $this->setupInputDefaults(false);
         $this->output->method('isDecorated')->willReturn(false);
@@ -227,10 +215,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithTableFilterOnlyProcessesSpecifiedTable(): void
+    /**     */
+    public function testExecuteWithTableFilterOnlyProcessesSpecifiedTable(): void
     {
         $this->setupInputDefaultsWithTable('pages', true);
         $this->output->method('isDecorated')->willReturn(false);
@@ -284,10 +270,8 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithNoChangesNeededReturnsSuccess(): void
+    /**     */
+    public function testExecuteWithNoChangesNeededReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
         $this->output->method('isDecorated')->willReturn(false);

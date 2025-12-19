@@ -31,10 +31,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         $this->subject = new GlobalScopingStrategy($this->repository);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushReturnsGlobalTagForPages(): void
+    /**     */
+    public function testGetCacheTagsToFlushReturnsGlobalTagForPages(): void
     {
         $content = new TemporalContent(
             uid: 5,
@@ -52,10 +50,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame(['pages'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushReturnsGlobalTagForContent(): void
+    /**     */
+    public function testGetCacheTagsToFlushReturnsGlobalTagForContent(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -73,10 +69,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame(['pages'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionDelegatesToRepository(): void
+    /**     */
+    public function testGetNextTransitionDelegatesToRepository(): void
     {
         $expectedTransition = 1620000000;
 
@@ -96,10 +90,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame($expectedTransition, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionRespectsWorkspaceContext(): void
+    /**     */
+    public function testGetNextTransitionRespectsWorkspaceContext(): void
     {
         $workspaceId = 1;
 
@@ -120,10 +112,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertTrue(true);
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionRespectsLanguageContext(): void
+    /**     */
+    public function testGetNextTransitionRespectsLanguageContext(): void
     {
         $languageId = 2;
 
@@ -144,10 +134,8 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertTrue(true);
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('global', $this->subject->getName());
     }

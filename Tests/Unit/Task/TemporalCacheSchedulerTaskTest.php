@@ -16,18 +16,14 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class TemporalCacheSchedulerTaskTest extends UnitTestCase
 {
-    /**
-     * @test
-     */
-    public function executeReturnsTrue(): void
+    /**     */
+    public function testExecuteReturnsTrue(): void
     {
         self::markTestSkipped('Requires full TYPO3 Scheduler framework - functional test needed');
     }
 
-    /**
-     * @test
-     */
-    public function executeProcessesTransitions(): void
+    /**     */
+    public function testExecuteProcessesTransitions(): void
     {
         self::markTestSkipped('Requires full TYPO3 Scheduler framework - functional test needed');
     }

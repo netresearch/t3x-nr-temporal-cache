@@ -42,18 +42,14 @@ final class VerifyCommandTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function commandHasCorrectName(): void
+    /**     */
+    public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:verify', $this->subject->getName());
     }
 
-    /**
-     * @test
-     */
-    public function executeWithAllChecksPassingReturnsSuccess(): void
+    /**     */
+    public function testExecuteWithAllChecksPassingReturnsSuccess(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -119,10 +115,8 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidConfigurationReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidConfigurationReturnsFailure(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -180,10 +174,8 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithMissingIndexesReturnsFailure(): void
+    /**     */
+    public function testExecuteWithMissingIndexesReturnsFailure(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -234,10 +226,8 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithHarmonizationEnabledVerifiesHarmonizationConfig(): void
+    /**     */
+    public function testExecuteWithHarmonizationEnabledVerifiesHarmonizationConfig(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -305,10 +295,8 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidHarmonizationSlotsReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidHarmonizationSlotsReturnsFailure(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);

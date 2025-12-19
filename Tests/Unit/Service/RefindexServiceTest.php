@@ -47,10 +47,8 @@ final class RefindexServiceTest extends UnitTestCase
         $this->subject = new RefindexService($this->connectionPool, $this->deletedRestriction);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentReturnsDirectParentPage(): void
+    /**     */
+    public function testFindPagesWithContentReturnsDirectParentPage(): void
     {
         $contentUid = 123;
         $parentPageId = 5;
@@ -65,10 +63,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([$parentPageId], $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentReturnsReferencedPages(): void
+    /**     */
+    public function testFindPagesWithContentReturnsReferencedPages(): void
     {
         $contentUid = 123;
         $parentPageId = 5;
@@ -86,10 +82,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $referencedPageId], $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentIncludesMountPoints(): void
+    /**     */
+    public function testFindPagesWithContentIncludesMountPoints(): void
     {
         $contentUid = 123;
         $parentPageId = 5;
@@ -107,10 +101,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $mountPointId], $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentIncludesShortcuts(): void
+    /**     */
+    public function testFindPagesWithContentIncludesShortcuts(): void
     {
         $contentUid = 123;
         $parentPageId = 5;
@@ -128,10 +120,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $shortcutId], $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentReturnsUniquePageIds(): void
+    /**     */
+    public function testFindPagesWithContentReturnsUniquePageIds(): void
     {
         $contentUid = 123;
         $pageId = 5;
@@ -148,10 +138,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([$pageId], $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentHandlesContentReferences(): void
+    /**     */
+    public function testFindPagesWithContentHandlesContentReferences(): void
     {
         $contentUid = 123;
         $parentPageId = 5;
@@ -178,10 +166,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertContains($referencingContentPage, $result);
     }
 
-    /**
-     * @test
-     */
-    public function findPagesWithContentReturnsEmptyArrayWhenContentNotFound(): void
+    /**     */
+    public function testFindPagesWithContentReturnsEmptyArrayWhenContentNotFound(): void
     {
         $contentUid = 999;
 
@@ -218,10 +204,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**
-     * @test
-     */
-    public function hasIndirectReferencesReturnsTrueForMountPoints(): void
+    /**     */
+    public function testHasIndirectReferencesReturnsTrueForMountPoints(): void
     {
         $pageId = 5;
 
@@ -235,10 +219,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function hasIndirectReferencesReturnsTrueForShortcuts(): void
+    /**     */
+    public function testHasIndirectReferencesReturnsTrueForShortcuts(): void
     {
         $pageId = 5;
 
@@ -252,10 +234,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function hasIndirectReferencesReturnsFalseWhenNoReferences(): void
+    /**     */
+    public function testHasIndirectReferencesReturnsFalseWhenNoReferences(): void
     {
         $pageId = 5;
 
@@ -267,10 +247,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function getContentElementsOnPageReturnsAllContentUids(): void
+    /**     */
+    public function testGetContentElementsOnPageReturnsAllContentUids(): void
     {
         $pageId = 5;
         $languageUid = 0;
@@ -294,10 +272,8 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([10, 20, 30], $result);
     }
 
-    /**
-     * @test
-     */
-    public function getContentElementsOnPageReturnsEmptyArrayWhenNoContent(): void
+    /**     */
+    public function testGetContentElementsOnPageReturnsEmptyArrayWhenNoContent(): void
     {
         $pageId = 999;
 

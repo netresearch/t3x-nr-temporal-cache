@@ -39,10 +39,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsWithNoContentReturnsZeroStatistics(): void
+    /**     */
+    public function testCalculateStatisticsWithNoContentReturnsZeroStatistics(): void
     {
         $currentTime = \time();
 
@@ -74,10 +72,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0, $result['harmonizableCandidates']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsCountsPageAndContentCorrectly(): void
+    /**     */
+    public function testCalculateStatisticsCountsPageAndContentCorrectly(): void
     {
         $currentTime = \time();
 
@@ -126,10 +122,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['contentCount']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsCountsActiveAndFutureContentCorrectly(): void
+    /**     */
+    public function testCalculateStatisticsCountsActiveAndFutureContentCorrectly(): void
     {
         $currentTime = \time();
 
@@ -177,10 +171,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['futureCount']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsCountsTransitionsCorrectly(): void
+    /**     */
+    public function testCalculateStatisticsCountsTransitionsCorrectly(): void
     {
         $currentTime = \time();
 
@@ -225,10 +217,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(2, $result['transitionsPerDay']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsCountsHarmonizableCandidatesWhenEnabled(): void
+    /**     */
+    public function testCalculateStatisticsCountsHarmonizableCandidatesWhenEnabled(): void
     {
         $currentTime = \time();
 
@@ -269,10 +259,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['harmonizableCandidates']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateStatisticsDoesNotCountHarmonizableCandidatesWhenDisabled(): void
+    /**     */
+    public function testCalculateStatisticsDoesNotCountHarmonizableCandidatesWhenDisabled(): void
     {
         $currentTime = \time();
 
@@ -308,10 +296,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0, $result['harmonizableCandidates']);
     }
 
-    /**
-     * @test
-     */
-    public function buildTimelineReturnsEmptyArrayWhenNoTransitions(): void
+    /**     */
+    public function testBuildTimelineReturnsEmptyArrayWhenNoTransitions(): void
     {
         $currentTime = \time();
 
@@ -325,10 +311,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertCount(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function buildTimelineGroupsTransitionsByDay(): void
+    /**     */
+    public function testBuildTimelineGroupsTransitionsByDay(): void
     {
         $currentTime = \time();
 
@@ -364,10 +348,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertCount(1, $result[1]['transitions']); // Day 2 has 1 transition
     }
 
-    /**
-     * @test
-     */
-    public function buildTimelineRespectsCustomDaysAhead(): void
+    /**     */
+    public function testBuildTimelineRespectsCustomDaysAhead(): void
     {
         $currentTime = \time();
         $daysAhead = 14;
@@ -386,10 +368,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         $this->subject->buildTimeline($currentTime, $daysAhead);
     }
 
-    /**
-     * @test
-     */
-    public function getConfigurationSummaryReturnsAllConfigurationFields(): void
+    /**     */
+    public function testGetConfigurationSummaryReturnsAllConfigurationFields(): void
     {
         $this->extensionConfiguration
             ->method('getScopingStrategy')
@@ -420,10 +400,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertTrue($result['debugLogging']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateAverageTransitionsPerDayReturnsZeroWhenNoTransitions(): void
+    /**     */
+    public function testCalculateAverageTransitionsPerDayReturnsZeroWhenNoTransitions(): void
     {
         $startTime = \time();
         $endTime = $startTime + 86400 * 30;
@@ -437,10 +415,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0.0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function calculateAverageTransitionsPerDayReturnsCorrectAverage(): void
+    /**     */
+    public function testCalculateAverageTransitionsPerDayReturnsCorrectAverage(): void
     {
         $startTime = \time();
         $endTime = $startTime + 86400 * 30;
@@ -458,10 +434,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(20.0, $result); // (10 + 20 + 30) / 3 = 20.0
     }
 
-    /**
-     * @test
-     */
-    public function getPeakTransitionDayReturnsNullWhenNoTransitions(): void
+    /**     */
+    public function testGetPeakTransitionDayReturnsNullWhenNoTransitions(): void
     {
         $startTime = \time();
         $endTime = $startTime + 86400 * 30;
@@ -475,10 +449,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertNull($result);
     }
 
-    /**
-     * @test
-     */
-    public function getPeakTransitionDayReturnsHighestDay(): void
+    /**     */
+    public function testGetPeakTransitionDayReturnsHighestDay(): void
     {
         $startTime = \time();
         $endTime = $startTime + 86400 * 30;

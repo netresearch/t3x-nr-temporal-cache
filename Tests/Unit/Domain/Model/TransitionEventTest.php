@@ -33,10 +33,8 @@ final class TransitionEventTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function constructorCreatesImmutableObject(): void
+    /**     */
+    public function testConstructorCreatesImmutableObject(): void
     {
         $timestamp = 1609459200;
 
@@ -55,10 +53,8 @@ final class TransitionEventTest extends UnitTestCase
         self::assertSame(2, $subject->languageId);
     }
 
-    /**
-     * @test
-     */
-    public function constructorUsesDefaultValues(): void
+    /**     */
+    public function testConstructorUsesDefaultValues(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -70,11 +66,9 @@ final class TransitionEventTest extends UnitTestCase
         self::assertSame(0, $subject->languageId);
     }
 
-    /**
-     * @test
-     * @dataProvider validTransitionTypeDataProvider
+    /**     * @dataProvider validTransitionTypeDataProvider
      */
-    public function constructorAcceptsValidTransitionTypes(string $transitionType): void
+    public function testConstructorAcceptsValidTransitionTypes(string $transitionType): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -94,10 +88,8 @@ final class TransitionEventTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function constructorThrowsExceptionForInvalidTransitionType(): void
+    /**     */
+    public function testConstructorThrowsExceptionForInvalidTransitionType(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('TransitionType must be "start", "end", or "unknown"');
@@ -109,10 +101,8 @@ final class TransitionEventTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function isStartTransitionReturnsTrueForStartType(): void
+    /**     */
+    public function testIsStartTransitionReturnsTrueForStartType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -124,10 +114,8 @@ final class TransitionEventTest extends UnitTestCase
         self::assertFalse($subject->isEndTransition());
     }
 
-    /**
-     * @test
-     */
-    public function isEndTransitionReturnsTrueForEndType(): void
+    /**     */
+    public function testIsEndTransitionReturnsTrueForEndType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -139,10 +127,8 @@ final class TransitionEventTest extends UnitTestCase
         self::assertFalse($subject->isStartTransition());
     }
 
-    /**
-     * @test
-     */
-    public function isStartAndEndReturnFalseForUnknownType(): void
+    /**     */
+    public function testIsStartAndEndReturnFalseForUnknownType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -154,10 +140,8 @@ final class TransitionEventTest extends UnitTestCase
         self::assertFalse($subject->isEndTransition());
     }
 
-    /**
-     * @test
-     */
-    public function getLogMessageReturnsFormattedMessage(): void
+    /**     */
+    public function testGetLogMessageReturnsFormattedMessage(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
@@ -177,10 +161,8 @@ final class TransitionEventTest extends UnitTestCase
         self::assertStringContainsString('language=2', $message);
     }
 
-    /**
-     * @test
-     */
-    public function getLogMessageIncludesFormattedTimestamp(): void
+    /**     */
+    public function testGetLogMessageIncludesFormattedTimestamp(): void
     {
         $timestamp = 1609459200; // 2021-01-01 00:00:00 UTC
 
@@ -195,11 +177,9 @@ final class TransitionEventTest extends UnitTestCase
         self::assertStringContainsString(\date('Y-m-d H:i:s', $timestamp), $message);
     }
 
-    /**
-     * @test
-     * @dataProvider transitionScenarioDataProvider
+    /**     * @dataProvider transitionScenarioDataProvider
      */
-    public function transitionEventsWorkForDifferentScenarios(
+    public function testTransitionEventsWorkForDifferentScenarios(
         string $tableName,
         string $transitionType,
         int $workspaceId,

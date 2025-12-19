@@ -98,10 +98,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Dashboard Action Tests
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function dashboardActionReturnsSuccessfulResponse(): void
+    /**     */
+    public function testDashboardActionReturnsSuccessfulResponse(): void
     {
         $request = $this->createRequest();
 
@@ -111,10 +109,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     */
-    public function dashboardActionCalculatesStatistics(): void
+    /**     */
+    public function testDashboardActionCalculatesStatistics(): void
     {
         $request = $this->createRequest();
 
@@ -125,10 +121,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertNotEmpty($body);
     }
 
-    /**
-     * @test
-     */
-    public function dashboardActionWithEmptyContentShowsZeroStatistics(): void
+    /**     */
+    public function testDashboardActionWithEmptyContentShowsZeroStatistics(): void
     {
         // Delete all temporal content
         $this->getConnectionPool()
@@ -146,10 +140,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     */
-    public function dashboardActionBuildsTimelineCorrectly(): void
+    /**     */
+    public function testDashboardActionBuildsTimelineCorrectly(): void
     {
         $request = $this->createRequest();
 
@@ -161,10 +153,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertNotEmpty($body);
     }
 
-    /**
-     * @test
-     */
-    public function dashboardActionShowsConfigurationSummary(): void
+    /**     */
+    public function testDashboardActionShowsConfigurationSummary(): void
     {
         $request = $this->createRequest();
 
@@ -180,10 +170,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Content Action Tests - List Display & Pagination
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function contentActionReturnsSuccessfulResponse(): void
+    /**     */
+    public function testContentActionReturnsSuccessfulResponse(): void
     {
         $request = $this->createRequest();
 
@@ -193,10 +181,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     */
-    public function contentActionDisplaysAllContentByDefault(): void
+    /**     */
+    public function testContentActionDisplaysAllContentByDefault(): void
     {
         $request = $this->createRequest();
 
@@ -207,10 +193,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertNotEmpty($body);
     }
 
-    /**
-     * @test
-     */
-    public function contentActionPaginatesCorrectly(): void
+    /**     */
+    public function testContentActionPaginatesCorrectly(): void
     {
         // Test pagination with multiple pages
         $response1 = $this->controller->contentAction($request, 1, 'all');
@@ -220,10 +204,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response2->getStatusCode());
     }
 
-    /**
-     * @test
-     */
-    public function contentActionHandlesBoundaryPagination(): void
+    /**     */
+    public function testContentActionHandlesBoundaryPagination(): void
     {
         // Test first page
         $response = $this->controller->contentAction($request, 1, 'all');
@@ -234,10 +216,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     */
-    public function contentActionWithEmptyContentReturnsEmptyList(): void
+    /**     */
+    public function testContentActionWithEmptyContentReturnsEmptyList(): void
     {
         // Delete all content
         $this->getConnectionPool()
@@ -256,11 +236,9 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Content Action Tests - Filtering
     // =========================================================================
 
-    /**
-     * @test
-     * @dataProvider filterTypeProvider
+    /**     * @dataProvider filterTypeProvider
      */
-    public function contentActionFiltersContentCorrectly(string $filter): void
+    public function testContentActionFiltersContentCorrectly(string $filter): void
     {
         $response = $this->controller->contentAction($request, 1, $filter);
 
@@ -282,10 +260,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersPagesOnly(): void
+    /**     */
+    public function testContentActionFiltersPagesOnly(): void
     {
         $response = $this->controller->contentAction($request, 1, 'pages');
 
@@ -293,10 +269,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show pages, not tt_content
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersContentElementsOnly(): void
+    /**     */
+    public function testContentActionFiltersContentElementsOnly(): void
     {
         $response = $this->controller->contentAction($request, 1, 'content');
 
@@ -304,10 +278,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show tt_content, not pages
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersActiveContent(): void
+    /**     */
+    public function testContentActionFiltersActiveContent(): void
     {
         $response = $this->controller->contentAction($request, 1, 'active');
 
@@ -315,10 +287,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show currently visible content
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersScheduledContent(): void
+    /**     */
+    public function testContentActionFiltersScheduledContent(): void
     {
         $response = $this->controller->contentAction($request, 1, 'scheduled');
 
@@ -326,10 +296,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show content with future starttime
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersExpiredContent(): void
+    /**     */
+    public function testContentActionFiltersExpiredContent(): void
     {
         $response = $this->controller->contentAction($request, 1, 'expired');
 
@@ -337,10 +305,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show content with past endtime
     }
 
-    /**
-     * @test
-     */
-    public function contentActionFiltersHarmonizableContent(): void
+    /**     */
+    public function testContentActionFiltersHarmonizableContent(): void
     {
         $response = $this->controller->contentAction($request, 1, 'harmonizable');
 
@@ -348,10 +314,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should only show content that can benefit from harmonization
     }
 
-    /**
-     * @test
-     */
-    public function contentActionHandlesInvalidFilterGracefully(): void
+    /**     */
+    public function testContentActionHandlesInvalidFilterGracefully(): void
     {
         $response = $this->controller->contentAction($request, 1, 'invalid_filter');
 
@@ -363,10 +327,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Content Action Tests - Harmonization Suggestions
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function contentActionIncludesHarmonizationSuggestions(): void
+    /**     */
+    public function testContentActionIncludesHarmonizationSuggestions(): void
     {
         $response = $this->controller->contentAction($request, 1, 'all');
 
@@ -374,10 +336,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Each content item should have harmonization suggestion attached
     }
 
-    /**
-     * @test
-     */
-    public function contentActionShowsHarmonizationOnlyWhenEnabled(): void
+    /**     */
+    public function testContentActionShowsHarmonizationOnlyWhenEnabled(): void
     {
         // Test with harmonization enabled
         $response = $this->controller->contentAction($request, 1, 'all');
@@ -392,10 +352,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Wizard Action Tests
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function wizardActionReturnsSuccessfulResponse(): void
+    /**     */
+    public function testWizardActionReturnsSuccessfulResponse(): void
     {
         $response = $this->controller->wizardAction($request);
 
@@ -403,11 +361,9 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     * @dataProvider wizardStepProvider
+    /**     * @dataProvider wizardStepProvider
      */
-    public function wizardActionHandlesDifferentSteps(string $step): void
+    public function testWizardActionHandlesDifferentSteps(string $step): void
     {
         $response = $this->controller->wizardAction($request, $step);
 
@@ -425,10 +381,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function wizardActionShowsConfigurationPresets(): void
+    /**     */
+    public function testWizardActionShowsConfigurationPresets(): void
     {
         $response = $this->controller->wizardAction($request, 'welcome');
 
@@ -436,10 +390,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Response should contain presets: simple, balanced, aggressive
     }
 
-    /**
-     * @test
-     */
-    public function wizardActionShowsCurrentConfiguration(): void
+    /**     */
+    public function testWizardActionShowsCurrentConfiguration(): void
     {
         $response = $this->controller->wizardAction($request, 'welcome');
 
@@ -447,10 +399,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should display current configuration values
     }
 
-    /**
-     * @test
-     */
-    public function wizardActionProvidesRecommendations(): void
+    /**     */
+    public function testWizardActionProvidesRecommendations(): void
     {
         $response = $this->controller->wizardAction($request, 'welcome');
 
@@ -458,10 +408,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         // Should include configuration recommendations based on statistics
     }
 
-    /**
-     * @test
-     */
-    public function wizardActionRecommendationsBasedOnStatistics(): void
+    /**     */
+    public function testWizardActionRecommendationsBasedOnStatistics(): void
     {
         // Wizard should show different recommendations based on content statistics
         $response = $this->controller->wizardAction($request, 'welcome');
@@ -473,10 +421,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Harmonize Action Tests - Normal Operation
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function harmonizeActionSucceedsWithValidInput(): void
+    /**     */
+    public function testHarmonizeActionSucceedsWithValidInput(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1, 2],
@@ -492,10 +438,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertTrue($data['dryRun']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionProcessesSingleContent(): void
+    /**     */
+    public function testHarmonizeActionProcessesSingleContent(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],
@@ -509,10 +453,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertIsArray($data['results']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionProcessesMultipleContent(): void
+    /**     */
+    public function testHarmonizeActionProcessesMultipleContent(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1, 2, 3],
@@ -530,10 +472,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Harmonize Action Tests - Dry Run Mode
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function harmonizeActionDryRunDoesNotModifyContent(): void
+    /**     */
+    public function testHarmonizeActionDryRunDoesNotModifyContent(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],
@@ -551,10 +491,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertNotNull($content);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionNormalModeModifiesContent(): void
+    /**     */
+    public function testHarmonizeActionNormalModeModifiesContent(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],
@@ -568,10 +506,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertFalse($data['dryRun']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionDefaultsToDryRun(): void
+    /**     */
+    public function testHarmonizeActionDefaultsToDryRun(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],
@@ -588,10 +524,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Harmonize Action Tests - Input Validation & Security
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function harmonizeActionRejectsEmptyContentArray(): void
+    /**     */
+    public function testHarmonizeActionRejectsEmptyContentArray(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [],
@@ -605,10 +539,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertStringContainsString('no_content', $data['message']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionRejectsMissingContentParameter(): void
+    /**     */
+    public function testHarmonizeActionRejectsMissingContentParameter(): void
     {
         $request = $this->createRequestWithBody([
             'dryRun' => true,
@@ -620,10 +552,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertFalse($data['success']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionSkipsNonExistentContent(): void
+    /**     */
+    public function testHarmonizeActionSkipsNonExistentContent(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1, 99999], // 99999 does not exist
@@ -638,10 +568,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertLessThan(2, \count($data['results']));
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionHandlesInvalidUidTypes(): void
+    /**     */
+    public function testHarmonizeActionHandlesInvalidUidTypes(): void
     {
         $request = $this->createRequestWithBody([
             'content' => ['invalid', 1],
@@ -658,10 +586,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Harmonize Action Tests - Error Handling
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function harmonizeActionFailsWhenHarmonizationDisabled(): void
+    /**     */
+    public function testHarmonizeActionFailsWhenHarmonizationDisabled(): void
     {
         // Temporarily disable harmonization
         $this->configurationToUseInTestInstance['EXTENSIONS']['temporal_cache']['harmonization']['enabled'] = false;
@@ -678,10 +604,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertStringContainsString('disabled', $data['message']);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionReturnsCorrectSuccessCount(): void
+    /**     */
+    public function testHarmonizeActionReturnsCorrectSuccessCount(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1, 2, 3],
@@ -701,10 +625,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // JSON Response Tests
     // =========================================================================
 
-    /**
-     * @test
-     */
-    public function harmonizeActionReturnsValidJson(): void
+    /**     */
+    public function testHarmonizeActionReturnsValidJson(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],
@@ -720,10 +642,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertIsArray($data);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeActionJsonResponseContainsRequiredFields(): void
+    /**     */
+    public function testHarmonizeActionJsonResponseContainsRequiredFields(): void
     {
         $request = $this->createRequestWithBody([
             'content' => [1],

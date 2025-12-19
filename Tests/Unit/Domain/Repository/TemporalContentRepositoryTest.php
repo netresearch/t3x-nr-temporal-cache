@@ -45,10 +45,8 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsNullWhenNoTransitions(): void
+    /**     */
+    public function testGetNextTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
         $result = $this->createMock(\Doctrine\DBAL\Result::class);
@@ -64,10 +62,8 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertNull($result);
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsEarliestTransition(): void
+    /**     */
+    public function testGetNextTransitionReturnsEarliestTransition(): void
     {
         $nextTransition = \time() + 3600;
 
@@ -85,10 +81,8 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertSame($nextTransition, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionUsesCacheOnSecondCall(): void
+    /**     */
+    public function testGetNextTransitionUsesCacheOnSecondCall(): void
     {
         $currentTime = \time();
         $nextTransition = $currentTime + 3600;
@@ -113,10 +107,8 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertSame($nextTransition, $result2);
     }
 
-    /**
-     * @test
-     */
-    public function findAllWithTemporalFieldsReturnsContentArray(): void
+    /**     */
+    public function testFindAllWithTemporalFieldsReturnsContentArray(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
         $result = $this->createMock(\Doctrine\DBAL\Result::class);

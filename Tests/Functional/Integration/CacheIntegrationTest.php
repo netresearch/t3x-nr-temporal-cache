@@ -31,10 +31,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
     }
 
-    /**
-     * @test
-     */
-    public function eventIsDispatchedByCacheSystem(): void
+    /**     */
+    public function testEventIsDispatchedByCacheSystem(): void
     {
         $eventDispatcher = $this->get(EventDispatcher::class);
         $originalLifetime = 86400;
@@ -47,10 +45,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertInstanceOf(ModifyCacheLifetimeForPageEvent::class, $modifiedEvent);
     }
 
-    /**
-     * @test
-     */
-    public function temporalContentAffectsCacheLifetime(): void
+    /**     */
+    public function testTemporalContentAffectsCacheLifetime(): void
     {
         $now = \time();
         $futureTime = $now + 3600; // 1 hour from now
@@ -77,10 +73,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertLessThan(3700, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function multipleTemporalRecordsCalculateCorrectLifetime(): void
+    /**     */
+    public function testMultipleTemporalRecordsCalculateCorrectLifetime(): void
     {
         $now = \time();
 
@@ -117,10 +111,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertLessThan(1900, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function extensionIntegratesWithCacheManager(): void
+    /**     */
+    public function testExtensionIntegratesWithCacheManager(): void
     {
         $cacheManager = $this->get(CacheManager::class);
 
@@ -132,10 +124,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertNotNull($pagesCache);
     }
 
-    /**
-     * @test
-     */
-    public function workflowWithRealDatabaseData(): void
+    /**     */
+    public function testWorkflowWithRealDatabaseData(): void
     {
         $now = \time();
 
@@ -166,10 +156,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertLessThan($expectedLifetime + 2, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function verifyNoRegressionWithStandardPages(): void
+    /**     */
+    public function testVerifyNoRegressionWithStandardPages(): void
     {
         // Scenario: Standard pages without temporal restrictions
         $connection = $this->getConnectionPool()->getConnectionForTable('pages');
@@ -191,10 +179,8 @@ final class CacheIntegrationTest extends FunctionalTestCase
         self::assertEquals($originalLifetime, $modifiedEvent->getCacheLifetime());
     }
 
-    /**
-     * @test
-     */
-    public function mixedContentTypesCalculateCorrectly(): void
+    /**     */
+    public function testMixedContentTypesCalculateCorrectly(): void
     {
         $now = \time();
 

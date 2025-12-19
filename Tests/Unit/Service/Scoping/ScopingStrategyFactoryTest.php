@@ -51,10 +51,8 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsGlobalStrategy(): void
+    /**     */
+    public function testGetReturnsGlobalStrategy(): void
     {
         $this->configuration
             ->method('getScopingStrategy')
@@ -67,10 +65,8 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->globalStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsPerPageStrategy(): void
+    /**     */
+    public function testGetReturnsPerPageStrategy(): void
     {
         $this->configuration
             ->method('getScopingStrategy')
@@ -83,10 +79,8 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->perPageStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsPerContentStrategy(): void
+    /**     */
+    public function testGetReturnsPerContentStrategy(): void
     {
         $this->configuration
             ->method('getScopingStrategy')
@@ -99,10 +93,8 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->perContentStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getThrowsExceptionForUnknownStrategy(): void
+    /**     */
+    public function testGetThrowsExceptionForUnknownStrategy(): void
     {
         $this->configuration
             ->method('getScopingStrategy')
