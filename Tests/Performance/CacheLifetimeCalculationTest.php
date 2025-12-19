@@ -22,12 +22,10 @@ use PHPUnit\Framework\TestCase;
  */
 final class CacheLifetimeCalculationTest extends TestCase
 {
-    /**
-     * @test
-     * Benchmark: Dynamic timing strategy with varying content counts
+    /**     * Benchmark: Dynamic timing strategy with varying content counts
      * Validates: Sub-millisecond performance even with many elements
      */
-    public function dynamicTimingStrategyScalability(): void
+    public function testDynamicTimingStrategyScalability(): void
     {
         $config = $this->createMock(ExtensionConfiguration::class);
         $strategy = new DynamicTimingStrategy($config);
@@ -85,12 +83,10 @@ final class CacheLifetimeCalculationTest extends TestCase
         self::assertLessThan(50, $growthPercent, 'Performance should not degrade more than 50% at 100x scale');
     }
 
-    /**
-     * @test
-     * Benchmark: Comparison of all timing strategies
+    /**     * Benchmark: Comparison of all timing strategies
      * Validates: Performance characteristics of each strategy
      */
-    public function timingStrategyComparison(): void
+    public function testTimingStrategyComparison(): void
     {
         $config = $this->createMock(ExtensionConfiguration::class);
         $config->method('getSchedulerInterval')->willReturn(3600);
@@ -138,12 +134,10 @@ final class CacheLifetimeCalculationTest extends TestCase
         echo "\n";
     }
 
-    /**
-     * @test
-     * Benchmark: Cache lifetime calculation under concurrent load simulation
+    /**     * Benchmark: Cache lifetime calculation under concurrent load simulation
      * Validates: Thread-safe performance characteristics
      */
-    public function concurrentLoadSimulation(): void
+    public function testConcurrentLoadSimulation(): void
     {
         $config = $this->createMock(ExtensionConfiguration::class);
         $strategy = new DynamicTimingStrategy($config);
@@ -184,12 +178,10 @@ final class CacheLifetimeCalculationTest extends TestCase
         self::assertLessThan(1.0, $memoryPerRequest, 'Each request should use < 1KB memory');
     }
 
-    /**
-     * @test
-     * Benchmark: Edge case performance (empty, minimal, maximum content)
+    /**     * Benchmark: Edge case performance (empty, minimal, maximum content)
      * Validates: Consistent performance across content variations
      */
-    public function edgeCasePerformance(): void
+    public function testEdgeCasePerformance(): void
     {
         $config = $this->createMock(ExtensionConfiguration::class);
         $strategy = new DynamicTimingStrategy($config);

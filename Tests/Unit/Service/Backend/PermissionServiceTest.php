@@ -38,10 +38,8 @@ final class PermissionServiceTest extends UnitTestCase
         parent::tearDown();
     }
 
-    /**
-     * @test
-     */
-    public function canModifyTemporalContentReturnsTrueForAdminUser(): void
+    /**     */
+    public function testCanModifyTemporalContentReturnsTrueForAdminUser(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -52,10 +50,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function canModifyTemporalContentChecksSpecificTableWhenProvided(): void
+    /**     */
+    public function testCanModifyTemporalContentChecksSpecificTableWhenProvided(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -72,10 +68,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function canModifyTemporalContentChecksAllTablesWhenNoTableProvided(): void
+    /**     */
+    public function testCanModifyTemporalContentChecksAllTablesWhenNoTableProvided(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -94,10 +88,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function canModifyTemporalContentReturnsFalseIfAnyTableNotModifiable(): void
+    /**     */
+    public function testCanModifyTemporalContentReturnsFalseIfAnyTableNotModifiable(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -116,10 +108,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function canAccessModuleReturnsTrueForAdminUser(): void
+    /**     */
+    public function testCanAccessModuleReturnsTrueForAdminUser(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -130,10 +120,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function canAccessModuleReturnsTrueWhenModuleNotHidden(): void
+    /**     */
+    public function testCanAccessModuleReturnsTrueWhenModuleNotHidden(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -152,10 +140,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function canAccessModuleReturnsFalseWhenModuleHidden(): void
+    /**     */
+    public function testCanAccessModuleReturnsFalseWhenModuleHidden(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -174,10 +160,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function canAccessModuleReturnsFalseWhenModuleInHiddenList(): void
+    /**     */
+    public function testCanAccessModuleReturnsFalseWhenModuleInHiddenList(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -196,10 +180,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function getUnmodifiableTablesReturnsEmptyForAdminUser(): void
+    /**     */
+    public function testGetUnmodifiableTablesReturnsEmptyForAdminUser(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -210,10 +192,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**
-     * @test
-     */
-    public function getUnmodifiableTablesReturnsTablesWithoutPermission(): void
+    /**     */
+    public function testGetUnmodifiableTablesReturnsTablesWithoutPermission(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -233,10 +213,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertContains('tt_content', $result);
     }
 
-    /**
-     * @test
-     */
-    public function isReadOnlyReturnsTrueWhenCannotModify(): void
+    /**     */
+    public function testIsReadOnlyReturnsTrueWhenCannotModify(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -252,10 +230,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function isReadOnlyReturnsFalseWhenCanModify(): void
+    /**     */
+    public function testIsReadOnlyReturnsFalseWhenCanModify(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -266,10 +242,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function getPermissionStatusReturnsCompleteStatusForAdminUser(): void
+    /**     */
+    public function testGetPermissionStatusReturnsCompleteStatusForAdminUser(): void
     {
         $this->backendUser
             ->method('isAdmin')
@@ -291,10 +265,8 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertEmpty($result['unmodifiableTables']);
     }
 
-    /**
-     * @test
-     */
-    public function getPermissionStatusReturnsCompleteStatusForNonAdminUser(): void
+    /**     */
+    public function testGetPermissionStatusReturnsCompleteStatusForNonAdminUser(): void
     {
         $this->backendUser
             ->method('isAdmin')

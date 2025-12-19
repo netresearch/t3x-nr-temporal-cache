@@ -24,10 +24,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         $this->typo3ExtensionConfiguration = $this->createMock(Typo3ExtensionConfiguration::class);
     }
 
-    /**
-     * @test
-     */
-    public function constructorLoadsConfiguration(): void
+    /**     */
+    public function testConstructorLoadsConfiguration(): void
     {
         $config = [
             'scoping' => ['strategy' => 'per-content'],
@@ -46,10 +44,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('scheduler', $subject->getTimingStrategy());
     }
 
-    /**
-     * @test
-     */
-    public function constructorHandlesEmptyConfiguration(): void
+    /**     */
+    public function testConstructorHandlesEmptyConfiguration(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -62,11 +58,9 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    /**
-     * @test
-     * @dataProvider scopingStrategyDataProvider
+    /**     * @dataProvider scopingStrategyDataProvider
      */
-    public function getScopingStrategyReturnsConfiguredValue(string $strategy): void
+    public function testGetScopingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -86,10 +80,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getScopingStrategyReturnsDefaultWhenNotConfigured(): void
+    /**     */
+    public function testGetScopingStrategyReturnsDefaultWhenNotConfigured(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -100,11 +92,9 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('global', $subject->getScopingStrategy());
     }
 
-    /**
-     * @test
-     * @dataProvider booleanDataProvider
+    /**     * @dataProvider booleanDataProvider
      */
-    public function useRefindexReturnsBooleanValue(mixed $value, bool $expected): void
+    public function testUseRefindexReturnsBooleanValue(mixed $value, bool $expected): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -127,10 +117,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function useRefindexReturnsTrueByDefault(): void
+    /**     */
+    public function testUseRefindexReturnsTrueByDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -141,11 +129,9 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->useRefindex());
     }
 
-    /**
-     * @test
-     * @dataProvider timingStrategyDataProvider
+    /**     * @dataProvider timingStrategyDataProvider
      */
-    public function getTimingStrategyReturnsConfiguredValue(string $strategy): void
+    public function testGetTimingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -165,10 +151,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getTimingStrategyReturnsDefaultWhenNotConfigured(): void
+    /**     */
+    public function testGetTimingStrategyReturnsDefaultWhenNotConfigured(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -179,11 +163,9 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    /**
-     * @test
-     * @dataProvider schedulerIntervalDataProvider
+    /**     * @dataProvider schedulerIntervalDataProvider
      */
-    public function getSchedulerIntervalReturnsConfiguredValue(int $interval, int $expected): void
+    public function testGetSchedulerIntervalReturnsConfiguredValue(int $interval, int $expected): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -203,10 +185,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getSchedulerIntervalReturnsDefault(): void
+    /**     */
+    public function testGetSchedulerIntervalReturnsDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -217,10 +197,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(60, $subject->getSchedulerInterval());
     }
 
-    /**
-     * @test
-     */
-    public function getTimingRulesReturnsConfiguredValues(): void
+    /**     */
+    public function testGetTimingRulesReturnsConfiguredValues(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -240,10 +218,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('scheduler', $rules['content']);
     }
 
-    /**
-     * @test
-     */
-    public function getTimingRulesReturnsDefaults(): void
+    /**     */
+    public function testGetTimingRulesReturnsDefaults(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -256,10 +232,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('scheduler', $rules['content']);
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizationEnabledReturnsConfiguredValue(): void
+    /**     */
+    public function testIsHarmonizationEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -270,10 +244,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isHarmonizationEnabled());
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizationEnabledReturnsFalseByDefault(): void
+    /**     */
+    public function testIsHarmonizationEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -284,10 +256,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isHarmonizationEnabled());
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationSlotsReturnsConfiguredValues(): void
+    /**     */
+    public function testGetHarmonizationSlotsReturnsConfiguredValues(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -299,10 +269,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(['00:00', '08:00', '16:00'], $slots);
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationSlotsReturnsDefaults(): void
+    /**     */
+    public function testGetHarmonizationSlotsReturnsDefaults(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -314,10 +282,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(['00:00', '06:00', '12:00', '18:00'], $slots);
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationSlotsTrimsWhitespace(): void
+    /**     */
+    public function testGetHarmonizationSlotsTrimsWhitespace(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -329,10 +295,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(['00:00', '12:00', '18:00'], $slots);
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationToleranceReturnsConfiguredValue(): void
+    /**     */
+    public function testGetHarmonizationToleranceReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -343,10 +307,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(7200, $subject->getHarmonizationTolerance());
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationToleranceReturnsDefault(): void
+    /**     */
+    public function testGetHarmonizationToleranceReturnsDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -357,10 +319,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(3600, $subject->getHarmonizationTolerance());
     }
 
-    /**
-     * @test
-     */
-    public function isAutoRoundEnabledReturnsConfiguredValue(): void
+    /**     */
+    public function testIsAutoRoundEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -371,10 +331,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isAutoRoundEnabled());
     }
 
-    /**
-     * @test
-     */
-    public function isAutoRoundEnabledReturnsFalseByDefault(): void
+    /**     */
+    public function testIsAutoRoundEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -385,10 +343,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isAutoRoundEnabled());
     }
 
-    /**
-     * @test
-     */
-    public function getDefaultMaxLifetimeReturnsConfiguredValue(): void
+    /**     */
+    public function testGetDefaultMaxLifetimeReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -399,10 +355,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(172800, $subject->getDefaultMaxLifetime());
     }
 
-    /**
-     * @test
-     */
-    public function getDefaultMaxLifetimeReturnsDefault(): void
+    /**     */
+    public function testGetDefaultMaxLifetimeReturnsDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -413,10 +367,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(86400, $subject->getDefaultMaxLifetime());
     }
 
-    /**
-     * @test
-     */
-    public function isDebugLoggingEnabledReturnsConfiguredValue(): void
+    /**     */
+    public function testIsDebugLoggingEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -427,10 +379,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isDebugLoggingEnabled());
     }
 
-    /**
-     * @test
-     */
-    public function isDebugLoggingEnabledReturnsFalseByDefault(): void
+    /**     */
+    public function testIsDebugLoggingEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -441,11 +391,9 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isDebugLoggingEnabled());
     }
 
-    /**
-     * @test
-     * @dataProvider convenienceMethodDataProvider
+    /**     * @dataProvider convenienceMethodDataProvider
      */
-    public function convenienceMethodsWorkCorrectly(string $method, string $configKey, string $configValue, bool $expected): void
+    public function testConvenienceMethodsWorkCorrectly(string $method, string $configKey, string $configValue, bool $expected): void
     {
         $this->typo3ExtensionConfiguration
             ->method('get')
@@ -470,10 +418,8 @@ final class ExtensionConfigurationTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getAllReturnsCompleteConfiguration(): void
+    /**     */
+    public function testGetAllReturnsCompleteConfiguration(): void
     {
         $config = [
             'scoping' => ['strategy' => 'per-content'],

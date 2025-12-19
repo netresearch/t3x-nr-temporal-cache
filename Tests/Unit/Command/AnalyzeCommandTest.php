@@ -45,18 +45,14 @@ final class AnalyzeCommandTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function commandHasCorrectName(): void
+    /**     */
+    public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:analyze', $this->subject->getName());
     }
 
-    /**
-     * @test
-     */
-    public function executeWithNoTemporalContentReturnsSuccessWithWarning(): void
+    /**     */
+    public function testExecuteWithNoTemporalContentReturnsSuccessWithWarning(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -78,10 +74,8 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithTemporalContentDisplaysStatistics(): void
+    /**     */
+    public function testExecuteWithTemporalContentDisplaysStatistics(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -111,10 +105,8 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithUpcomingTransitionsDisplaysPeakDays(): void
+    /**     */
+    public function testExecuteWithUpcomingTransitionsDisplaysPeakDays(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -160,10 +152,8 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithHarmonizationEnabledDisplaysImpactAnalysis(): void
+    /**     */
+    public function testExecuteWithHarmonizationEnabledDisplaysImpactAnalysis(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -216,10 +206,8 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithVerboseModeDisplaysConfigurationSummary(): void
+    /**     */
+    public function testExecuteWithVerboseModeDisplaysConfigurationSummary(): void
     {
         $this->setupInputDefaults();
         $this->output->method('isDecorated')->willReturn(false);
@@ -269,10 +257,8 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithCustomWorkspaceAndLanguagePassesCorrectly(): void
+    /**     */
+    public function testExecuteWithCustomWorkspaceAndLanguagePassesCorrectly(): void
     {
         $this->input
             ->method('bind')

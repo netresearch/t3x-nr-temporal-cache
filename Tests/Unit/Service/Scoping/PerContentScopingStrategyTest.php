@@ -41,10 +41,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushReturnsPageTagForPages(): void
+    /**     */
+    public function testGetCacheTagsToFlushReturnsPageTagForPages(): void
     {
         $content = new TemporalContent(
             uid: 5,
@@ -62,10 +60,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushUsesRefindexForContent(): void
+    /**     */
+    public function testGetCacheTagsToFlushUsesRefindexForContent(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -90,10 +86,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertEqualsCanonicalizing(['pageId_5', 'pageId_10', 'pageId_15'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushFallsBackToParentPageWhenRefindexDisabled(): void
+    /**     */
+    public function testGetCacheTagsToFlushFallsBackToParentPageWhenRefindexDisabled(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -113,10 +107,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushFallsBackToParentPageOnRefindexFailure(): void
+    /**     */
+    public function testGetCacheTagsToFlushFallsBackToParentPageOnRefindexFailure(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -139,10 +131,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushFallsBackWhenRefindexReturnsEmpty(): void
+    /**     */
+    public function testGetCacheTagsToFlushFallsBackWhenRefindexReturnsEmpty(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -165,10 +155,8 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('per-content', $this->subject->getName());
     }

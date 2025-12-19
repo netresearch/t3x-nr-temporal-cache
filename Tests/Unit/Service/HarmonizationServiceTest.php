@@ -24,10 +24,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeTimestampReturnsOriginalWhenDisabled(): void
+    /**     */
+    public function testHarmonizeTimestampReturnsOriginalWhenDisabled(): void
     {
         $timestamp = 1609462800; // 2021-01-01 01:00:00 UTC
 
@@ -39,10 +37,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeTimestampReturnsOriginalWhenNoSlotsConfigured(): void
+    /**     */
+    public function testHarmonizeTimestampReturnsOriginalWhenNoSlotsConfigured(): void
     {
         $timestamp = 1609462800;
 
@@ -54,10 +50,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeTimestampRoundsToNearestSlot(): void
+    /**     */
+    public function testHarmonizeTimestampRoundsToNearestSlot(): void
     {
         // 2021-01-01 00:30:00 UTC should round to 00:00:00
         $timestamp = 1609461000;
@@ -72,10 +66,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($expectedTimestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function harmonizeTimestampReturnsOriginalWhenOutsideTolerance(): void
+    /**     */
+    public function testHarmonizeTimestampReturnsOriginalWhenOutsideTolerance(): void
     {
         // 2021-01-01 03:00:00 UTC is 3 hours from 00:00 and 06:00
         $timestamp = 1609470000;
@@ -90,11 +82,9 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    /**
-     * @test
-     * @dataProvider harmonizationDataProvider
+    /**     * @dataProvider harmonizationDataProvider
      */
-    public function harmonizeTimestampWorksForVariousSlots(
+    public function testHarmonizeTimestampWorksForVariousSlots(
         int $inputTimestamp,
         array $slots,
         int $tolerance,
@@ -141,10 +131,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getSlotsInRangeReturnsAllSlotsInRange(): void
+    /**     */
+    public function testGetSlotsInRangeReturnsAllSlotsInRange(): void
     {
         $start = 1609459200; // 2021-01-01 00:00:00
         $end = 1609632000;   // 2021-01-03 00:00:00
@@ -161,10 +149,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertContains($end, $slots);
     }
 
-    /**
-     * @test
-     */
-    public function getSlotsInRangeReturnsEmptyWhenNoSlotsConfigured(): void
+    /**     */
+    public function testGetSlotsInRangeReturnsEmptyWhenNoSlotsConfigured(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
@@ -174,10 +160,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertEmpty($slots);
     }
 
-    /**
-     * @test
-     */
-    public function getNextSlotReturnsNextSlotToday(): void
+    /**     */
+    public function testGetNextSlotReturnsNextSlotToday(): void
     {
         $timestamp = 1609462800; // 2021-01-01 01:00:00
         $expected = 1609480800;  // 2021-01-01 06:00:00
@@ -189,10 +173,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($expected, $subject->getNextSlot($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function getNextSlotReturnsFirstSlotTomorrow(): void
+    /**     */
+    public function testGetNextSlotReturnsFirstSlotTomorrow(): void
     {
         $timestamp = 1609527600; // 2021-01-01 19:00:00 (after last slot)
         $expected = 1609545600;  // 2021-01-02 00:00:00
@@ -204,10 +186,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($expected, $subject->getNextSlot($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function getNextSlotReturnsNullWhenNoSlotsConfigured(): void
+    /**     */
+    public function testGetNextSlotReturnsNullWhenNoSlotsConfigured(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
@@ -216,10 +196,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertNull($subject->getNextSlot(1609459200));
     }
 
-    /**
-     * @test
-     */
-    public function getPreviousSlotReturnsPreviousSlotToday(): void
+    /**     */
+    public function testGetPreviousSlotReturnsPreviousSlotToday(): void
     {
         $timestamp = 1609527600; // 2021-01-01 19:00:00
         $expected = 1609524000;  // 2021-01-01 18:00:00
@@ -231,10 +209,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($expected, $subject->getPreviousSlot($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function getPreviousSlotReturnsLastSlotYesterday(): void
+    /**     */
+    public function testGetPreviousSlotReturnsLastSlotYesterday(): void
     {
         $timestamp = 1609459200; // 2021-01-01 00:00:00 (first slot)
         $expected = 1609437600;  // 2020-12-31 18:00:00
@@ -246,10 +222,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($expected, $subject->getPreviousSlot($timestamp));
     }
 
-    /**
-     * @test
-     */
-    public function getPreviousSlotReturnsNullWhenNoSlotsConfigured(): void
+    /**     */
+    public function testGetPreviousSlotReturnsNullWhenNoSlotsConfigured(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
@@ -258,11 +232,9 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertNull($subject->getPreviousSlot(1609459200));
     }
 
-    /**
-     * @test
-     * @dataProvider slotBoundaryDataProvider
+    /**     * @dataProvider slotBoundaryDataProvider
      */
-    public function isOnSlotBoundaryDetectsSlotBoundaries(int $timestamp, array $slots, bool $expected): void
+    public function testIsOnSlotBoundaryDetectsSlotBoundaries(int $timestamp, array $slots, bool $expected): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn($slots);
 
@@ -283,10 +255,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function formatSlotReturnsHumanReadableTime(): void
+    /**     */
+    public function testFormatSlotReturnsHumanReadableTime(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00']);
 
@@ -298,10 +268,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame('23:59', $subject->formatSlot(86340));
     }
 
-    /**
-     * @test
-     */
-    public function getFormattedSlotsReturnsAllFormattedSlots(): void
+    /**     */
+    public function testGetFormattedSlotsReturnsAllFormattedSlots(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
@@ -311,10 +279,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame(['00:00', '06:00', '12:00', '18:00'], $formatted);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactReturnsCorrectStatistics(): void
+    /**     */
+    public function testCalculateHarmonizationImpactReturnsCorrectStatistics(): void
     {
         $midnight = 1609459200;
         $timestamps = [
@@ -337,10 +303,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame(60.0, $impact['reduction']); // (5-2)/5 * 100
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactHandlesEmptyArray(): void
+    /**     */
+    public function testCalculateHarmonizationImpactHandlesEmptyArray(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00']);
 
@@ -352,10 +316,8 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame(0.0, $impact['reduction']);
     }
 
-    /**
-     * @test
-     */
-    public function invalidSlotFormatsAreIgnored(): void
+    /**     */
+    public function testInvalidSlotFormatsAreIgnored(): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([
             '00:00',

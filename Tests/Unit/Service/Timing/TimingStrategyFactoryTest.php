@@ -51,10 +51,8 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsDynamicStrategy(): void
+    /**     */
+    public function testGetReturnsDynamicStrategy(): void
     {
         $this->configuration
             ->method('getTimingStrategy')
@@ -67,10 +65,8 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->dynamicStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsSchedulerStrategy(): void
+    /**     */
+    public function testGetReturnsSchedulerStrategy(): void
     {
         $this->configuration
             ->method('getTimingStrategy')
@@ -83,10 +79,8 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->schedulerStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getReturnsHybridStrategy(): void
+    /**     */
+    public function testGetReturnsHybridStrategy(): void
     {
         $this->configuration
             ->method('getTimingStrategy')
@@ -99,10 +93,8 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->hybridStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getThrowsExceptionForUnknownStrategy(): void
+    /**     */
+    public function testGetThrowsExceptionForUnknownStrategy(): void
     {
         $this->configuration
             ->method('getTimingStrategy')

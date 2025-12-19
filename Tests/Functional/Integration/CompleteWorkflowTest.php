@@ -43,10 +43,8 @@ final class CompleteWorkflowTest extends FunctionalTestCase
         ],
     ];
 
-    /**
-     * @test
-     */
-    public function completeWorkflowWorksEndToEnd(): void
+    /**     */
+    public function testCompleteWorkflowWorksEndToEnd(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
@@ -78,10 +76,8 @@ final class CompleteWorkflowTest extends FunctionalTestCase
         self::assertIsInt($harmonized);
     }
 
-    /**
-     * @test
-     */
-    public function backwardCompatibilityWithDefaultConfiguration(): void
+    /**     */
+    public function testBackwardCompatibilityWithDefaultConfiguration(): void
     {
         $configuration = $this->get(ExtensionConfiguration::class);
 

@@ -19,10 +19,8 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    /**
-     * @test
-     */
-    public function controllerCanBeInstantiated(): void
+    /**     */
+    public function testControllerCanBeInstantiated(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');

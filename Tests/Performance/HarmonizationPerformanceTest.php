@@ -36,12 +36,10 @@ final class HarmonizationPerformanceTest extends TestCase
         $this->analysisService = new HarmonizationAnalysisService($configMock);
     }
 
-    /**
-     * @test
-     * Benchmark: Harmonization analysis of 1000 content elements
+    /**     * Benchmark: Harmonization analysis of 1000 content elements
      * Target: < 50ms for all analysis operations
      */
-    public function harmonizationAnalysisPerformance(): void
+    public function testHarmonizationAnalysisPerformance(): void
     {
         $contentElements = $this->generateTestContent(1000);
 
@@ -74,12 +72,10 @@ final class HarmonizationPerformanceTest extends TestCase
         self::assertGreaterThan(0, $harmonizableCount, 'Should find some harmonizable content');
     }
 
-    /**
-     * @test
-     * Benchmark: Batch harmonization of 500 content elements
+    /**     * Benchmark: Batch harmonization of 500 content elements
      * Target: < 100ms for all harmonization operations
      */
-    public function batchHarmonizationPerformance(): void
+    public function testBatchHarmonizationPerformance(): void
     {
         $contentElements = $this->generateTestContent(500);
 
@@ -117,12 +113,10 @@ final class HarmonizationPerformanceTest extends TestCase
         self::assertGreaterThan(0, $successCount, 'Should successfully harmonize content');
     }
 
-    /**
-     * @test
-     * Benchmark: Cache churn reduction measurement
+    /**     * Benchmark: Cache churn reduction measurement
      * Validates: Harmonization reduces cache operations by 60-80%
      */
-    public function cacheChurnReductionMeasurement(): void
+    public function testCacheChurnReductionMeasurement(): void
     {
         // Generate 100 content elements with random times near harmonization slots
         $baseTime = strtotime('today 00:00:00');
@@ -176,12 +170,10 @@ final class HarmonizationPerformanceTest extends TestCase
         self::assertLessThanOrEqual(4, $timestampsAfter, 'Should align to 4 harmonization slots');
     }
 
-    /**
-     * @test
-     * Benchmark: Memory leak detection during sustained operations
+    /**     * Benchmark: Memory leak detection during sustained operations
      * Validates: No memory leaks during repeated harmonization
      */
-    public function memoryLeakDetection(): void
+    public function testMemoryLeakDetection(): void
     {
         $iterations = 10;
         $elementsPerIteration = 100;

@@ -22,10 +22,8 @@ final class TemporalCacheSchedulerTaskTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    /**
-     * @test
-     */
-    public function taskExecutesSuccessfully(): void
+    /**     */
+    public function testTaskExecutesSuccessfully(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');

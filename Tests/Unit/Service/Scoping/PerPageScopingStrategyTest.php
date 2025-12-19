@@ -29,10 +29,8 @@ final class PerPageScopingStrategyTest extends UnitTestCase
         $this->subject = new PerPageScopingStrategy($this->repository);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushReturnsPageTagForPages(): void
+    /**     */
+    public function testGetCacheTagsToFlushReturnsPageTagForPages(): void
     {
         $content = new TemporalContent(
             uid: 5,
@@ -50,10 +48,8 @@ final class PerPageScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushReturnsParentPageTagForContent(): void
+    /**     */
+    public function testGetCacheTagsToFlushReturnsParentPageTagForContent(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -71,10 +67,8 @@ final class PerPageScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('per-page', $this->subject->getName());
     }

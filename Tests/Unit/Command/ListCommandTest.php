@@ -33,18 +33,14 @@ final class ListCommandTest extends UnitTestCase
         $this->subject = new ListCommand($this->repository);
     }
 
-    /**
-     * @test
-     */
-    public function commandHasCorrectName(): void
+    /**     */
+    public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:list', $this->subject->getName());
     }
 
-    /**
-     * @test
-     */
-    public function executeWithNoTemporalContentReturnsSuccess(): void
+    /**     */
+    public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults('table');
         $this->output->method('isDecorated')->willReturn(false);
@@ -59,10 +55,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidTableNameReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidTableNameReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => 'invalid_table',
@@ -82,10 +76,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidSortFieldReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidSortFieldReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => null,
@@ -105,10 +97,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithInvalidFormatReturnsFailure(): void
+    /**     */
+    public function testExecuteWithInvalidFormatReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => null,
@@ -128,10 +118,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithTableFormatDisplaysTable(): void
+    /**     */
+    public function testExecuteWithTableFormatDisplaysTable(): void
     {
         $this->setupInputDefaults('table');
         $this->output->method('isDecorated')->willReturn(false);
@@ -159,10 +147,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithJsonFormatOutputsJson(): void
+    /**     */
+    public function testExecuteWithJsonFormatOutputsJson(): void
     {
         $this->setupInputDefaults('json');
         $this->output->method('isDecorated')->willReturn(false);
@@ -196,10 +182,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithCsvFormatOutputsCsv(): void
+    /**     */
+    public function testExecuteWithCsvFormatOutputsCsv(): void
     {
         $this->setupInputDefaults('csv');
         $this->output->method('isDecorated')->willReturn(false);
@@ -236,10 +220,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithTableFilterOnlyShowsSpecifiedTable(): void
+    /**     */
+    public function testExecuteWithTableFilterOnlyShowsSpecifiedTable(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => 'pages',
@@ -286,10 +268,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithUpcomingFilterOnlyShowsFutureTransitions(): void
+    /**     */
+    public function testExecuteWithUpcomingFilterOnlyShowsFutureTransitions(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => null,
@@ -339,10 +319,8 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     */
-    public function executeWithLimitOptionLimitsResults(): void
+    /**     */
+    public function testExecuteWithLimitOptionLimitsResults(): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => null,
@@ -389,11 +367,9 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**
-     * @test
-     * @dataProvider sortFieldDataProvider
+    /**     * @dataProvider sortFieldDataProvider
      */
-    public function executeWithDifferentSortFieldsSortsCorrectly(string $sortField): void
+    public function testExecuteWithDifferentSortFieldsSortsCorrectly(string $sortField): void
     {
         $this->setupInputDefaultsWithOptions([
             'table' => null,

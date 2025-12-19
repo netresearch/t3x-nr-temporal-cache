@@ -33,10 +33,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizableReturnsFalseWhenHarmonizationDisabled(): void
+    /**     */
+    public function testIsHarmonizableReturnsFalseWhenHarmonizationDisabled(): void
     {
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -58,10 +56,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizableReturnsFalseWhenNoTemporalFields(): void
+    /**     */
+    public function testIsHarmonizableReturnsFalseWhenNoTemporalFields(): void
     {
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -83,10 +79,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizableReturnsTrueWhenStarttimeCanBeHarmonized(): void
+    /**     */
+    public function testIsHarmonizableReturnsTrueWhenStarttimeCanBeHarmonized(): void
     {
         $currentTime = \time();
 
@@ -115,10 +109,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizableReturnsTrueWhenEndtimeCanBeHarmonized(): void
+    /**     */
+    public function testIsHarmonizableReturnsTrueWhenEndtimeCanBeHarmonized(): void
     {
         $currentTime = \time();
 
@@ -151,10 +143,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**
-     * @test
-     */
-    public function isHarmonizableReturnsFalseWhenAlreadyHarmonized(): void
+    /**     */
+    public function testIsHarmonizableReturnsFalseWhenAlreadyHarmonized(): void
     {
         $currentTime = \time();
 
@@ -182,10 +172,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**
-     * @test
-     */
-    public function generateHarmonizationSuggestionIncludesStarttimeWhenHarmonizable(): void
+    /**     */
+    public function testGenerateHarmonizationSuggestionIncludesStarttimeWhenHarmonizable(): void
     {
         $currentTime = \time();
 
@@ -215,10 +203,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame(600, $result['suggestions']['starttime']['diff']);
     }
 
-    /**
-     * @test
-     */
-    public function generateHarmonizationSuggestionIncludesEndtimeWhenHarmonizable(): void
+    /**     */
+    public function testGenerateHarmonizationSuggestionIncludesEndtimeWhenHarmonizable(): void
     {
         $currentTime = \time();
 
@@ -246,10 +232,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame($currentTime + 600, $result['suggestions']['endtime']['suggested']);
     }
 
-    /**
-     * @test
-     */
-    public function generateHarmonizationSuggestionReturnsNoChangesWhenAlreadyHarmonized(): void
+    /**     */
+    public function testGenerateHarmonizationSuggestionReturnsNoChangesWhenAlreadyHarmonized(): void
     {
         $currentTime = \time();
 
@@ -274,10 +258,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result['suggestions']);
     }
 
-    /**
-     * @test
-     */
-    public function analyzeHarmonizableCandidatesReturnsZeroWhenDisabled(): void
+    /**     */
+    public function testAnalyzeHarmonizableCandidatesReturnsZeroWhenDisabled(): void
     {
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -304,10 +286,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result['harmonizableItems']);
     }
 
-    /**
-     * @test
-     */
-    public function analyzeHarmonizableCandidatesCountsHarmonizableItems(): void
+    /**     */
+    public function testAnalyzeHarmonizableCandidatesCountsHarmonizableItems(): void
     {
         $currentTime = \time();
 
@@ -350,10 +330,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertCount(2, $result['harmonizableItems']);
     }
 
-    /**
-     * @test
-     */
-    public function analyzeHarmonizableCandidatesCalculatesAverageShift(): void
+    /**     */
+    public function testAnalyzeHarmonizableCandidatesCalculatesAverageShift(): void
     {
         $currentTime = \time();
 
@@ -385,10 +363,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame(1, $result['endtimeChanges']);
     }
 
-    /**
-     * @test
-     */
-    public function filterHarmonizableContentReturnsEmptyWhenDisabled(): void
+    /**     */
+    public function testFilterHarmonizableContentReturnsEmptyWhenDisabled(): void
     {
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -410,10 +386,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**
-     * @test
-     */
-    public function filterHarmonizableContentFiltersCorrectly(): void
+    /**     */
+    public function testFilterHarmonizableContentFiltersCorrectly(): void
     {
         $currentTime = \time();
 
@@ -459,10 +433,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame($harmonizable, \array_values($result)[0]);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactReturnsLowPriorityForSmallShifts(): void
+    /**     */
+    public function testCalculateHarmonizationImpactReturnsLowPriorityForSmallShifts(): void
     {
         $currentTime = \time();
         $futureTime = $currentTime + 86400; // 1 day in future
@@ -489,10 +461,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('low', $result['priority']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactReturnsMediumPriorityForModerateShifts(): void
+    /**     */
+    public function testCalculateHarmonizationImpactReturnsMediumPriorityForModerateShifts(): void
     {
         $currentTime = \time();
         $futureTime = $currentTime + 86400; // 1 day in future
@@ -518,10 +488,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('medium', $result['priority']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactReturnsHighPriorityForLargeShifts(): void
+    /**     */
+    public function testCalculateHarmonizationImpactReturnsHighPriorityForLargeShifts(): void
     {
         $currentTime = \time();
 
@@ -546,10 +514,8 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('high', $result['priority']);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactDetectsVisibilityAffection(): void
+    /**     */
+    public function testCalculateHarmonizationImpactDetectsVisibilityAffection(): void
     {
         $currentTime = \time();
 

@@ -14,10 +14,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class TemporalContentTest extends UnitTestCase
 {
-    /**
-     * @test
-     */
-    public function constructorCreatesImmutableObject(): void
+    /**     */
+    public function testConstructorCreatesImmutableObject(): void
     {
         $subject = new TemporalContent(
             uid: 123,
@@ -42,10 +40,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->deleted);
     }
 
-    /**
-     * @test
-     */
-    public function hasTemporalFieldsReturnsTrueWhenStarttimeSet(): void
+    /**     */
+    public function testHasTemporalFieldsReturnsTrueWhenStarttimeSet(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -61,10 +57,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertTrue($subject->hasTemporalFields());
     }
 
-    /**
-     * @test
-     */
-    public function hasTemporalFieldsReturnsTrueWhenEndtimeSet(): void
+    /**     */
+    public function testHasTemporalFieldsReturnsTrueWhenEndtimeSet(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -80,10 +74,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertTrue($subject->hasTemporalFields());
     }
 
-    /**
-     * @test
-     */
-    public function hasTemporalFieldsReturnsFalseWhenNoTemporalFields(): void
+    /**     */
+    public function testHasTemporalFieldsReturnsFalseWhenNoTemporalFields(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -99,10 +91,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->hasTemporalFields());
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsNullWhenNoFutureTransitions(): void
+    /**     */
+    public function testGetNextTransitionReturnsNullWhenNoFutureTransitions(): void
     {
         $currentTime = 1620000000;
         $subject = new TemporalContent(
@@ -119,10 +109,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertNull($subject->getNextTransition($currentTime));
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsStarttimeWhenInFuture(): void
+    /**     */
+    public function testGetNextTransitionReturnsStarttimeWhenInFuture(): void
     {
         $currentTime = 1600000000;
         $futureStarttime = 1609459200;
@@ -141,10 +129,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame($futureStarttime, $subject->getNextTransition($currentTime));
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsEndtimeWhenInFuture(): void
+    /**     */
+    public function testGetNextTransitionReturnsEndtimeWhenInFuture(): void
     {
         $currentTime = 1610000000;
         $futureEndtime = 1612137600;
@@ -163,10 +149,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame($futureEndtime, $subject->getNextTransition($currentTime));
     }
 
-    /**
-     * @test
-     */
-    public function getNextTransitionReturnsNearestTransition(): void
+    /**     */
+    public function testGetNextTransitionReturnsNearestTransition(): void
     {
         $currentTime = 1600000000;
         $nearTransition = 1605000000;
@@ -186,10 +170,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame($nearTransition, $subject->getNextTransition($currentTime));
     }
 
-    /**
-     * @test
-     */
-    public function getContentTypeReturnsPageForPagesTable(): void
+    /**     */
+    public function testGetContentTypeReturnsPageForPagesTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -205,10 +187,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame('page', $subject->getContentType());
     }
 
-    /**
-     * @test
-     */
-    public function getContentTypeReturnsContentForTtContentTable(): void
+    /**     */
+    public function testGetContentTypeReturnsContentForTtContentTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -224,10 +204,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame('content', $subject->getContentType());
     }
 
-    /**
-     * @test
-     */
-    public function isPageReturnsTrueForPagesTable(): void
+    /**     */
+    public function testIsPageReturnsTrueForPagesTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -243,10 +221,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertTrue($subject->isPage());
     }
 
-    /**
-     * @test
-     */
-    public function isPageReturnsFalseForTtContentTable(): void
+    /**     */
+    public function testIsPageReturnsFalseForTtContentTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -262,10 +238,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->isPage());
     }
 
-    /**
-     * @test
-     */
-    public function isContentReturnsTrueForTtContentTable(): void
+    /**     */
+    public function testIsContentReturnsTrueForTtContentTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -281,10 +255,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertTrue($subject->isContent());
     }
 
-    /**
-     * @test
-     */
-    public function isContentReturnsFalseForPagesTable(): void
+    /**     */
+    public function testIsContentReturnsFalseForPagesTable(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -300,11 +272,9 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->isContent());
     }
 
-    /**
-     * @test
-     * @dataProvider visibilityDataProvider
+    /**     * @dataProvider visibilityDataProvider
      */
-    public function isVisibleChecksAllConditions(
+    public function testIsVisibleChecksAllConditions(
         bool $hidden,
         bool $deleted,
         ?int $starttime,
@@ -349,10 +319,8 @@ final class TemporalContentTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getTransitionTypeReturnsStartForStarttime(): void
+    /**     */
+    public function testGetTransitionTypeReturnsStartForStarttime(): void
     {
         $starttime = 1609459200;
         $subject = new TemporalContent(
@@ -369,10 +337,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame('start', $subject->getTransitionType($starttime));
     }
 
-    /**
-     * @test
-     */
-    public function getTransitionTypeReturnsEndForEndtime(): void
+    /**     */
+    public function testGetTransitionTypeReturnsEndForEndtime(): void
     {
         $endtime = 1612137600;
         $subject = new TemporalContent(
@@ -389,10 +355,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertSame('end', $subject->getTransitionType($endtime));
     }
 
-    /**
-     * @test
-     */
-    public function getTransitionTypeReturnsNullForNonMatchingTimestamp(): void
+    /**     */
+    public function testGetTransitionTypeReturnsNullForNonMatchingTimestamp(): void
     {
         $subject = new TemporalContent(
             uid: 1,
@@ -408,10 +372,8 @@ final class TemporalContentTest extends UnitTestCase
         self::assertNull($subject->getTransitionType(1610000000));
     }
 
-    /**
-     * @test
-     */
-    public function getTransitionTypeReturnsNullWhenNoTemporalFields(): void
+    /**     */
+    public function testGetTransitionTypeReturnsNullWhenNoTemporalFields(): void
     {
         $subject = new TemporalContent(
             uid: 1,

@@ -38,20 +38,16 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function handlesContentTypeReturnsAlwaysTrue(): void
+    /**     */
+    public function testHandlesContentTypeReturnsAlwaysTrue(): void
     {
         self::assertTrue($this->subject->handlesContentType('page'));
         self::assertTrue($this->subject->handlesContentType('content'));
         self::assertTrue($this->subject->handlesContentType('any'));
     }
 
-    /**
-     * @test
-     */
-    public function processTransitionDoesNothing(): void
+    /**     */
+    public function testProcessTransitionDoesNothing(): void
     {
         $content = new TemporalContent(
             uid: 1,
@@ -75,10 +71,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertTrue(true);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeReturnsLifetimeUntilNextTransition(): void
+    /**     */
+    public function testGetCacheLifetimeReturnsLifetimeUntilNextTransition(): void
     {
         $currentTime = \time();
         $nextTransition = $currentTime + 3600;
@@ -103,10 +97,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(3600, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeReturnsDefaultWhenNoTransitions(): void
+    /**     */
+    public function testGetCacheLifetimeReturnsDefaultWhenNoTransitions(): void
     {
         $this->context
             ->method('getPropertyFromAspect')
@@ -128,10 +120,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(86400, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeCapsAtMaximum(): void
+    /**     */
+    public function testGetCacheLifetimeCapsAtMaximum(): void
     {
         $currentTime = \time();
         $nextTransition = $currentTime + 172800; // 2 days
@@ -156,10 +146,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(86400, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeReturnsMinimumForPastTransitions(): void
+    /**     */
+    public function testGetCacheLifetimeReturnsMinimumForPastTransitions(): void
     {
         $currentTime = \time();
         $pastTransition = $currentTime - 3600;
@@ -180,10 +168,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(60, $lifetime); // Minimum 1 minute
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('dynamic', $this->subject->getName());
     }

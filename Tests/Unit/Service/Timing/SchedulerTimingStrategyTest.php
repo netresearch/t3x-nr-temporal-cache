@@ -50,29 +50,23 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function handlesContentTypeReturnsAlwaysTrue(): void
+    /**     */
+    public function testHandlesContentTypeReturnsAlwaysTrue(): void
     {
         self::assertTrue($this->subject->handlesContentType('page'));
         self::assertTrue($this->subject->handlesContentType('content'));
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeReturnsNull(): void
+    /**     */
+    public function testGetCacheLifetimeReturnsNull(): void
     {
         $lifetime = $this->subject->getCacheLifetime($this->context);
 
         self::assertNull($lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function processTransitionFlushesCache(): void
+    /**     */
+    public function testProcessTransitionFlushesCache(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -111,10 +105,8 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         $this->subject->processTransition($event);
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('scheduler', $this->subject->getName());
     }

@@ -33,10 +33,8 @@ final class HarmonizationIntegrationTest extends FunctionalTestCase
         ],
     ];
 
-    /**
-     * @test
-     */
-    public function harmonizationWorksWithRealConfiguration(): void
+    /**     */
+    public function testHarmonizationWorksWithRealConfiguration(): void
     {
         $configuration = $this->get(ExtensionConfiguration::class);
         $service = new HarmonizationService($configuration);
@@ -50,10 +48,8 @@ final class HarmonizationIntegrationTest extends FunctionalTestCase
         self::assertSame($expected, $result);
     }
 
-    /**
-     * @test
-     */
-    public function calculateHarmonizationImpactWorksEndToEnd(): void
+    /**     */
+    public function testCalculateHarmonizationImpactWorksEndToEnd(): void
     {
         $configuration = $this->get(ExtensionConfiguration::class);
         $service = new HarmonizationService($configuration);

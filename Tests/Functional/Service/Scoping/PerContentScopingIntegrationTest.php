@@ -25,10 +25,8 @@ final class PerContentScopingIntegrationTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    /**
-     * @test
-     */
-    public function getCacheTagsToFlushWorksWithRealDatabase(): void
+    /**     */
+    public function testGetCacheTagsToFlushWorksWithRealDatabase(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');

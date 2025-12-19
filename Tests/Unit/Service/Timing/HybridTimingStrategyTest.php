@@ -45,11 +45,9 @@ final class HybridTimingStrategyTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     * @dataProvider contentTypeHandlingDataProvider
+    /**     * @dataProvider contentTypeHandlingDataProvider
      */
-    public function handlesContentTypeDelegatesToCorrectStrategy(
+    public function testHandlesContentTypeDelegatesToCorrectStrategy(
         string $contentType,
         array $timingRules,
         string $expectedStrategy
@@ -82,10 +80,8 @@ final class HybridTimingStrategyTest extends UnitTestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function getCacheLifetimeDelegatesToDynamicStrategyForPages(): void
+    /**     */
+    public function testGetCacheLifetimeDelegatesToDynamicStrategyForPages(): void
     {
         $this->configuration
             ->method('getTimingRules')
@@ -104,10 +100,8 @@ final class HybridTimingStrategyTest extends UnitTestCase
         self::assertSame(3600, $result);
     }
 
-    /**
-     * @test
-     */
-    public function processTransitionDelegatesToSchedulerStrategyForContent(): void
+    /**     */
+    public function testProcessTransitionDelegatesToSchedulerStrategyForContent(): void
     {
         $content = new TemporalContent(
             uid: 123,
@@ -140,10 +134,8 @@ final class HybridTimingStrategyTest extends UnitTestCase
         $this->subject->processTransition($event);
     }
 
-    /**
-     * @test
-     */
-    public function getNameReturnsCorrectIdentifier(): void
+    /**     */
+    public function testGetNameReturnsCorrectIdentifier(): void
     {
         $this->configuration
             ->method('getTimingRules')

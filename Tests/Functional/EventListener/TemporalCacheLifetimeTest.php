@@ -34,20 +34,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
     }
 
-    /**
-     * @test
-     */
-    public function eventListenerIsRegisteredInContainer(): void
+    /**     */
+    public function testEventListenerIsRegisteredInContainer(): void
     {
         $subject = $this->get(TemporalCacheLifetime::class);
 
         self::assertInstanceOf(TemporalCacheLifetime::class, $subject);
     }
 
-    /**
-     * @test
-     */
-    public function calculatesLifetimeBasedOnPageStarttime(): void
+    /**     */
+    public function testCalculatesLifetimeBasedOnPageStarttime(): void
     {
         $now = \time();
         $futureStarttime = $now + 3600; // 1 hour from now
@@ -66,10 +62,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function calculatesLifetimeBasedOnPageEndtime(): void
+    /**     */
+    public function testCalculatesLifetimeBasedOnPageEndtime(): void
     {
         $now = \time();
         $futureEndtime = $now + 7200; // 2 hours from now
@@ -88,10 +82,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(7202, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function calculatesLifetimeBasedOnContentElementStarttime(): void
+    /**     */
+    public function testCalculatesLifetimeBasedOnContentElementStarttime(): void
     {
         $now = \time();
         $futureStarttime = $now + 1800; // 30 minutes from now
@@ -110,10 +102,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function selectsNearestTransitionFromMultipleRecords(): void
+    /**     */
+    public function testSelectsNearestTransitionFromMultipleRecords(): void
     {
         $now = \time();
         $nearTransition = $now + 1800;  // 30 min
@@ -134,10 +124,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function respectsLanguageContext(): void
+    /**     */
+    public function testRespectsLanguageContext(): void
     {
         $now = \time();
         $futureStarttime = $now + 3600;
@@ -163,10 +151,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function ignoresPastStarttimes(): void
+    /**     */
+    public function testIgnoresPastStarttimes(): void
     {
         $now = \time();
         $pastStarttime = $now - 3600;   // 1 hour ago
@@ -185,10 +171,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function ignoresZeroTimestamps(): void
+    /**     */
+    public function testIgnoresZeroTimestamps(): void
     {
         $now = \time();
         $futureStarttime = $now + 3600;
@@ -210,10 +194,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function doesNotModifyLifetimeWhenNoTemporalContent(): void
+    /**     */
+    public function testDoesNotModifyLifetimeWhenNoTemporalContent(): void
     {
         // Insert page with no temporal restrictions
         $this->insertPage(0, 0);
@@ -229,10 +211,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertEquals($originalLifetime, $event->getCacheLifetime());
     }
 
-    /**
-     * @test
-     */
-    public function handlesHiddenContentElements(): void
+    /**     */
+    public function testHandlesHiddenContentElements(): void
     {
         $now = \time();
         $futureStarttime = $now + 3600;
@@ -259,10 +239,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertGreaterThan(0, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function handlesMultipleContentElementsOnSamePage(): void
+    /**     */
+    public function testHandlesMultipleContentElementsOnSamePage(): void
     {
         $now = \time();
         $transitions = [
@@ -286,10 +264,8 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**
-     * @test
-     */
-    public function performanceWithManyRecords(): void
+    /**     */
+    public function testPerformanceWithManyRecords(): void
     {
         $now = \time();
 

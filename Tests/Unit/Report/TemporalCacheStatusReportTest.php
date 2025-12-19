@@ -48,10 +48,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function getLabelReturnsTranslationKey(): void
+    /**     */
+    public function testGetLabelReturnsTranslationKey(): void
     {
         $label = $this->subject->getLabel();
 
@@ -59,10 +57,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('locallang_reports.xlf', $label);
     }
 
-    /**
-     * @test
-     */
-    public function getStatusReturnsAllStatusSections(): void
+    /**     */
+    public function testGetStatusReturnsAllStatusSections(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -82,10 +78,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         }
     }
 
-    /**
-     * @test
-     */
-    public function getExtensionStatusReturnsOkForValidConfiguration(): void
+    /**     */
+    public function testGetExtensionStatusReturnsOkForValidConfiguration(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -97,10 +91,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertSame(ContextualFeedbackSeverity::OK, $extensionStatus->getSeverity());
     }
 
-    /**
-     * @test
-     */
-    public function getExtensionStatusReturnsErrorForInvalidScopingStrategy(): void
+    /**     */
+    public function testGetExtensionStatusReturnsErrorForInvalidScopingStrategy(): void
     {
         $this->extensionConfiguration
             ->method('getScopingStrategy')
@@ -120,10 +112,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Invalid Configuration', $extensionStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getExtensionStatusReturnsErrorForInvalidTimingStrategy(): void
+    /**     */
+    public function testGetExtensionStatusReturnsErrorForInvalidTimingStrategy(): void
     {
         $this->extensionConfiguration
             ->method('getScopingStrategy')
@@ -142,10 +132,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertSame(ContextualFeedbackSeverity::ERROR, $extensionStatus->getSeverity());
     }
 
-    /**
-     * @test
-     */
-    public function getDatabaseIndexesStatusReturnsOkWhenIndexesExist(): void
+    /**     */
+    public function testGetDatabaseIndexesStatusReturnsOkWhenIndexesExist(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -158,10 +146,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('OK', $indexStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getDatabaseIndexesStatusReturnsErrorWhenIndexesMissing(): void
+    /**     */
+    public function testGetDatabaseIndexesStatusReturnsErrorWhenIndexesMissing(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(false);
@@ -174,10 +160,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Missing Indexes', $indexStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getDatabaseIndexesStatusHandlesException(): void
+    /**     */
+    public function testGetDatabaseIndexesStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
 
@@ -206,10 +190,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         }
     }
 
-    /**
-     * @test
-     */
-    public function getTemporalContentStatusReturnsStatistics(): void
+    /**     */
+    public function testGetTemporalContentStatusReturnsStatistics(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -242,10 +224,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('100 items', $contentStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getTemporalContentStatusReturnsWarningWhenNoContent(): void
+    /**     */
+    public function testGetTemporalContentStatusReturnsWarningWhenNoContent(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -277,10 +257,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertSame(ContextualFeedbackSeverity::WARNING, $contentStatus->getSeverity());
     }
 
-    /**
-     * @test
-     */
-    public function getTemporalContentStatusHandlesException(): void
+    /**     */
+    public function testGetTemporalContentStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -300,10 +278,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Error', $contentStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationStatusReturnsInfoWhenDisabled(): void
+    /**     */
+    public function testGetHarmonizationStatusReturnsInfoWhenDisabled(): void
     {
         $this->mockValidConfiguration();
         $this->extensionConfiguration
@@ -320,10 +296,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Disabled', $harmonizationStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationStatusShowsConfigurationWhenEnabled(): void
+    /**     */
+    public function testGetHarmonizationStatusShowsConfigurationWhenEnabled(): void
     {
         $this->extensionConfiguration
             ->method('getScopingStrategy')
@@ -364,10 +338,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Enabled', $harmonizationStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getHarmonizationStatusCalculatesImpact(): void
+    /**     */
+    public function testGetHarmonizationStatusCalculatesImpact(): void
     {
         $this->extensionConfiguration
             ->method('getScopingStrategy')
@@ -452,10 +424,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('moderate', $message);
     }
 
-    /**
-     * @test
-     */
-    public function getUpcomingTransitionsStatusReturnsOkWhenNoTransitions(): void
+    /**     */
+    public function testGetUpcomingTransitionsStatusReturnsOkWhenNoTransitions(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -472,10 +442,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('None', $transitionsStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getUpcomingTransitionsStatusGroupsByDay(): void
+    /**     */
+    public function testGetUpcomingTransitionsStatusGroupsByDay(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -530,10 +498,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('3 in next 7 days', $transitionsStatus->getValue());
     }
 
-    /**
-     * @test
-     */
-    public function getUpcomingTransitionsStatusReturnsWarningForHighVolume(): void
+    /**     */
+    public function testGetUpcomingTransitionsStatusReturnsWarningForHighVolume(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
@@ -588,10 +554,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('High Transition Volume', $transitionsStatus->getMessage());
     }
 
-    /**
-     * @test
-     */
-    public function getUpcomingTransitionsStatusHandlesException(): void
+    /**     */
+    public function testGetUpcomingTransitionsStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
