@@ -161,7 +161,7 @@ services:
     tags:
       - name: event.listener
         identifier: 'temporal-cache/modify-cache-lifetime'
-        event: TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent
+        event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
         method: '__invoke'
 
   # ============================================================================
