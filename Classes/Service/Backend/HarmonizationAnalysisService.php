@@ -127,10 +127,12 @@ final class HarmonizationAnalysisService
         if ($content->starttime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->starttime);
             if ($harmonized !== $content->starttime) {
+                $diff = $harmonized - $content->starttime;
                 $suggestions['starttime'] = [
                     'current' => $content->starttime,
                     'suggested' => $harmonized,
-                    'diff' => $harmonized - $content->starttime,
+                    'diff' => $diff,
+                    'diffMinutes' => (int) round($diff / 60),
                 ];
             }
         }
@@ -139,10 +141,12 @@ final class HarmonizationAnalysisService
         if ($content->endtime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->endtime);
             if ($harmonized !== $content->endtime) {
+                $diff = $harmonized - $content->endtime;
                 $suggestions['endtime'] = [
                     'current' => $content->endtime,
                     'suggested' => $harmonized,
-                    'diff' => $harmonized - $content->endtime,
+                    'diff' => $diff,
+                    'diffMinutes' => (int) round($diff / 60),
                 ];
             }
         }

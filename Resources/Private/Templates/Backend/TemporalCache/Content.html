@@ -133,7 +133,7 @@
                                                             <strong>Start:</strong>
                                                             <f:format.date format="H:i">{item.suggestions.starttime.suggested}</f:format.date>
                                                             <span class="text-muted">
-                                                                (<f:if condition="{item.suggestions.starttime.diff} > 0">+</f:if>{item.suggestions.starttime.diff -> f:format.number(decimals: 0) -> f:variable.divide(divisor: 60)}min)
+                                                                (<f:if condition="{item.suggestions.starttime.diff} > 0">+</f:if><f:format.number decimals="0">{item.suggestions.starttime.diffMinutes}</f:format.number>min)
                                                             </span>
                                                         </div>
                                                     </f:if>
@@ -142,7 +142,7 @@
                                                             <strong>End:</strong>
                                                             <f:format.date format="H:i">{item.suggestions.endtime.suggested}</f:format.date>
                                                             <span class="text-muted">
-                                                                (<f:if condition="{item.suggestions.endtime.diff} > 0">+</f:if>{item.suggestions.endtime.diff -> f:format.number(decimals: 0) -> f:variable.divide(divisor: 60)}min)
+                                                                (<f:if condition="{item.suggestions.endtime.diff} > 0">+</f:if><f:format.number decimals="0">{item.suggestions.endtime.diffMinutes}</f:format.number>min)
                                                             </span>
                                                         </div>
                                                     </f:if>
