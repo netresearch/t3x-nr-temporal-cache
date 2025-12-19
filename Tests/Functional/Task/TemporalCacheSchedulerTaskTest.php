@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Task;
 
-use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
-use Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory;
 use Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -28,11 +26,8 @@ final class TemporalCacheSchedulerTaskTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
 
-        $repository = $this->get(TemporalContentRepository::class);
-        $timingStrategyFactory = $this->get(TimingStrategyFactory::class);
-        $timingStrategy = $timingStrategyFactory->get();
-
-        $task = new TemporalCacheSchedulerTask($repository, $timingStrategy);
+        // Get the task from DI container - it will have all dependencies injected
+        $task = $this->get(TemporalCacheSchedulerTask::class);
 
         $result = $task->execute();
 

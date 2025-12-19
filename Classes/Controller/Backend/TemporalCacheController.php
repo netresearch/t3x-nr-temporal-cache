@@ -94,10 +94,15 @@ final class TemporalCacheController extends ActionController
         $allContent = $this->contentRepository->findAllWithTemporalFields();
         $filteredContent = $this->filterContent($allContent, $filter, $currentTime);
 
-        // Add harmonization suggestions
+        // Add harmonization suggestions and pre-computed visibility status
         /** @var array<int, array<string, mixed>> $contentWithSuggestions */
         $contentWithSuggestions = \array_map(
-            fn (\Netresearch\TemporalCache\Domain\Model\TemporalContent $content) => $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content, $currentTime),
+            function (\Netresearch\TemporalCache\Domain\Model\TemporalContent $content) use ($currentTime): array {
+                $suggestion = $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content, $currentTime);
+                // Pre-compute isVisible for Fluid template (can't call methods with params in Fluid)
+                $suggestion['isVisible'] = $content->isVisible($currentTime);
+                return $suggestion;
+            },
             $filteredContent
         );
 

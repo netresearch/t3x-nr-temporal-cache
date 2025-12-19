@@ -107,7 +107,7 @@
                                     </f:if>
                                 </td>
                                 <td>
-                                    <f:if condition="{item.content -> f:invoke(method: 'isVisible', arguments: '{0: currentTime}')}">
+                                    <f:if condition="{item.isVisible}">
                                         <f:then>
                                             <span class="badge bg-success"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.active" /></span>
                                         </f:then>
