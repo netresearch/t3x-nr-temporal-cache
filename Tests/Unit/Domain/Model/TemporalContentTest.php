@@ -272,8 +272,7 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->isContent());
     }
 
-    /**     * @dataProvider visibilityDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('visibilityDataProvider')]
     public function testIsVisibleChecksAllConditions(
         bool $hidden,
         bool $deleted,

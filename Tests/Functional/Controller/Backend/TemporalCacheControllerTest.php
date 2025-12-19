@@ -234,8 +234,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Content Action Tests - Filtering
     // =========================================================================
 
-    /**     * @dataProvider filterTypeProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('filterTypeProvider')]
     public function testContentActionFiltersContentCorrectly(string $filter): void
     {
         $request = $this->createRequest();
@@ -381,8 +380,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    /**     * @dataProvider wizardStepProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('wizardStepProvider')]
     public function testWizardActionHandlesDifferentSteps(string $step): void
     {
         $request = $this->createRequest();

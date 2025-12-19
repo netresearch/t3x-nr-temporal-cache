@@ -367,8 +367,7 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**     * @dataProvider sortFieldDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('sortFieldDataProvider')]
     public function testExecuteWithDifferentSortFieldsSortsCorrectly(string $sortField): void
     {
         $this->setupInputDefaultsWithOptions([

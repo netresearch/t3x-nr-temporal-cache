@@ -58,8 +58,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    /**     * @dataProvider scopingStrategyDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('scopingStrategyDataProvider')]
     public function testGetScopingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
@@ -92,8 +91,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('global', $subject->getScopingStrategy());
     }
 
-    /**     * @dataProvider booleanDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('booleanDataProvider')]
     public function testUseRefindexReturnsBooleanValue(mixed $value, bool $expected): void
     {
         $this->typo3ExtensionConfiguration
@@ -129,8 +127,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->useRefindex());
     }
 
-    /**     * @dataProvider timingStrategyDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('timingStrategyDataProvider')]
     public function testGetTimingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
@@ -163,8 +160,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    /**     * @dataProvider schedulerIntervalDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('schedulerIntervalDataProvider')]
     public function testGetSchedulerIntervalReturnsConfiguredValue(int $interval, int $expected): void
     {
         $this->typo3ExtensionConfiguration
@@ -391,8 +387,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isDebugLoggingEnabled());
     }
 
-    /**     * @dataProvider convenienceMethodDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('convenienceMethodDataProvider')]
     public function testConvenienceMethodsWorkCorrectly(string $method, string $configKey, string $configValue, bool $expected): void
     {
         $this->typo3ExtensionConfiguration
