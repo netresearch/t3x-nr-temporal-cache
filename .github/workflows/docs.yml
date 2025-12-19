@@ -9,6 +9,9 @@ on:
   repository_dispatch:
     types: [ documentation ]
 
+permissions:
+  contents: read
+
 jobs:
   trigger-docs-build:
     name: Trigger docs.typo3.org rebuild
