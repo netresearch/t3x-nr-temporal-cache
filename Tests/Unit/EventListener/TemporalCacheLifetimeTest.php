@@ -132,6 +132,9 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
 
         // Act
         ($this->subject)($event);
+
+        // Assert: Lifetime should be capped at default maximum
+        self::assertLessThanOrEqual($expectedLifetime, $event->getCacheLifetime());
     }
 
     public function testInvokeRespectsTypoScriptCachePeriod(): void
@@ -148,6 +151,9 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
 
         // Act
         ($this->subject)($event);
+
+        // Assert: Lifetime should respect TypoScript cache_period limit
+        self::assertLessThanOrEqual($typoScriptMaxLifetime, $event->getCacheLifetime());
     }
 
     public function testInvokeHandlesExceptionsGracefully(): void
