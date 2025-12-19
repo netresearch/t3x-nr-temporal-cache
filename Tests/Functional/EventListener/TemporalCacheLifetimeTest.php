@@ -52,7 +52,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertPage($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400); // 24h default
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class)); // 24h default
 
         $subject->__invoke($event);
 
@@ -72,7 +72,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertPage(0, $futureEndtime);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -92,7 +92,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertContentElement($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -114,7 +114,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertContentElement($nearTransition, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -141,7 +141,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $context->setAspect('language', new \TYPO3\CMS\Core\Context\LanguageAspect(0, 0, \TYPO3\CMS\Core\Context\LanguageAspect::OVERLAYS_OFF));
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -161,7 +161,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertPage($pastStarttime, $futureEndtime);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -184,7 +184,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertPage($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -203,7 +203,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
 
         $subject = $this->get(TemporalCacheLifetime::class);
         $originalLifetime = 86400;
-        $event = new ModifyCacheLifetimeForPageEvent($originalLifetime);
+        $event = new ModifyCacheLifetimeForPageEvent($originalLifetime, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -229,7 +229,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         ]);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -254,7 +254,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         }
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -286,7 +286,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         }
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $startTime = \microtime(true);
         $subject->__invoke($event);
