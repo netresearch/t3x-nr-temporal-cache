@@ -61,10 +61,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function invokeDoesNotModifyCacheLifetimeWhenTimingStrategyReturnsNull(): void
+    public function testInvokeDoesNotModifyCacheLifetimeWhenTimingStrategyReturnsNull(): void
     {
         // Arrange: Timing strategy returns null (scheduler mode)
         $this->timingStrategy
@@ -97,10 +94,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         );
     }
 
-    /**
-     * @test
-     */
-    public function invokeSetsLifetimeWhenTimingStrategyReturnsValue(): void
+    public function testInvokeSetsLifetimeWhenTimingStrategyReturnsValue(): void
     {
         $lifetime = 3600;
 
@@ -124,10 +118,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         ($this->subject)($event);
     }
 
-    /**
-     * @test
-     */
-    public function invokeCapsLifetimeAtDefaultMaximum(): void
+    public function testInvokeCapsLifetimeAtDefaultMaximum(): void
     {
         $requestedLifetime = 100000; // More than default 86400
         $expectedLifetime = 86400;
@@ -143,10 +134,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         ($this->subject)($event);
     }
 
-    /**
-     * @test
-     */
-    public function invokeRespectsTypoScriptCachePeriod(): void
+    public function testInvokeRespectsTypoScriptCachePeriod(): void
     {
         $typoScriptMaxLifetime = 7200;
         $requestedLifetime = 10000;
@@ -162,10 +150,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         ($this->subject)($event);
     }
 
-    /**
-     * @test
-     */
-    public function invokeHandlesExceptionsGracefully(): void
+    public function testInvokeHandlesExceptionsGracefully(): void
     {
         // Arrange: Timing strategy throws exception
         $this->timingStrategy
@@ -180,10 +165,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         self::assertTrue(true); // Reached here without exception
     }
 
-    /**
-     * @test
-     */
-    public function invokeLogsDebugInfoWhenDebugEnabled(): void
+    public function testInvokeLogsDebugInfoWhenDebugEnabled(): void
     {
         $lifetime = 3600;
 
@@ -223,20 +205,14 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         $subject($event);
     }
 
-    /**
-     * @test
-     */
-    public function getScopingStrategyReturnsInjectedStrategy(): void
+    public function testGetScopingStrategyReturnsInjectedStrategy(): void
     {
         $result = $this->subject->getScopingStrategy();
 
         self::assertSame($this->scopingStrategy, $result);
     }
 
-    /**
-     * @test
-     */
-    public function getTimingStrategyReturnsInjectedStrategy(): void
+    public function testGetTimingStrategyReturnsInjectedStrategy(): void
     {
         $result = $this->subject->getTimingStrategy();
 
