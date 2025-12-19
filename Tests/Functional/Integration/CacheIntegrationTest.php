@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Functional\Integration;
 
 use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**

@@ -7,7 +7,6 @@ namespace Netresearch\TemporalCache\Tests\Unit\Command;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Index;
-use Doctrine\DBAL\Types\Type;
 use Netresearch\TemporalCache\Command\VerifyCommand;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use PHPUnit\Framework\MockObject\MockObject;

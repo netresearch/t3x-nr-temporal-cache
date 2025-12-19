@@ -43,8 +43,8 @@ final class HarmonizationPerformanceTest extends TestCase
     {
         $contentElements = $this->generateTestContent(1000);
 
-        $startTime = microtime(true);
-        $startMemory = memory_get_usage();
+        $startTime = \microtime(true);
+        $startMemory = \memory_get_usage();
 
         $harmonizableCount = 0;
         foreach ($contentElements as $content) {
@@ -53,8 +53,8 @@ final class HarmonizationPerformanceTest extends TestCase
             }
         }
 
-        $endTime = microtime(true);
-        $endMemory = memory_get_usage();
+        $endTime = \microtime(true);
+        $endMemory = \memory_get_usage();
 
         $duration = ($endTime - $startTime) * 1000; // Convert to ms
         $memoryUsed = ($endMemory - $startMemory) / 1024; // Convert to KB
@@ -63,9 +63,9 @@ final class HarmonizationPerformanceTest extends TestCase
         echo "Harmonization Analysis Performance:\n";
         echo "  Content Elements:    1000\n";
         echo "  Harmonizable:        {$harmonizableCount}\n";
-        echo "  Duration:            " . number_format($duration, 2) . " ms\n";
-        echo "  Memory Used:         " . number_format($memoryUsed, 2) . " KB\n";
-        echo "  Per Element:         " . number_format($duration / 1000, 4) . " ms\n";
+        echo "  Duration:            " . \number_format($duration, 2) . " ms\n";
+        echo "  Memory Used:         " . \number_format($memoryUsed, 2) . " KB\n";
+        echo "  Per Element:         " . \number_format($duration / 1000, 4) . " ms\n";
         echo "\n";
 
         self::assertLessThan(50, $duration, 'Analysis should complete in under 50ms for 1000 elements');
@@ -80,10 +80,10 @@ final class HarmonizationPerformanceTest extends TestCase
         $contentElements = $this->generateTestContent(500);
 
         // Filter to only harmonizable content
-        $harmonizable = array_filter($contentElements, fn($c) => $this->analysisService->isHarmonizable($c));
+        $harmonizable = \array_filter($contentElements, fn ($c) => $this->analysisService->isHarmonizable($c));
 
-        $startTime = microtime(true);
-        $startMemory = memory_get_usage();
+        $startTime = \microtime(true);
+        $startMemory = \memory_get_usage();
 
         $successCount = 0;
         foreach ($harmonizable as $content) {
@@ -93,20 +93,20 @@ final class HarmonizationPerformanceTest extends TestCase
             }
         }
 
-        $endTime = microtime(true);
-        $endMemory = memory_get_usage();
+        $endTime = \microtime(true);
+        $endMemory = \memory_get_usage();
 
         $duration = ($endTime - $startTime) * 1000;
         $memoryUsed = ($endMemory - $startMemory) / 1024;
-        $totalElements = count($harmonizable);
+        $totalElements = \count($harmonizable);
 
         echo "\n";
         echo "Batch Harmonization Performance:\n";
         echo "  Total Elements:      {$totalElements}\n";
         echo "  Successfully Harmonized: {$successCount}\n";
-        echo "  Duration:            " . number_format($duration, 2) . " ms\n";
-        echo "  Memory Used:         " . number_format($memoryUsed, 2) . " KB\n";
-        echo "  Per Element:         " . number_format($duration / $totalElements, 4) . " ms\n";
+        echo "  Duration:            " . \number_format($duration, 2) . " ms\n";
+        echo "  Memory Used:         " . \number_format($memoryUsed, 2) . " KB\n";
+        echo "  Per Element:         " . \number_format($duration / $totalElements, 4) . " ms\n";
         echo "\n";
 
         self::assertLessThan(100, $duration, 'Batch harmonization should complete in under 100ms');
@@ -119,13 +119,13 @@ final class HarmonizationPerformanceTest extends TestCase
     public function testCacheChurnReductionMeasurement(): void
     {
         // Generate 100 content elements with random times near harmonization slots
-        $baseTime = strtotime('today 00:00:00');
+        $baseTime = \strtotime('today 00:00:00');
         $contentElements = [];
 
         for ($i = 0; $i < 100; $i++) {
             // Create times scattered within ±1 hour of each 6-hour slot
-            $slot = [0, 21600, 43200, 64800][array_rand([0, 1, 2, 3])];
-            $offset = rand(-3600, 3600);
+            $slot = [0, 21600, 43200, 64800][\array_rand([0, 1, 2, 3])];
+            $offset = \rand(-3600, 3600);
 
             $contentElements[] = TemporalContent::fromArray([
                 'uid' => 1000 + $i,
@@ -154,8 +154,8 @@ final class HarmonizationPerformanceTest extends TestCase
             }
         }
 
-        $timestampsBefore = count($uniqueTimestampsBefore);
-        $timestampsAfter = count($harmonizedTimestamps);
+        $timestampsBefore = \count($uniqueTimestampsBefore);
+        $timestampsAfter = \count($harmonizedTimestamps);
         $reduction = (($timestampsBefore - $timestampsAfter) / $timestampsBefore) * 100;
 
         echo "\n";
@@ -163,7 +163,7 @@ final class HarmonizationPerformanceTest extends TestCase
         echo "  Content Elements:          100\n";
         echo "  Unique Timestamps Before:  {$timestampsBefore}\n";
         echo "  Unique Timestamps After:   {$timestampsAfter}\n";
-        echo "  Reduction:                 " . number_format($reduction, 1) . "%\n";
+        echo "  Reduction:                 " . \number_format($reduction, 1) . "%\n";
         echo "\n";
 
         self::assertGreaterThanOrEqual(60, $reduction, 'Should reduce cache operations by at least 60%');
@@ -188,24 +188,24 @@ final class HarmonizationPerformanceTest extends TestCase
                 }
             }
 
-            $memorySnapshots[] = memory_get_usage();
+            $memorySnapshots[] = \memory_get_usage();
 
             // Force garbage collection
-            gc_collect_cycles();
+            \gc_collect_cycles();
         }
 
         // Calculate memory growth
         $initialMemory = $memorySnapshots[0];
-        $finalMemory = end($memorySnapshots);
+        $finalMemory = \end($memorySnapshots);
         $memoryGrowth = ($finalMemory - $initialMemory) / 1024; // KB
 
         echo "\n";
         echo "Memory Leak Detection:\n";
         echo "  Iterations:          {$iterations}\n";
         echo "  Elements/Iteration:  {$elementsPerIteration}\n";
-        echo "  Initial Memory:      " . number_format($initialMemory / 1024, 2) . " KB\n";
-        echo "  Final Memory:        " . number_format($finalMemory / 1024, 2) . " KB\n";
-        echo "  Memory Growth:       " . number_format($memoryGrowth, 2) . " KB\n";
+        echo "  Initial Memory:      " . \number_format($initialMemory / 1024, 2) . " KB\n";
+        echo "  Final Memory:        " . \number_format($finalMemory / 1024, 2) . " KB\n";
+        echo "  Memory Growth:       " . \number_format($memoryGrowth, 2) . " KB\n";
         echo "\n";
 
         // Allow some growth but not excessive (< 500KB for 1000 operations)
@@ -217,7 +217,7 @@ final class HarmonizationPerformanceTest extends TestCase
      */
     private function generateTestContent(int $count): array
     {
-        $baseTime = strtotime('tomorrow 00:00:00');
+        $baseTime = \strtotime('tomorrow 00:00:00');
         $content = [];
 
         for ($i = 0; $i < $count; $i++) {
@@ -227,11 +227,11 @@ final class HarmonizationPerformanceTest extends TestCase
             if ($isHarmonizable) {
                 // Create time near a harmonization slot (within tolerance)
                 $slot = [0, 21600, 43200, 64800][$i % 4];
-                $offset = rand(-3000, 3000); // Within 1 hour tolerance
+                $offset = \rand(-3000, 3000); // Within 1 hour tolerance
                 $starttime = $baseTime + $slot + $offset;
             } else {
                 // Create time far from harmonization slots
-                $starttime = $baseTime + rand(5000, 18000);
+                $starttime = $baseTime + \rand(5000, 18000);
             }
 
             $content[] = TemporalContent::fromArray([

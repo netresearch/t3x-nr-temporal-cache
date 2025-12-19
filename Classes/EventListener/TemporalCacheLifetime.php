@@ -8,8 +8,8 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
 use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
 /**
  * Event listener that dynamically adjusts cache lifetime based on temporal content dependencies.

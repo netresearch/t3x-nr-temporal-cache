@@ -36,13 +36,13 @@ final class CacheLifetimeCalculationTest extends TestCase
         foreach ($testCases as $elementCount) {
             $context = $this->createContextWithElements($elementCount);
 
-            $startTime = microtime(true);
+            $startTime = \microtime(true);
 
             for ($i = 0; $i < 100; $i++) {
                 $lifetime = $strategy->getCacheLifetime($context);
             }
 
-            $endTime = microtime(true);
+            $endTime = \microtime(true);
 
             $avgDuration = (($endTime - $startTime) / 100) * 1000; // ms per calculation
 
@@ -54,20 +54,22 @@ final class CacheLifetimeCalculationTest extends TestCase
 
         echo "\n";
         echo "Dynamic Timing Strategy Scalability:\n";
-        echo str_repeat('─', 50) . "\n";
-        printf("%-20s %20s\n", "Content Elements", "Avg Duration (ms)");
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
+        \printf("%-20s %20s\n", "Content Elements", "Avg Duration (ms)");
+        echo \str_repeat('─', 50) . "\n";
 
         foreach ($results as $result) {
-            printf("%-20d %20s\n", $result['elements'], number_format($result['duration'], 4));
+            \printf("%-20d %20s\n", $result['elements'], \number_format($result['duration'], 4));
 
             // Each calculation should be under 1ms regardless of scale
-            self::assertLessThan(1.0, $result['duration'],
+            self::assertLessThan(
+                1.0,
+                $result['duration'],
                 "Calculation with {$result['elements']} elements should be < 1ms"
             );
         }
 
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
         echo "\n";
 
         // Verify minimal performance degradation
@@ -75,9 +77,9 @@ final class CacheLifetimeCalculationTest extends TestCase
         $growthPercent = $growth * 100;
 
         echo "Performance Degradation Analysis:\n";
-        echo "  10 elements:    " . number_format($results[0]['duration'], 4) . " ms\n";
-        echo "  1000 elements:  " . number_format($results[4]['duration'], 4) . " ms\n";
-        echo "  Growth:         " . number_format($growthPercent, 1) . "%\n";
+        echo "  10 elements:    " . \number_format($results[0]['duration'], 4) . " ms\n";
+        echo "  1000 elements:  " . \number_format($results[4]['duration'], 4) . " ms\n";
+        echo "  Growth:         " . \number_format($growthPercent, 1) . "%\n";
         echo "\n";
 
         self::assertLessThan(50, $growthPercent, 'Performance should not degrade more than 50% at 100x scale');
@@ -103,13 +105,13 @@ final class CacheLifetimeCalculationTest extends TestCase
         $results = [];
 
         foreach ($strategies as $name => $strategy) {
-            $startTime = microtime(true);
+            $startTime = \microtime(true);
 
             for ($i = 0; $i < $iterations; $i++) {
                 $lifetime = $strategy->getCacheLifetime($context);
             }
 
-            $endTime = microtime(true);
+            $endTime = \microtime(true);
 
             $avgDuration = (($endTime - $startTime) / $iterations) * 1000000; // microseconds
 
@@ -121,16 +123,16 @@ final class CacheLifetimeCalculationTest extends TestCase
         echo "  Iterations:      {$iterations}\n";
         echo "  Content Elements: 100\n";
         echo "\n";
-        echo str_repeat('─', 50) . "\n";
-        printf("%-20s %25s\n", "Strategy", "Avg Duration (μs)");
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
+        \printf("%-20s %25s\n", "Strategy", "Avg Duration (μs)");
+        echo \str_repeat('─', 50) . "\n";
 
         foreach ($results as $name => $duration) {
-            printf("%-20s %25s\n", $name, number_format($duration, 2));
+            \printf("%-20s %25s\n", $name, \number_format($duration, 2));
             self::assertLessThan(1000, $duration, "{$name} strategy should be < 1000μs");
         }
 
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
         echo "\n";
     }
 
@@ -148,18 +150,18 @@ final class CacheLifetimeCalculationTest extends TestCase
 
         // Pre-generate contexts (simulating different pages)
         for ($i = 0; $i < $concurrentRequests; $i++) {
-            $contexts[] = $this->createContextWithElements(rand(5, 50));
+            $contexts[] = $this->createContextWithElements(\rand(5, 50));
         }
 
-        $startTime = microtime(true);
-        $startMemory = memory_get_usage();
+        $startTime = \microtime(true);
+        $startMemory = \memory_get_usage();
 
         foreach ($contexts as $context) {
             $lifetime = $strategy->getCacheLifetime($context);
         }
 
-        $endTime = microtime(true);
-        $endMemory = memory_get_usage();
+        $endTime = \microtime(true);
+        $endMemory = \memory_get_usage();
 
         $totalDuration = ($endTime - $startTime) * 1000; // ms
         $avgDuration = $totalDuration / $concurrentRequests;
@@ -168,10 +170,10 @@ final class CacheLifetimeCalculationTest extends TestCase
         echo "\n";
         echo "Concurrent Load Simulation:\n";
         echo "  Simulated Requests:  {$concurrentRequests}\n";
-        echo "  Total Duration:      " . number_format($totalDuration, 2) . " ms\n";
-        echo "  Avg per Request:     " . number_format($avgDuration, 4) . " ms\n";
-        echo "  Memory per Request:  " . number_format($memoryPerRequest, 4) . " KB\n";
-        echo "  Throughput:          " . number_format($concurrentRequests / ($totalDuration / 1000), 0) . " req/sec\n";
+        echo "  Total Duration:      " . \number_format($totalDuration, 2) . " ms\n";
+        echo "  Avg per Request:     " . \number_format($avgDuration, 4) . " ms\n";
+        echo "  Memory per Request:  " . \number_format($memoryPerRequest, 4) . " KB\n";
+        echo "  Throughput:          " . \number_format($concurrentRequests / ($totalDuration / 1000), 0) . " req/sec\n";
         echo "\n";
 
         self::assertLessThan(1.0, $avgDuration, 'Each request should process in < 1ms');
@@ -200,13 +202,13 @@ final class CacheLifetimeCalculationTest extends TestCase
         foreach ($testCases as $label => $elementCount) {
             $context = $this->createContextWithElements($elementCount);
 
-            $startTime = microtime(true);
+            $startTime = \microtime(true);
 
             for ($i = 0; $i < $iterations; $i++) {
                 $lifetime = $strategy->getCacheLifetime($context);
             }
 
-            $endTime = microtime(true);
+            $endTime = \microtime(true);
 
             $avgDuration = (($endTime - $startTime) / $iterations) * 1000;
 
@@ -215,16 +217,16 @@ final class CacheLifetimeCalculationTest extends TestCase
 
         echo "\n";
         echo "Edge Case Performance Analysis:\n";
-        echo str_repeat('─', 50) . "\n";
-        printf("%-20s %25s\n", "Scenario", "Avg Duration (ms)");
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
+        \printf("%-20s %25s\n", "Scenario", "Avg Duration (ms)");
+        echo \str_repeat('─', 50) . "\n";
 
         foreach ($results as $label => $duration) {
-            printf("%-20s %25s\n", $label, number_format($duration, 4));
+            \printf("%-20s %25s\n", $label, \number_format($duration, 4));
             self::assertLessThan(1.0, $duration, "{$label} should calculate in < 1ms");
         }
 
-        echo str_repeat('─', 50) . "\n";
+        echo \str_repeat('─', 50) . "\n";
         echo "\n";
     }
 
@@ -233,7 +235,7 @@ final class CacheLifetimeCalculationTest extends TestCase
      */
     private function createContextWithElements(int $count): CacheCalculationContext
     {
-        $now = time();
+        $now = \time();
         $elements = [];
 
         for ($i = 0; $i < $count; $i++) {
@@ -249,18 +251,18 @@ final class CacheLifetimeCalculationTest extends TestCase
 
             switch ($type) {
                 case 0: // Future content
-                    $contentData['starttime'] = $now + rand(3600, 86400);
+                    $contentData['starttime'] = $now + \rand(3600, 86400);
                     $contentData['endtime'] = 0;
                     break;
 
                 case 1: // Expiring content
                     $contentData['starttime'] = 0;
-                    $contentData['endtime'] = $now + rand(3600, 86400);
+                    $contentData['endtime'] = $now + \rand(3600, 86400);
                     break;
 
                 case 2: // Active content with end date
-                    $contentData['starttime'] = $now - rand(3600, 86400);
-                    $contentData['endtime'] = $now + rand(86400, 604800);
+                    $contentData['starttime'] = $now - \rand(3600, 86400);
+                    $contentData['endtime'] = $now + \rand(86400, 604800);
                     break;
 
                 default: // Active permanent content
