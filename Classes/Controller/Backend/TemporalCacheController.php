@@ -20,11 +20,9 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Pagination\ArrayPaginator;
 use TYPO3\CMS\Core\Pagination\SimplePagination;
-use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
@@ -64,7 +62,7 @@ final class TemporalCacheController extends ActionController
      */
     public function dashboardAction(?ServerRequestInterface $request = null): ResponseInterface
     {
-        $request = $request ?? $this->request;
+        $request ??= $this->request;
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'dashboard');
 
@@ -88,7 +86,7 @@ final class TemporalCacheController extends ActionController
      */
     public function contentAction(?ServerRequestInterface $request = null, int $currentPage = 1, string $filter = 'all'): ResponseInterface
     {
-        $request = $request ?? $this->request;
+        $request ??= $this->request;
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'content');
 
@@ -128,7 +126,7 @@ final class TemporalCacheController extends ActionController
      */
     public function wizardAction(?ServerRequestInterface $request = null, string $step = 'welcome'): ResponseInterface
     {
-        $request = $request ?? $this->request;
+        $request ??= $this->request;
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'wizard');
 

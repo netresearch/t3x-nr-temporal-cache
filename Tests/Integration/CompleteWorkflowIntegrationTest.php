@@ -147,7 +147,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $allContent = $this->repository->findAllWithTemporalFields();
 
         // Find harmonizable content
-        $harmonizable = \array_filter($allContent, fn($c) => $this->harmonizationAnalysisService->isHarmonizable($c));
+        $harmonizable = \array_filter($allContent, fn ($c) => $this->harmonizationAnalysisService->isHarmonizable($c));
 
         self::assertCount(3, $harmonizable, 'Should find 3 harmonizable content elements');
 
@@ -169,10 +169,16 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         // All should be harmonized to same timestamp (12:00 UTC slot)
         self::assertCount(3, $harmonizedTimestamps, 'Should have 3 harmonized timestamps');
-        self::assertSame($harmonizedTimestamps[0], $harmonizedTimestamps[1],
-            'Content A and B should harmonize to same timestamp');
-        self::assertSame($harmonizedTimestamps[1], $harmonizedTimestamps[2],
-            'Content B and C should harmonize to same timestamp');
+        self::assertSame(
+            $harmonizedTimestamps[0],
+            $harmonizedTimestamps[1],
+            'Content A and B should harmonize to same timestamp'
+        );
+        self::assertSame(
+            $harmonizedTimestamps[1],
+            $harmonizedTimestamps[2],
+            'Content B and C should harmonize to same timestamp'
+        );
 
         // Verify harmonized time is aligned to slot (00:00, 06:00, 12:00, or 18:00)
         $harmonizedTime = $harmonizedTimestamps[0];
@@ -238,8 +244,11 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         // Verify transitions were found
         $transitions = $this->repository->findTransitionsInRange($now - 300, $now);
-        self::assertGreaterThanOrEqual(2, \count($transitions),
-            'Should find at least 2 transitions (appeared + expired)');
+        self::assertGreaterThanOrEqual(
+            2,
+            \count($transitions),
+            'Should find at least 2 transitions (appeared + expired)'
+        );
 
         // Verify last run timestamp was updated
         $lastRun = $this->registry->get('tx_temporalcache', 'scheduler_last_run');
@@ -409,8 +418,10 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $lifetime = $timingStrategy->getCacheLifetime($this->context);
 
         // Should return either a lifetime (dynamic mode) or null (scheduler mode)
-        self::assertTrue($lifetime === null || \is_int($lifetime),
-            'Hybrid strategy should return int or null');
+        self::assertTrue(
+            $lifetime === null || \is_int($lifetime),
+            'Hybrid strategy should return int or null'
+        );
     }
 
     // =========================================================================

@@ -9,8 +9,8 @@ use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -89,10 +89,16 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         $actualLifetime = $event->getCacheLifetime();
 
         // Cache lifetime should be reduced to ~1 hour (allowing small margin for test execution)
-        self::assertLessThanOrEqual(3600, $actualLifetime,
-            'Cache lifetime should be limited to when future content becomes visible');
-        self::assertGreaterThan(3500, $actualLifetime,
-            'Cache lifetime should be close to 1 hour');
+        self::assertLessThanOrEqual(
+            3600,
+            $actualLifetime,
+            'Cache lifetime should be limited to when future content becomes visible'
+        );
+        self::assertGreaterThan(
+            3500,
+            $actualLifetime,
+            'Cache lifetime should be close to 1 hour'
+        );
     }
 
     /**
@@ -134,10 +140,16 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         $actualLifetime = $event->getCacheLifetime();
 
         // Cache lifetime should be reduced to ~30 minutes
-        self::assertLessThanOrEqual(1800, $actualLifetime,
-            'Cache lifetime should be limited to when content expires');
-        self::assertGreaterThan(1700, $actualLifetime,
-            'Cache lifetime should be close to 30 minutes');
+        self::assertLessThanOrEqual(
+            1800,
+            $actualLifetime,
+            'Cache lifetime should be limited to when content expires'
+        );
+        self::assertGreaterThan(
+            1700,
+            $actualLifetime,
+            'Cache lifetime should be close to 30 minutes'
+        );
     }
 
     /**
@@ -187,10 +199,16 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         $actualLifetime = $event->getCacheLifetime();
 
         // Cache lifetime should be limited to earliest transition (15 minutes)
-        self::assertLessThanOrEqual(900, $actualLifetime,
-            'Cache lifetime should be limited to earliest transition');
-        self::assertGreaterThan(800, $actualLifetime,
-            'Cache lifetime should be close to 15 minutes');
+        self::assertLessThanOrEqual(
+            900,
+            $actualLifetime,
+            'Cache lifetime should be limited to earliest transition'
+        );
+        self::assertGreaterThan(
+            800,
+            $actualLifetime,
+            'Cache lifetime should be close to 15 minutes'
+        );
     }
 
     /**
@@ -228,8 +246,11 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         $actualLifetime = $event->getCacheLifetime();
 
         // Cache lifetime should remain at default
-        self::assertSame(86400, $actualLifetime,
-            'Cache lifetime should not change when no temporal content exists');
+        self::assertSame(
+            86400,
+            $actualLifetime,
+            'Cache lifetime should not change when no temporal content exists'
+        );
     }
 
     /**
@@ -333,8 +354,11 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
 
         // With global scoping, should use earliest transition across ALL pages
         // This might be 1 hour (from page 1) depending on strategy implementation
-        self::assertLessThanOrEqual(7200, $actualLifetime,
-            'Cache lifetime should consider global temporal content');
+        self::assertLessThanOrEqual(
+            7200,
+            $actualLifetime,
+            'Cache lifetime should consider global temporal content'
+        );
     }
 
     /**
