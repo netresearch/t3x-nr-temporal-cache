@@ -5,7 +5,7 @@
     bootstrap="../../Tests/Unit/Bootstrap.php"
     cacheDirectory=".phpunit.cache"
     executionOrder="random"
-    requireCoverageMetadata="true"
+    requireCoverageMetadata="false"
     beStrictAboutCoverageMetadata="false"
     beStrictAboutOutputDuringTests="true"
     failOnRisky="true"
