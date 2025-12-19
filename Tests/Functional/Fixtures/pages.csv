@@ -2,8 +2,8 @@ pages
 ,uid,pid,title,hidden,deleted,starttime,endtime,sys_language_uid
 ,1,0,"Root Page",0,0,0,0,0
 ,2,1,"Public Page",0,0,0,0,0
-,3,1,"Scheduled Page",0,0,4102444800,0,0
-,4,1,"Expiring Page",0,0,0,4102444800,0
+,3,1,"Scheduled Page",0,0,1893456000,0,0
+,4,1,"Expiring Page",0,0,0,1893456000,0
 ,5,1,"Hidden Page",1,0,0,0,0
 ,10,1,"Referenced Page",0,0,0,0,0
 ,15,1,"Another Page",0,0,0,0,0
