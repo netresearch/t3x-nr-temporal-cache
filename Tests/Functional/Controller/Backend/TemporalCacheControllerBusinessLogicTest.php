@@ -38,7 +38,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
 
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'temporal_cache' => [
+            'nr_temporal_cache' => [
                 'scoping' => [
                     'strategy' => 'global',
                 ],
@@ -163,6 +163,9 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
         $allContent = $this->repository->findAllWithTemporalFields();
 
         $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'expired', $now]);
+
+        // Ensure we got an array result (even if empty is valid)
+        self::assertIsArray($filtered, 'filterContent should return an array');
 
         foreach ($filtered as $item) {
             self::assertNotNull($item->endtime, 'Expired content should have endtime');
