@@ -145,7 +145,6 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     {
         $queryBuilder = $this->getMockBuilder(QueryBuilder::class)
             ->disableOriginalConstructor()
-            ->disableArgumentCloning()
             ->onlyMethods([
                 'expr',
                 'getRestrictions',
