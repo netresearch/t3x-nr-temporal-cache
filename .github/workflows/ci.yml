@@ -6,15 +6,18 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+
 jobs:
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
         with:
           php-version: 8.2
           extensions: mbstring, intl, pdo_sqlite
@@ -25,7 +28,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -75,10 +78,10 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, intl, pdo_sqlite, pdo_mysql, pdo_pgsql
@@ -124,10 +127,10 @@ jobs:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
         with:
           php-version: 8.2
           extensions: mbstring, intl, pdo_sqlite
@@ -143,19 +146,19 @@ jobs:
         run: composer test:coverage:check
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
-          files: .Build/logs/clover.xml
-          fail_ci_if_error: false
+          file: .Build/logs/clover.xml
+          fail_ci_if_error: true
 
   dependency-check:
     name: Dependency Security Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
         with:
           php-version: 8.2
           extensions: mbstring, intl
@@ -164,4 +167,4 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Check for known security vulnerabilities
-        run: composer audit --abandoned=ignore
+        run: composer audit
