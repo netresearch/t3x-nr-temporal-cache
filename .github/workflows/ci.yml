@@ -145,8 +145,8 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          file: .Build/logs/clover.xml
-          fail_ci_if_error: true
+          files: .Build/logs/clover.xml
+          fail_ci_if_error: false
 
   dependency-check:
     name: Dependency Security Check

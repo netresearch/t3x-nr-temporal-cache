@@ -1,7 +1,7 @@
 tt_content
 ,uid,pid,header,CType,hidden,deleted,starttime,endtime,sys_language_uid
 ,1,1,"Regular Content","text",0,0,0,0,0
-,2,1,"Scheduled Content","text",0,0,FUTURE_TIME,0,0
-,3,1,"Expiring Content","text",0,0,0,FUTURE_TIME,0
+,2,1,"Scheduled Content","text",0,0,4102444800,0,0
+,3,1,"Expiring Content","text",0,0,0,4102444800,0
 ,4,1,"Hidden Content","text",1,0,0,0,0
 ,123,5,"Test Content Element","text",0,0,0,0,0
