@@ -16,6 +16,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Http\ServerRequest;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Routing\Route;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -90,7 +92,9 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
             $this->get(HarmonizationAnalysisService::class),
             $this->get(HarmonizationService::class),
             $this->get(PermissionService::class),
-            $this->get(CacheManager::class)
+            $this->get(CacheManager::class),
+            $this->get(IconFactory::class),
+            $this->get(PageRenderer::class)
         );
     }
 
