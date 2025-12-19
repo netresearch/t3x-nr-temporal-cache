@@ -8,11 +8,7 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
-use Netresearch\TemporalCache\Service\Backend\PermissionService;
 use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
-use Netresearch\TemporalCache\Service\HarmonizationService;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -77,17 +73,8 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
         $this->statisticsService = $this->get(TemporalCacheStatisticsService::class);
         $this->harmonizationService = $this->get(HarmonizationAnalysisService::class);
 
-        // Initialize controller
-        $this->controller = new TemporalCacheController(
-            $this->get(ModuleTemplateFactory::class),
-            $this->configuration,
-            $this->repository,
-            $this->statisticsService,
-            $this->harmonizationService,
-            $this->get(HarmonizationService::class),
-            $this->get(PermissionService::class),
-            $this->get(CacheManager::class)
-        );
+        // Get controller from DI container to ensure all dependencies are injected
+        $this->controller = $this->get(TemporalCacheController::class);
     }
 
     /**

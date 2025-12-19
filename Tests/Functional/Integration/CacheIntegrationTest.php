@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Functional\Integration;
 
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -36,7 +38,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
     {
         $eventDispatcher = $this->get(EventDispatcher::class);
         $originalLifetime = 86400;
-        $event = new ModifyCacheLifetimeForPageEvent($originalLifetime);
+        $event = $this->createCacheLifetimeEvent($originalLifetime);
 
         // Dispatch event (simulates TYPO3 cache system behavior)
         $modifiedEvent = $eventDispatcher->dispatch($event);
@@ -63,7 +65,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
         ]);
 
         $eventDispatcher = $this->get(EventDispatcher::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = $this->createCacheLifetimeEvent(86400);
         $modifiedEvent = $eventDispatcher->dispatch($event);
 
         // Lifetime should be modified to ~1 hour
@@ -102,7 +104,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
         ]);
 
         $eventDispatcher = $this->get(EventDispatcher::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = $this->createCacheLifetimeEvent(86400);
         $modifiedEvent = $eventDispatcher->dispatch($event);
 
         // Should use earliest transition (30 minutes)
@@ -145,7 +147,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
 
         // 2. Cache system calculates lifetime
         $eventDispatcher = $this->get(EventDispatcher::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = $this->createCacheLifetimeEvent(86400);
         $modifiedEvent = $eventDispatcher->dispatch($event);
 
         // 3. Verify cache will expire at page's starttime
@@ -172,7 +174,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
 
         $eventDispatcher = $this->get(EventDispatcher::class);
         $originalLifetime = 86400;
-        $event = new ModifyCacheLifetimeForPageEvent($originalLifetime);
+        $event = $this->createCacheLifetimeEvent($originalLifetime);
         $modifiedEvent = $eventDispatcher->dispatch($event);
 
         // Lifetime should remain default (no temporal content)
@@ -207,7 +209,7 @@ final class CacheIntegrationTest extends FunctionalTestCase
         ]);
 
         $eventDispatcher = $this->get(EventDispatcher::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400);
+        $event = $this->createCacheLifetimeEvent(86400);
         $modifiedEvent = $eventDispatcher->dispatch($event);
 
         // Should use earliest (content in 1 hour)
@@ -219,5 +221,30 @@ final class CacheIntegrationTest extends FunctionalTestCase
     protected function getConnectionPool(): ConnectionPool
     {
         return GeneralUtility::makeInstance(ConnectionPool::class);
+    }
+
+    /**
+     * Create ModifyCacheLifetimeForPageEvent compatible with both TYPO3 12 and 13
+     *
+     * TYPO3 12: __construct(int $cacheLifetime)
+     * TYPO3 13: __construct(int $cacheLifetime, int $pageId, array $pageRecord, array $renderingInstructions, Context $context)
+     */
+    private function createCacheLifetimeEvent(int $cacheLifetime): ModifyCacheLifetimeForPageEvent
+    {
+        $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
+
+        if ($typo3Version->getMajorVersion() >= 13) {
+            // TYPO3 13+ requires 5 parameters
+            return new ModifyCacheLifetimeForPageEvent(
+                $cacheLifetime,
+                1,
+                [],
+                [],
+                $this->get(Context::class)
+            );
+        }
+
+        // TYPO3 12 only takes 1 parameter
+        return new ModifyCacheLifetimeForPageEvent($cacheLifetime);
     }
 }
