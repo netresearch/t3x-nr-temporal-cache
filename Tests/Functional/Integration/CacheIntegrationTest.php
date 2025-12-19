@@ -25,6 +25,22 @@ final class CacheIntegrationTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
+    protected array $configurationToUseInTestInstance = [
+        'EXTENSIONS' => [
+            'nr_temporal_cache' => [
+                'scoping' => [
+                    'strategy' => 'global',
+                ],
+                'timing' => [
+                    'strategy' => 'dynamic',
+                ],
+                'harmonization' => [
+                    'enabled' => false,
+                ],
+            ],
+        ],
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
