@@ -23,7 +23,7 @@ final class HarmonizationIntegrationTest extends FunctionalTestCase
 
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'temporal_cache' => [
+            'nr_temporal_cache' => [
                 'harmonization' => [
                     'enabled' => true,
                     'slots' => '00:00,06:00,12:00,18:00',

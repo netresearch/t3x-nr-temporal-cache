@@ -26,7 +26,7 @@ final class CompleteWorkflowTest extends FunctionalTestCase
 
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'temporal_cache' => [
+            'nr_temporal_cache' => [
                 'scoping' => [
                     'strategy' => 'per-content',
                     'use_refindex' => true,
