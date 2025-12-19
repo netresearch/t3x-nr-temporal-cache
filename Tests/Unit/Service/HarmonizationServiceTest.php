@@ -82,8 +82,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    /**     * @dataProvider harmonizationDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('harmonizationDataProvider')]
     public function testHarmonizeTimestampWorksForVariousSlots(
         int $inputTimestamp,
         array $slots,
@@ -232,8 +231,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertNull($subject->getPreviousSlot(1609459200));
     }
 
-    /**     * @dataProvider slotBoundaryDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('slotBoundaryDataProvider')]
     public function testIsOnSlotBoundaryDetectsSlotBoundaries(int $timestamp, array $slots, bool $expected): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn($slots);

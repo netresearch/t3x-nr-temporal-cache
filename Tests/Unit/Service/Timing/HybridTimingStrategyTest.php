@@ -45,8 +45,7 @@ final class HybridTimingStrategyTest extends UnitTestCase
         );
     }
 
-    /**     * @dataProvider contentTypeHandlingDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('contentTypeHandlingDataProvider')]
     public function testHandlesContentTypeDelegatesToCorrectStrategy(
         string $contentType,
         array $timingRules,

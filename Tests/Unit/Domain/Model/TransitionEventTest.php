@@ -66,8 +66,7 @@ final class TransitionEventTest extends UnitTestCase
         self::assertSame(0, $subject->languageId);
     }
 
-    /**     * @dataProvider validTransitionTypeDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('validTransitionTypeDataProvider')]
     public function testConstructorAcceptsValidTransitionTypes(string $transitionType): void
     {
         $subject = new TransitionEvent(
@@ -177,8 +176,7 @@ final class TransitionEventTest extends UnitTestCase
         self::assertStringContainsString(\date('Y-m-d H:i:s', $timestamp), $message);
     }
 
-    /**     * @dataProvider transitionScenarioDataProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('transitionScenarioDataProvider')]
     public function testTransitionEventsWorkForDifferentScenarios(
         string $tableName,
         string $transitionType,
