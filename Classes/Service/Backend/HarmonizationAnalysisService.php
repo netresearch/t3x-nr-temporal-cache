@@ -132,7 +132,7 @@ final class HarmonizationAnalysisService
                     'current' => $content->starttime,
                     'suggested' => $harmonized,
                     'diff' => $diff,
-                    'diffMinutes' => (int) round($diff / 60),
+                    'diffMinutes' => (int) \round($diff / 60),
                 ];
             }
         }
@@ -146,7 +146,7 @@ final class HarmonizationAnalysisService
                     'current' => $content->endtime,
                     'suggested' => $harmonized,
                     'diff' => $diff,
-                    'diffMinutes' => (int) round($diff / 60),
+                    'diffMinutes' => (int) \round($diff / 60),
                 ];
             }
         }
