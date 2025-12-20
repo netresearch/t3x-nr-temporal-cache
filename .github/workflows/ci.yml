@@ -168,3 +168,4 @@ jobs:
 
       - name: Check for known security vulnerabilities
         run: composer audit --locked --abandoned=ignore
+
