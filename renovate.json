@@ -2,13 +2,5 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
-  ],
-  "packageRules": [
-    {
-      "description": "Pin CI Docker images to actual stable versions (not nightly/unreleased)",
-      "matchManagers": ["github-actions"],
-      "matchPackageNames": ["mariadb", "postgres"],
-      "enabled": false
-    }
   ]
 }
