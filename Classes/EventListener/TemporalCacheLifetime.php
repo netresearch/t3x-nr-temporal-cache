@@ -98,7 +98,7 @@ final class TemporalCacheLifetime
      * 2. Extension setting default_max_lifetime (fallback)
      * 3. 86400 seconds / 24 hours (TYPO3 default, final fallback)
      *
-     * @param array<string, mixed> $renderingInstructions TypoScript rendering instructions
+     * @param array<string|int, mixed> $renderingInstructions TypoScript rendering instructions
      * @return int Maximum cache lifetime in seconds
      */
     private function determineMaxLifetime(array $renderingInstructions): int
