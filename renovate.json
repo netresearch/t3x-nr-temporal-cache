@@ -9,6 +9,13 @@
     {
       "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mariadb"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Disable MariaDB major updates - v12 has io_uring issues on GitHub Actions"
     }
   ]
 }
