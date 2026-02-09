@@ -1,5 +1,5 @@
-# Auto-merge dependency updates for repositories WITHOUT branch protection
-# Uses direct merge since --auto flag requires branch protection
+# Auto-merge dependency updates using GitHub native auto-merge
+# The --auto flag waits for branch protection requirements (CI, reviews) before merging
 name: Auto-merge dependency PRs
 
 on:
@@ -37,37 +37,8 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait for CI checks
-        run: |
-          echo "Waiting for CI checks to complete..."
-          for i in {1..60}; do
-            CHECKS=$(gh pr checks "$PR_URL" --json name,state \
-              --jq '[.[] | select(.name != "Auto-merge dependency PRs")]')
-
-            FAILED=$(echo "$CHECKS" | jq '[.[] | select(.state == "FAILURE" or .state == "ERROR")] | length')
-            PENDING=$(echo "$CHECKS" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
-
-            if [ "$FAILED" != "0" ]; then
-              echo "Some checks failed, skipping merge"
-              exit 1
-            fi
-
-            if [ "$PENDING" = "0" ]; then
-              echo "All checks passed!"
-              exit 0
-            fi
-
-            echo "Waiting for $PENDING check(s)... (attempt $i/60)"
-            sleep 10
-          done
-          echo "Timeout waiting for checks"
-          exit 1
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge PR
-        run: gh pr merge --merge "$PR_URL"
+      - name: Enable auto-merge
+        run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
