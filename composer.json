@@ -71,28 +71,13 @@
         }
     },
     "scripts": {
-        "test": [
-            "@test:unit",
-            "@test:functional"
-        ],
-        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
-        "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
-        "test:coverage": "phpunit -c Build/phpunit/UnitTests.xml --coverage-html=.Build/coverage --coverage-clover=.Build/logs/clover.xml",
-        "test:coverage:check": "php Build/scripts/check-coverage.php .Build/logs/clover.xml 69",
-        "code:check": [
-            "@code:phpstan",
-            "@code:style:check"
-        ],
-        "code:fix": [
-            "@code:style:fix"
-        ],
-        "code:phpstan": "phpstan analyze --configuration=Build/phpstan.neon --memory-limit=512M",
-        "code:style:check": "php-cs-fixer fix --dry-run --diff --config=Build/.php-cs-fixer.php",
-        "code:style:fix": "php-cs-fixer fix --config=Build/.php-cs-fixer.php",
-        "ci": [
-            "@code:check",
-            "@test"
-        ],
+        "ci:cgl": "php-cs-fixer fix --config=Build/.php-cs-fixer.php",
+        "ci:test:php:cgl": "@ci:cgl -- --dry-run --diff",
+        "ci:test:php:phpstan": "phpstan analyze --configuration=Build/phpstan.neon --memory-limit=512M",
+        "ci:test:php:unit": "phpunit -c Build/phpunit/UnitTests.xml",
+        "ci:test:php:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
+        "ci:test:php:coverage": "phpunit -c Build/phpunit/UnitTests.xml --coverage-html=.Build/coverage --coverage-clover=.Build/logs/clover.xml",
+        "ci:test:php:coverage:check": "php Build/scripts/check-coverage.php .Build/logs/clover.xml 69",
         "docs:render": "docker run --rm --pull always -v \"$(pwd):/project\" ghcr.io/typo3-documentation/render-guides:latest --config=Documentation/guides.xml",
         "docs:serve": "php -S localhost:8090 -t Documentation-GENERATED-temp/",
         "docs:clean": "rm -rf Documentation-GENERATED-temp/"
