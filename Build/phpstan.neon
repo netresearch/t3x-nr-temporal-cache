@@ -9,3 +9,14 @@ parameters:
         - ../Tests/Unit/Bootstrap.php
     scanDirectories:
         - ../Tests/Unit/Fixtures
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # TYPO3 12 compatibility: $uriBuilder property is non-nullable in v12
+        # but may be uninitialized in test contexts
+        -
+            identifier: isset.property
+            message: '#Property TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController::\$uriBuilder .* in isset\(\) is not nullable#'
+        # TYPO3 13+ only: IconSize enum does not exist in TYPO3 12
+        -
+            identifier: class.notFound
+            message: '#class TYPO3\\CMS\\Core\\Imaging\\IconSize#'
