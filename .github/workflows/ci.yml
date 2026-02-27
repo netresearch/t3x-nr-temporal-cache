@@ -9,9 +9,9 @@ jobs:
     permissions:
       contents: read
     with:
-      php-versions: '["8.1", "8.2", "8.3", "8.4"]'
+      php-versions: '["8.1", "8.2", "8.3", "8.4", "8.5"]'
       typo3-versions: '["^12.4", "^13.0", "^14.0"]'
       typo3-packages: '["typo3/cms-core", "typo3/cms-scheduler", "typo3/cms-reports"]'
-      matrix-exclude: '[{"php": "8.1", "typo3": "^13.0"}, {"php": "8.1", "typo3": "^14.0"}, {"php": "8.2", "typo3": "^14.0"}]'
+      matrix-exclude: '[{"php": "8.1", "typo3": "^13.0"}, {"php": "8.1", "typo3": "^14.0"}, {"php": "8.2", "typo3": "^14.0"}, {"php": "8.5", "typo3": "^12.4"}]'
       run-rector: false
       run-functional-tests: true
