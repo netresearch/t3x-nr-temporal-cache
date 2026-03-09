@@ -8,7 +8,6 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
-use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Context\Context;
@@ -205,7 +204,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->method('debug')
             ->with(
                 'Temporal cache lifetime set',
-                new IsType('array')
+                self::callback(static fn ($value): bool => is_array($value))
             );
 
         // Act
