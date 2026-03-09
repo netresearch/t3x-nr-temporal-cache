@@ -205,7 +205,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->method('debug')
             ->with(
                 'Temporal cache lifetime set',
-                new IsType(IsType::TYPE_ARRAY)
+                new IsType('array')
             );
 
         // Act
