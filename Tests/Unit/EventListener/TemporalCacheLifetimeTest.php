@@ -204,7 +204,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->method('debug')
             ->with(
                 'Temporal cache lifetime set',
-                self::isType('array')
+                self::callback(static fn ($value): bool => \is_array($value))
             );
 
         // Act
