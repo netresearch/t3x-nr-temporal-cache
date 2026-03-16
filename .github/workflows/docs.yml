@@ -2,29 +2,22 @@ name: Documentation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'Documentation/**'
       - '.github/workflows/docs.yml'
-  repository_dispatch:
-    types: [ documentation ]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Documentation/**'
+      - '.github/workflows/docs.yml'
+  merge_group:
+  workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
-  trigger-docs-build:
-    name: Trigger docs.typo3.org rebuild
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
-        with:
-          egress-policy: audit
-
-      - name: Notify docs.typo3.org
-        run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"branch": "main"}' \
-            "https://docs.typo3.org/service/webhooks/github/${{ github.repository }}"
+  docs:
+    uses: netresearch/typo3-ci-workflows/.github/workflows/docs.yml@main
+    permissions:
+      contents: read
