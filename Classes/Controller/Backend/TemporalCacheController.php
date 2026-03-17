@@ -13,6 +13,7 @@ use Netresearch\TemporalCache\Service\HarmonizationService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
+use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -43,6 +44,8 @@ final class TemporalCacheController extends ActionController
 {
     private const ITEMS_PER_PAGE = 50;
 
+    private const MODULE_ROUTE = 'tools_TemporalCache';
+
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly ExtensionConfiguration $extensionConfiguration,
@@ -53,8 +56,24 @@ final class TemporalCacheController extends ActionController
         private readonly PermissionService $permissionService,
         private readonly CacheManager $cacheManager,
         private readonly IconFactory $iconFactory,
-        private readonly PageRenderer $pageRenderer
+        private readonly PageRenderer $pageRenderer,
+        private readonly BackendUriBuilder $backendUriBuilder,
     ) {
+    }
+
+    /**
+     * Build a backend module URI for the given action.
+     *
+     * Uses TYPO3's Backend UriBuilder (routing-based) instead of Extbase's
+     * UriBuilder which can return empty strings in v14 backend module context,
+     * causing "LinkButton is not valid" errors.
+     */
+    private function buildModuleUri(string $action): string
+    {
+        return (string)$this->backendUriBuilder->buildUriFromRoute(
+            self::MODULE_ROUTE,
+            ['action' => $action]
+        );
     }
 
     /**
@@ -120,7 +139,7 @@ final class TemporalCacheController extends ActionController
             'harmonizationEnabled' => $this->extensionConfiguration->isHarmonizationEnabled(),
             'canModifyContent' => $this->permissionService->canModifyTemporalContent(),
             'permissionStatus' => $this->permissionService->getPermissionStatus(),
-            'harmonizeActionUri' => isset($this->uriBuilder) ? $this->uriBuilder->reset()->uriFor('harmonize') : '',
+            'harmonizeActionUri' => $this->buildModuleUri('harmonize'),
         ]);
 
         return $moduleTemplate->renderResponse('Backend/TemporalCache/Content');
@@ -244,8 +263,8 @@ final class TemporalCacheController extends ActionController
         // Add DocHeader buttons
         $this->addDocHeaderButtons($moduleTemplate, $currentAction);
 
-        // Only create menu if uriBuilder is available (skipped in tests)
-        if (isset($this->uriBuilder)) {
+        // Only create menu if backendUriBuilder is available (skipped in tests)
+        if (isset($this->backendUriBuilder)) {
             $menu = $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
             $menu->setIdentifier('temporal_cache_menu');
 
@@ -255,7 +274,7 @@ final class TemporalCacheController extends ActionController
                     ->setTitle($this->getLanguageService()->sL(
                         'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.' . $action
                     ))
-                    ->setHref($this->uriBuilder->reset()->uriFor($action))
+                    ->setHref($this->buildModuleUri($action))
                     ->setActive($currentAction === $action);
                 $menu->addMenuItem($item);
             }
@@ -269,7 +288,7 @@ final class TemporalCacheController extends ActionController
      */
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
-        if (!isset($this->uriBuilder)) {
+        if (!isset($this->backendUriBuilder)) {
             return; // Skip in tests
         }
 
@@ -277,7 +296,7 @@ final class TemporalCacheController extends ActionController
 
         // Refresh button (all actions)
         $refreshButton = $buttonBar->makeLinkButton()
-            ->setHref($this->uriBuilder->reset()->uriFor($currentAction))
+            ->setHref($this->buildModuleUri($currentAction))
             ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
             ->setIcon($this->iconFactory->getIcon('actions-refresh', IconSize::SMALL))
             ->setShowLabelText(false);
@@ -285,7 +304,7 @@ final class TemporalCacheController extends ActionController
 
         // Shortcut button (all actions)
         $shortcutButton = $buttonBar->makeShortcutButton()
-            ->setRouteIdentifier('tools_TemporalCache')
+            ->setRouteIdentifier(self::MODULE_ROUTE)
             ->setDisplayName($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'))
             ->setArguments(['action' => $currentAction]);
         $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
@@ -295,7 +314,7 @@ final class TemporalCacheController extends ActionController
             case 'dashboard':
                 // Quick access to content list
                 $contentButton = $buttonBar->makeLinkButton()
-                    ->setHref($this->uriBuilder->reset()->uriFor('content'))
+                    ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
                     ->setIcon($this->iconFactory->getIcon('actions-document-open', IconSize::SMALL))
                     ->setShowLabelText(true);
