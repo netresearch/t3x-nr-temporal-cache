@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -298,7 +299,7 @@ final class TemporalCacheController extends ActionController
         $refreshButton = $buttonBar->makeLinkButton()
             ->setHref($this->buildModuleUri($currentAction))
             ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-            ->setIcon($this->iconFactory->getIcon('actions-refresh', IconSize::SMALL))
+            ->setIcon($this->iconFactory->getIcon('actions-refresh', class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
             ->setShowLabelText(false);
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
@@ -316,7 +317,7 @@ final class TemporalCacheController extends ActionController
                 $contentButton = $buttonBar->makeLinkButton()
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
-                    ->setIcon($this->iconFactory->getIcon('actions-document-open', IconSize::SMALL))
+                    ->setIcon($this->iconFactory->getIcon('actions-document-open', class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
                     ->setShowLabelText(true);
                 $buttonBar->addButton($contentButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
                 break;

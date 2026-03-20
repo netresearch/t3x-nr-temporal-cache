@@ -16,6 +16,10 @@ parameters:
         -
             identifier: isset.property
             message: '#Property TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController::\$uriBuilder .* in isset\(\) is not nullable#'
+        # BackendUriBuilder isset() guard for test contexts
+        -
+            identifier: isset.property
+            message: '#Property .+TemporalCacheController::\$backendUriBuilder in isset\(\) is not nullable nor uninitialized#'
         # TYPO3 13+ only: IconSize enum does not exist in TYPO3 12
         -
             identifier: class.notFound
