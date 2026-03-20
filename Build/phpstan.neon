@@ -20,3 +20,15 @@ parameters:
         -
             identifier: class.notFound
             message: '#class TYPO3\\CMS\\Core\\Imaging\\IconSize#'
+        # Icon::SIZE_SMALL is deprecated in v13+ but needed as v12 fallback
+        -
+            identifier: classConstant.deprecatedClass
+            message: '#Icon::SIZE_SMALL#'
+        # Icon::SIZE_SMALL is removed in v14 but needed as v12 fallback
+        -
+            identifier: classConstant.notFound
+            message: '#Icon::SIZE_SMALL#'
+        # IconFactory::getIcon() $size parameter type mismatch across TYPO3 versions
+        -
+            identifier: argument.type
+            message: '#method TYPO3\\CMS\\Core\\Imaging\\IconFactory::getIcon\(\) expects TYPO3\\CMS\\Core\\Imaging\\IconSize#'
