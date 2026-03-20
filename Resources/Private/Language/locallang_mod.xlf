@@ -111,6 +111,11 @@
                 <source>Harmonization Potential</source>
             </trans-unit>
 
+            <!-- Buttons -->
+            <trans-unit id="button.view_content" resname="button.view_content">
+                <source>View Content</source>
+            </trans-unit>
+
             <!-- Quick Actions -->
             <trans-unit id="dashboard.quick_actions.title" resname="dashboard.quick_actions.title">
                 <source>Quick Actions</source>

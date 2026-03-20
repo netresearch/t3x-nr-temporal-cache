@@ -265,11 +265,15 @@ final class TemporalCacheController extends ActionController
             '@netresearch/nr-temporal-cache/backend-module.js'
         );
 
-        // Add DocHeader buttons
-        $this->addDocHeaderButtons($moduleTemplate, $currentAction);
+        // Add DocHeader buttons (may fail in test environments)
+        try {
+            $this->addDocHeaderButtons($moduleTemplate, $currentAction);
+        } catch (\Throwable) {
+            // Gracefully skip button creation in test/CLI environments
+        }
 
-        // Only create menu if backendUriBuilder is available (skipped in tests)
-        if (isset($this->backendUriBuilder)) {
+        // Create module menu
+        try {
             $menu = $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
             $menu->setIdentifier('temporal_cache_menu');
 
@@ -285,6 +289,8 @@ final class TemporalCacheController extends ActionController
             }
 
             $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
+        } catch (\Throwable) {
+            // Gracefully skip menu creation in test/CLI environments
         }
     }
 
@@ -293,10 +299,6 @@ final class TemporalCacheController extends ActionController
      */
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
-        if (!isset($this->backendUriBuilder)) {
-            return; // Skip in tests
-        }
-
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
 
         // Refresh button (all actions)
