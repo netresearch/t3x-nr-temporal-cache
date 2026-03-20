@@ -71,10 +71,14 @@ final class TemporalCacheController extends ActionController
      */
     private function buildModuleUri(string $action): string
     {
-        return (string)$this->backendUriBuilder->buildUriFromRoute(
-            self::MODULE_ROUTE,
-            ['action' => $action]
-        );
+        try {
+            return (string)$this->backendUriBuilder->buildUriFromRoute(
+                self::MODULE_ROUTE,
+                ['action' => $action]
+            );
+        } catch (\Throwable) {
+            return '#';
+        }
     }
 
     /**
@@ -299,7 +303,7 @@ final class TemporalCacheController extends ActionController
         $refreshButton = $buttonBar->makeLinkButton()
             ->setHref($this->buildModuleUri($currentAction))
             ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-            ->setIcon($this->iconFactory->getIcon('actions-refresh', class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+            ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
             ->setShowLabelText(false);
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
@@ -317,7 +321,7 @@ final class TemporalCacheController extends ActionController
                 $contentButton = $buttonBar->makeLinkButton()
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
-                    ->setIcon($this->iconFactory->getIcon('actions-document-open', class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                    ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
                     ->setShowLabelText(true);
                 $buttonBar->addButton($contentButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
                 break;
