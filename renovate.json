@@ -1,19 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "github>netresearch/renovate-config"
   ],
   "automergeType": "pr",
   "platformAutomerge": true,
   "packageRules": [
     {
-      "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "pin",
+        "digest"
+      ],
       "automerge": true
     },
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["mariadb"],
-      "matchUpdateTypes": ["major"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mariadb"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "enabled": false,
       "description": "Disable MariaDB major updates - v12 has io_uring issues on GitHub Actions"
     }
