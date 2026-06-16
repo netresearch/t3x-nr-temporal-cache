@@ -55,143 +55,74 @@ final class AnalyzeCommandTest extends UnitTestCase
     public function testExecuteWithNoTemporalContentReturnsSuccessWithWarning(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutput();
+        $this->stubStatistics();
 
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 0,
-                'pages' => 0,
-                'content' => 0,
-                'withStart' => 0,
-                'withEnd' => 0,
-                'withBoth' => 0,
-            ]);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
     /**     */
     public function testExecuteWithTemporalContentDisplaysStatistics(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutput();
+        $this->stubStatistics([
+            'total' => 50,
+            'pages' => 30,
+            'content' => 20,
+            'withStart' => 15,
+            'withEnd' => 10,
+            'withBoth' => 25,
+        ]);
+        $this->stubTransitions();
+        $this->stubHarmonizationEnabled(false);
 
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 50,
-                'pages' => 30,
-                'content' => 20,
-                'withStart' => 15,
-                'withEnd' => 10,
-                'withBoth' => 25,
-            ]);
-
-        $this->repository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
     /**     */
     public function testExecuteWithUpcomingTransitionsDisplaysPeakDays(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutput();
+        $this->stubStatistics([
+            'total' => 10,
+            'pages' => 5,
+            'content' => 5,
+            'withStart' => 5,
+            'withEnd' => 5,
+            'withBoth' => 0,
+        ]);
 
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 10,
-                'pages' => 5,
-                'content' => 5,
-                'withStart' => 5,
-                'withEnd' => 5,
-                'withBoth' => 0,
-            ]);
-
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test Page',
-            pid: 0,
-            starttime: \time() + 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
-
-        $transitions = [
+        $content = $this->createTemporalContent('Test Page');
+        $this->stubTransitions([
             new TransitionEvent($content, \time() + 3600, 'start'),
             new TransitionEvent($content, \time() + 7200, 'start'),
-        ];
+        ]);
+        $this->stubHarmonizationEnabled(false);
 
-        $this->repository
-            ->method('findTransitionsInRange')
-            ->willReturn($transitions);
-
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
     /**     */
     public function testExecuteWithHarmonizationEnabledDisplaysImpactAnalysis(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutput();
+        $this->stubStatistics([
+            'total' => 10,
+            'pages' => 10,
+            'content' => 0,
+            'withStart' => 10,
+            'withEnd' => 0,
+            'withBoth' => 0,
+        ]);
 
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 10,
-                'pages' => 10,
-                'content' => 0,
-                'withStart' => 10,
-                'withEnd' => 0,
-                'withBoth' => 0,
-            ]);
-
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: \time() + 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
-
-        $transitions = [
+        $content = $this->createTemporalContent('Test');
+        $this->stubTransitions([
             new TransitionEvent($content, \time() + 3600, 'start'),
-        ];
-
-        $this->repository
-            ->method('findTransitionsInRange')
-            ->willReturn($transitions);
-
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
+        ]);
+        $this->stubHarmonizationEnabled(true);
 
         $this->harmonizationService
             ->method('calculateHarmonizationImpact')
@@ -201,36 +132,24 @@ final class AnalyzeCommandTest extends UnitTestCase
                 'reduction' => 35.0,
             ]);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
     /**     */
     public function testExecuteWithVerboseModeDisplaysConfigurationSummary(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_VERBOSE);
-
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 5,
-                'pages' => 5,
-                'content' => 0,
-                'withStart' => 5,
-                'withEnd' => 0,
-                'withBoth' => 0,
-            ]);
-
-        $this->repository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+        $this->setupOutput(OutputInterface::VERBOSITY_VERBOSE);
+        $this->stubStatistics([
+            'total' => 5,
+            'pages' => 5,
+            'content' => 0,
+            'withStart' => 5,
+            'withEnd' => 0,
+            'withBoth' => 0,
+        ]);
+        $this->stubTransitions();
+        $this->stubHarmonizationEnabled(false);
 
         $this->configuration
             ->method('getScopingStrategy')
@@ -252,58 +171,28 @@ final class AnalyzeCommandTest extends UnitTestCase
             ->method('isAutoRoundEnabled')
             ->willReturn(true);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
     /**     */
     public function testExecuteWithCustomWorkspaceAndLanguagePassesCorrectly(): void
     {
-        $this->input
-            ->method('bind')
-            ->willReturnSelf();
+        $this->setupInputDefaults([
+            ['workspace', '1'],
+            ['language', '2'],
+            ['days', '60'],
+        ]);
+        $this->setupOutput();
+        $this->stubStatistics();
 
-        $this->input
-            ->method('isInteractive')
-            ->willReturn(false);
-
-        $this->input
-            ->method('hasArgument')
-            ->willReturn(false);
-
-        $this->input
-            ->method('validate')
-            ->willReturnSelf();
-
-        $this->input
-            ->method('getOption')
-            ->willReturnMap([
-                ['workspace', '1'],
-                ['language', '2'],
-                ['days', '60'],
-            ]);
-
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $this->repository
-            ->method('getStatistics')
-            ->willReturn([
-                'total' => 0,
-                'pages' => 0,
-                'content' => 0,
-                'withStart' => 0,
-                'withEnd' => 0,
-                'withBoth' => 0,
-            ]);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runCommand());
     }
 
-    private function setupInputDefaults(): void
+    private function setupInputDefaults(array $optionMap = [
+        ['workspace', '0'],
+        ['language', '0'],
+        ['days', '30'],
+    ]): void
     {
         $this->input
             ->method('bind')
@@ -323,10 +212,65 @@ final class AnalyzeCommandTest extends UnitTestCase
 
         $this->input
             ->method('getOption')
-            ->willReturnMap([
-                ['workspace', '0'],
-                ['language', '0'],
-                ['days', '30'],
-            ]);
+            ->willReturnMap($optionMap);
+    }
+
+    private function setupOutput(int $verbosity = OutputInterface::VERBOSITY_NORMAL): void
+    {
+        $this->output->method('isDecorated')->willReturn(false);
+        $this->output->method('getVerbosity')->willReturn($verbosity);
+    }
+
+    /**
+     * @param array<string, int> $statistics
+     */
+    private function stubStatistics(array $statistics = [
+        'total' => 0,
+        'pages' => 0,
+        'content' => 0,
+        'withStart' => 0,
+        'withEnd' => 0,
+        'withBoth' => 0,
+    ]): void
+    {
+        $this->repository
+            ->method('getStatistics')
+            ->willReturn($statistics);
+    }
+
+    /**
+     * @param array<int, TransitionEvent> $transitions
+     */
+    private function stubTransitions(array $transitions = []): void
+    {
+        $this->repository
+            ->method('findTransitionsInRange')
+            ->willReturn($transitions);
+    }
+
+    private function stubHarmonizationEnabled(bool $enabled): void
+    {
+        $this->configuration
+            ->method('isHarmonizationEnabled')
+            ->willReturn($enabled);
+    }
+
+    private function createTemporalContent(string $title): TemporalContent
+    {
+        return new TemporalContent(
+            uid: 1,
+            tableName: 'pages',
+            title: $title,
+            pid: 0,
+            starttime: \time() + 3600,
+            endtime: null,
+            languageUid: 0,
+            workspaceUid: 0
+        );
+    }
+
+    private function runCommand(): int
+    {
+        return $this->subject->run($this->input, $this->output);
     }
 }

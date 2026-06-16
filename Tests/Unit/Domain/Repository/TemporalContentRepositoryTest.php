@@ -86,6 +86,77 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     }
 
     /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextPageTransitionReturnsEarliestPageTransition(): void
+    {
+        $next = \time() + 3600;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertSame($next, $this->subject->getNextPageTransition(\time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextPageTransitionReturnsNullWhenNoTransitions(): void
+    {
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn(false);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertNull($this->subject->getNextPageTransition(\time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextContentTransitionForPageReturnsEarliestTransition(): void
+    {
+        $next = \time() + 1800;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextContentTransitionForPageUsesNonZeroWorkspace(): void
+    {
+        $next = \time() + 900;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        // Exercises the non-live workspace branch of applyWorkspaceRestriction().
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 1, 0));
+    }
+
+    /**     */
     public function testGetNextTransitionUsesCacheOnSecondCall(): void
     {
         $currentTime = \time();

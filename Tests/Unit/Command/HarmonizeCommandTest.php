@@ -61,8 +61,7 @@ final class HarmonizeCommandTest extends UnitTestCase
     public function testExecuteWithHarmonizationDisabledReturnsFailure(): void
     {
         $this->setupInputDefaults(true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
         $this->configuration
             ->method('isHarmonizationEnabled')
@@ -76,9 +75,8 @@ final class HarmonizeCommandTest extends UnitTestCase
     /**     */
     public function testExecuteWithInvalidTableNameReturnsFailure(): void
     {
-        $this->setupInputDefaultsWithTable('invalid_table', true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupInputDefaults(true, 'invalid_table');
+        $this->setupOutputDefaults();
 
         $this->configuration
             ->method('isHarmonizationEnabled')
@@ -93,20 +91,8 @@ final class HarmonizeCommandTest extends UnitTestCase
     public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
-
-        $this->configuration
-            ->method('getHarmonizationSlots')
-            ->willReturn(['00:00', '12:00']);
-
-        $this->configuration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(900);
+        $this->setupOutputDefaults();
+        $this->enableHarmonization();
 
         $this->repository
             ->method('findAllWithTemporalFields')
@@ -121,31 +107,10 @@ final class HarmonizeCommandTest extends UnitTestCase
     public function testExecuteInDryRunModeDoesNotModifyDatabase(): void
     {
         $this->setupInputDefaults(true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
+        $this->enableHarmonization();
 
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
-
-        $this->configuration
-            ->method('getHarmonizationSlots')
-            ->willReturn(['00:00', '12:00']);
-
-        $this->configuration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(900);
-
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test Page',
-            pid: 0,
-            starttime: \time(),
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createTemporalContent(title: 'Test Page');
 
         $this->repository
             ->method('findAllWithTemporalFields')
@@ -156,9 +121,7 @@ final class HarmonizeCommandTest extends UnitTestCase
             ->willReturn(\time() + 600); // Different timestamp (needs harmonization)
 
         // Connection pool should NOT be called in dry-run mode
-        $this->connectionPool
-            ->expects(self::never())
-            ->method('getConnectionForTable');
+        $this->expectConnectionPoolNeverUsed();
 
         $result = $this->subject->run($this->input, $this->output);
 
@@ -169,36 +132,16 @@ final class HarmonizeCommandTest extends UnitTestCase
     public function testExecuteInLiveModeWithoutConfirmationCancels(): void
     {
         $this->setupInputDefaults(false);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
         // Simulate user declining confirmation
         $this->input
             ->method('isInteractive')
             ->willReturn(true);
 
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
+        $this->enableHarmonization();
 
-        $this->configuration
-            ->method('getHarmonizationSlots')
-            ->willReturn(['00:00', '12:00']);
-
-        $this->configuration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(900);
-
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: \time(),
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createTemporalContent(title: 'Test');
 
         $this->repository
             ->method('findAllWithTemporalFields')
@@ -209,9 +152,7 @@ final class HarmonizeCommandTest extends UnitTestCase
             ->willReturn(\time() + 600);
 
         // Connection pool should NOT be called when user declines
-        $this->connectionPool
-            ->expects(self::never())
-            ->method('getConnectionForTable');
+        $this->expectConnectionPoolNeverUsed();
 
         $result = $this->subject->run($this->input, $this->output);
 
@@ -221,42 +162,17 @@ final class HarmonizeCommandTest extends UnitTestCase
     /**     */
     public function testExecuteWithTableFilterOnlyProcessesSpecifiedTable(): void
     {
-        $this->setupInputDefaultsWithTable('pages', true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupInputDefaults(true, 'pages');
+        $this->setupOutputDefaults();
+        $this->enableHarmonization();
 
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
+        $pageContent = $this->createTemporalContent(title: 'Page');
 
-        $this->configuration
-            ->method('getHarmonizationSlots')
-            ->willReturn(['00:00', '12:00']);
-
-        $this->configuration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(900);
-
-        $pageContent = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Page',
-            pid: 0,
-            starttime: \time(),
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
-
-        $ttContent = new TemporalContent(
+        $ttContent = $this->createTemporalContent(
             uid: 2,
             tableName: 'tt_content',
             title: 'Content',
-            pid: 1,
-            starttime: \time(),
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
+            pid: 1
         );
 
         $this->repository
@@ -277,31 +193,10 @@ final class HarmonizeCommandTest extends UnitTestCase
     public function testExecuteWithNoChangesNeededReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
+        $this->enableHarmonization();
 
-        $this->configuration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
-
-        $this->configuration
-            ->method('getHarmonizationSlots')
-            ->willReturn(['00:00', '12:00']);
-
-        $this->configuration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(900);
-
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: \time(),
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createTemporalContent(title: 'Test');
 
         $this->repository
             ->method('findAllWithTemporalFields')
@@ -317,35 +212,7 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    private function setupInputDefaults(bool $dryRun): void
-    {
-        $this->input
-            ->method('bind')
-            ->willReturnSelf();
-
-        $this->input
-            ->method('isInteractive')
-            ->willReturn(false);
-
-        $this->input
-            ->method('hasArgument')
-            ->willReturn(false);
-
-        $this->input
-            ->method('validate')
-            ->willReturnSelf();
-
-        $this->input
-            ->method('getOption')
-            ->willReturnMap([
-                ['dry-run', $dryRun],
-                ['workspace', '0'],
-                ['language', '0'],
-                ['table', null],
-            ]);
-    }
-
-    private function setupInputDefaultsWithTable(string $table, bool $dryRun): void
+    private function setupInputDefaults(bool $dryRun, ?string $table = null): void
     {
         $this->input
             ->method('bind')
@@ -371,5 +238,51 @@ final class HarmonizeCommandTest extends UnitTestCase
                 ['language', '0'],
                 ['table', $table],
             ]);
+    }
+
+    private function setupOutputDefaults(): void
+    {
+        $this->output->method('isDecorated')->willReturn(false);
+        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+    }
+
+    private function enableHarmonization(): void
+    {
+        $this->configuration
+            ->method('isHarmonizationEnabled')
+            ->willReturn(true);
+
+        $this->configuration
+            ->method('getHarmonizationSlots')
+            ->willReturn(['00:00', '12:00']);
+
+        $this->configuration
+            ->method('getHarmonizationTolerance')
+            ->willReturn(900);
+    }
+
+    private function createTemporalContent(
+        int $uid = 1,
+        string $tableName = 'pages',
+        string $title = 'Test',
+        int $pid = 0,
+    ): TemporalContent {
+        return new TemporalContent(
+            uid: $uid,
+            tableName: $tableName,
+            title: $title,
+            pid: $pid,
+            starttime: \time(),
+            endtime: null,
+            languageUid: 0,
+            workspaceUid: 0
+        );
+    }
+
+    private function expectConnectionPoolNeverUsed(): void
+    {
+        $this->connectionPool
+            ->expects(self::never())
+            ->method('getConnectionForTable');
     }
 }

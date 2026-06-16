@@ -26,6 +26,8 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class GlobalScopingStrategy implements ScopingStrategyInterface
 {
+    use ResolvesContextAspects;
+
     public function __construct(
         private readonly TemporalContentRepositoryInterface $temporalContentRepository
     ) {
@@ -49,15 +51,10 @@ class GlobalScopingStrategy implements ScopingStrategyInterface
      */
     public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
-        $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
-        $languageId = $context->getPropertyFromAspect('language', 'id', 0);
-        \assert(\is_int($workspaceId));
-        \assert(\is_int($languageId));
-
         return $this->temporalContentRepository->getNextTransition(
             \time(),
-            $workspaceId,
-            $languageId
+            $this->resolveWorkspaceId($context),
+            $this->resolveLanguageId($context)
         );
     }
 

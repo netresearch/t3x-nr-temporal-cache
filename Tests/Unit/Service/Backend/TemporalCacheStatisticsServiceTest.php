@@ -44,21 +44,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+        $this->stubContentRepository();
+        $this->stubHarmonizationEnabled(false);
 
         $result = $this->subject->calculateStatistics($currentTime);
 
@@ -77,43 +64,23 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $page = new TemporalContent(
+        $page = $this->createContent(
             uid: 1,
             tableName: 'pages',
             title: 'Page',
-            pid: 0,
             starttime: $currentTime - 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
         );
 
-        $content = new TemporalContent(
+        $content = $this->createContent(
             uid: 2,
             tableName: 'tt_content',
             title: 'Content',
             pid: 1,
             starttime: $currentTime - 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
         );
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([$page, $content]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+        $this->stubContentRepository(content: [$page, $content]);
+        $this->stubHarmonizationEnabled(false);
 
         $result = $this->subject->calculateStatistics($currentTime);
 
@@ -127,43 +94,20 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $activeContent = new TemporalContent(
+        $activeContent = $this->createContent(
             uid: 1,
-            tableName: 'pages',
             title: 'Active',
-            pid: 0,
             starttime: $currentTime - 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
         );
 
-        $futureContent = new TemporalContent(
+        $futureContent = $this->createContent(
             uid: 2,
-            tableName: 'pages',
             title: 'Future',
-            pid: 0,
             starttime: $currentTime + 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
         );
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([$activeContent, $futureContent]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+        $this->stubContentRepository(content: [$activeContent, $futureContent]);
+        $this->stubHarmonizationEnabled(false);
 
         $result = $this->subject->calculateStatistics($currentTime);
 
@@ -176,40 +120,22 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: $currentTime + 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createContent(starttime: $currentTime + 3600);
 
         $transitions = [
             new TransitionEvent($content, $currentTime + 3600, 'start'),
             new TransitionEvent($content, $currentTime + 7200, 'start'),
         ];
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([$content]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn($transitions);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([
+        $this->stubContentRepository(
+            content: [$content],
+            transitions: $transitions,
+            transitionsPerDay: [
                 '2025-01-01' => 2,
                 '2025-01-02' => 1,
-            ]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+            ],
+        );
+        $this->stubHarmonizationEnabled(false);
 
         $result = $this->subject->calculateStatistics($currentTime);
 
@@ -222,32 +148,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: $currentTime,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createContent(starttime: $currentTime);
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([$content]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
+        $this->stubContentRepository(content: [$content]);
+        $this->stubHarmonizationEnabled(true);
 
         // Mock harmonization service to return different timestamp
         $this->harmonizationService
@@ -264,32 +168,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: $currentTime,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createContent(starttime: $currentTime);
 
-        $this->contentRepository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([$content]);
-
-        $this->contentRepository
-            ->method('findTransitionsInRange')
-            ->willReturn([]);
-
-        $this->contentRepository
-            ->method('countTransitionsPerDay')
-            ->willReturn([]);
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(false);
+        $this->stubContentRepository(content: [$content]);
+        $this->stubHarmonizationEnabled(false);
 
         $result = $this->subject->calculateStatistics($currentTime);
 
@@ -316,16 +198,7 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     {
         $currentTime = \time();
 
-        $content = new TemporalContent(
-            uid: 1,
-            tableName: 'pages',
-            title: 'Test',
-            pid: 0,
-            starttime: $currentTime + 3600,
-            endtime: null,
-            languageUid: 0,
-            workspaceUid: 0
-        );
+        $content = $this->createContent(starttime: $currentTime + 3600);
 
         $day1Time = $currentTime + 3600;
         $day1Time2 = $currentTime + 7200;
@@ -475,5 +348,55 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertIsArray($result);
         self::assertSame('2025-01-02', $result['date']);
         self::assertSame(50, $result['count']);
+    }
+
+    private function createContent(
+        int $uid = 1,
+        string $tableName = 'pages',
+        string $title = 'Test',
+        int $pid = 0,
+        ?int $starttime = null,
+        ?int $endtime = null,
+    ): TemporalContent {
+        return new TemporalContent(
+            uid: $uid,
+            tableName: $tableName,
+            title: $title,
+            pid: $pid,
+            starttime: $starttime,
+            endtime: $endtime,
+            languageUid: 0,
+            workspaceUid: 0
+        );
+    }
+
+    /**
+     * @param list<TemporalContent>   $content
+     * @param list<TransitionEvent>   $transitions
+     * @param array<string, int>      $transitionsPerDay
+     */
+    private function stubContentRepository(
+        array $content = [],
+        array $transitions = [],
+        array $transitionsPerDay = [],
+    ): void {
+        $this->contentRepository
+            ->method('findAllWithTemporalFields')
+            ->willReturn($content);
+
+        $this->contentRepository
+            ->method('findTransitionsInRange')
+            ->willReturn($transitions);
+
+        $this->contentRepository
+            ->method('countTransitionsPerDay')
+            ->willReturn($transitionsPerDay);
+    }
+
+    private function stubHarmonizationEnabled(bool $enabled): void
+    {
+        $this->extensionConfiguration
+            ->method('isHarmonizationEnabled')
+            ->willReturn($enabled);
     }
 }

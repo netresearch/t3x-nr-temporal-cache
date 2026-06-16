@@ -10,6 +10,7 @@ use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\SingletonInterface;
 
@@ -98,22 +99,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter if t3ver_wsid field exists
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        } else {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    't3ver_wsid',
-                    $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         // Add language filter if sys_language_uid field exists and language specified
         if ($languageUid >= 0 && \in_array('sys_language_uid', $fields, true)) {
@@ -488,22 +474,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             );
         }
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        } else {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    't3ver_wsid',
-                    $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         // Add language filter if specified
         if ($languageUid >= 0) {
@@ -566,6 +537,33 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         }
 
         return $columns;
+    }
+
+    /**
+     * Restrict a query to the given workspace.
+     *
+     * Live (workspace 0) matches records whose t3ver_wsid is 0 or NULL; any other workspace
+     * matches that workspace's records exactly.
+     */
+    private function applyWorkspaceRestriction(QueryBuilder $queryBuilder, int $workspaceUid): void
+    {
+        if ($workspaceUid === 0) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
+                    $queryBuilder->expr()->isNull('t3ver_wsid')
+                )
+            );
+
+            return;
+        }
+
+        $queryBuilder->andWhere(
+            $queryBuilder->expr()->eq(
+                't3ver_wsid',
+                $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
+            )
+        );
     }
 
     /**
@@ -677,15 +675,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         $result = $queryBuilder->executeQuery();
         $contentElements = [];
@@ -761,15 +751,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         $row = $queryBuilder->executeQuery()->fetchAssociative();
 
