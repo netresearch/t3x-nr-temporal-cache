@@ -314,7 +314,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         $scopingStrategy = $this->get(PerPageScopingStrategy::class);
 
-        $content = $this->repository->findAllWithTemporalFields()[0] ?? null;
+        $content = $this->repository->findByUid(4002, 'tt_content');
         self::assertNotNull($content, 'Should have temporal content after insert');
 
         $tags = $scopingStrategy->getCacheTagsToFlush($content, $this->context);
@@ -346,7 +346,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         $scopingStrategy = $this->get(PerContentScopingStrategy::class);
 
-        $content = $this->repository->findAllWithTemporalFields()[0] ?? null;
+        $content = $this->repository->findByUid(4003, 'tt_content');
         self::assertNotNull($content, 'Should have temporal content after insert');
 
         $tags = $scopingStrategy->getCacheTagsToFlush($content, $this->context);
