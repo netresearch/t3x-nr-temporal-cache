@@ -15,8 +15,8 @@ jobs:
       id-token: write
       attestations: write
     with:
-      archive-prefix: nr-temporal-cache
-      package-name: netresearch/nr-temporal-cache
-      extension-key: nr_temporal_cache
+      archive-prefix: 'nr-temporal-cache'
+      package-name: 'netresearch/nr-temporal-cache'
+      extension-key: 'nr_temporal_cache'
     secrets:
       TYPO3_TER_ACCESS_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
