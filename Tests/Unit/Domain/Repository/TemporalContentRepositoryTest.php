@@ -7,7 +7,9 @@ namespace Netresearch\TemporalCache\Tests\Unit\Domain\Repository;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -25,7 +27,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     private ConnectionPool&MockObject $connectionPool;
     private TransitionCache $transitionCache;
     private TemporalMonitorRegistry $monitorRegistry;
-    private DeletedRestriction&MockObject $deletedRestriction;
+    private DeletedRestriction&Stub $deletedRestriction;
     private TemporalContentRepository $subject;
 
     protected function setUp(): void
@@ -36,7 +38,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $this->transitionCache = new TransitionCache();
         // Use real TemporalMonitorRegistry instance (it's a final class, can't be mocked)
         $this->monitorRegistry = new TemporalMonitorRegistry();
-        $this->deletedRestriction = $this->createMock(DeletedRestriction::class);
+        $this->deletedRestriction = $this->createStub(DeletedRestriction::class);
         $this->subject = new TemporalContentRepository(
             $this->connectionPool,
             $this->transitionCache,
@@ -46,10 +48,11 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     }
 
     /**     */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetNextTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -63,12 +66,13 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     }
 
     /**     */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetNextTransitionReturnsEarliestTransition(): void
     {
         $nextTransition = \time() + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -82,13 +86,84 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     }
 
     /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextPageTransitionReturnsEarliestPageTransition(): void
+    {
+        $next = \time() + 3600;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertSame($next, $this->subject->getNextPageTransition(\time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextPageTransitionReturnsNullWhenNoTransitions(): void
+    {
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn(false);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertNull($this->subject->getNextPageTransition(\time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextContentTransitionForPageReturnsEarliestTransition(): void
+    {
+        $next = \time() + 1800;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 0, 0));
+    }
+
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextContentTransitionForPageUsesNonZeroWorkspace(): void
+    {
+        $next = \time() + 900;
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn($next);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        // Exercises the non-live workspace branch of applyWorkspaceRestriction().
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 1, 0));
+    }
+
+    /**     */
     public function testGetNextTransitionUsesCacheOnSecondCall(): void
     {
         $currentTime = \time();
         $nextTransition = $currentTime + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -108,10 +183,11 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     }
 
     /**     */
+    #[AllowMockObjectsWithoutExpectations]
     public function testFindAllWithTemporalFieldsReturnsContentArray(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(\Doctrine\DBAL\Result::class);
         $result->method('fetchAssociative')->willReturnOnConsecutiveCalls(
             [
                 'uid' => 1,
@@ -141,29 +217,12 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertNotEmpty($result);
     }
 
-    private function createMockQueryBuilder(): QueryBuilder&MockObject
+    private function createMockQueryBuilder(): QueryBuilder&Stub
     {
-        $queryBuilder = $this->getMockBuilder(QueryBuilder::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods([
-                'expr',
-                'getRestrictions',
-                'select',
-                'addSelect',
-                'addSelectLiteral',
-                'from',
-                'where',
-                'andWhere',
-                'orderBy',
-                'setMaxResults',
-                'createNamedParameter',
-                'quoteIdentifier',
-                'executeQuery',
-            ])
-            ->getMock();
+        $queryBuilder = $this->createStub(QueryBuilder::class);
 
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
-        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
+        $expressionBuilder = $this->createStub(ExpressionBuilder::class);
+        $restrictions = $this->createStub(QueryRestrictionContainerInterface::class);
 
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
@@ -185,7 +244,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $queryBuilder->method('quoteIdentifier')->willReturnArgument(0);
 
         // Create mock CompositeExpression objects for proper return types
-        $compositeExpression = $this->createMock(CompositeExpression::class);
+        $compositeExpression = $this->createStub(CompositeExpression::class);
         $compositeExpression->method('__toString')->willReturn('expr_composite');
 
         // Expression builder returns CompositeExpression for or/and, string for others

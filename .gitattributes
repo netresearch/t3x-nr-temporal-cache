@@ -37,6 +37,16 @@
 /.serena export-ignore
 /composer.lock export-ignore
 /.php-cs-fixer.cache export-ignore
+/DDEV_SETUP.md export-ignore
+/COVERAGE_ANALYSIS.md export-ignore
+/PERFORMANCE_ANALYSIS.md export-ignore
+/TEST_EVIDENCE_REPORT.md export-ignore
+/TEST_PYRAMID_SUMMARY.md export-ignore
+/TRANSLATION_ANALYSIS_REPORT.md export-ignore
+/TRANSLATION_TASK_SUMMARY.md export-ignore
+/benchmark_results.txt export-ignore
+/crowdin.yml export-ignore
+/index.html export-ignore
 
 # Binary files
 *.png binary

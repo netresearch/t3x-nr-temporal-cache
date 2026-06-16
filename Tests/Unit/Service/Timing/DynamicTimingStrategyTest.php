@@ -7,8 +7,9 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
-use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
+use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -20,7 +21,7 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class DynamicTimingStrategyTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&Stub $repository;
+    private ScopingStrategyInterface&Stub $scopingStrategy;
     private ExtensionConfiguration&Stub $configuration;
     private Context&Stub $context;
     private DynamicTimingStrategy $subject;
@@ -28,12 +29,12 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
         $this->context = $this->createStub(Context::class);
 
         $this->subject = new DynamicTimingStrategy(
-            $this->repository,
+            $this->scopingStrategy,
             $this->configuration
         );
     }
@@ -77,18 +78,11 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         $currentTime = \time();
         $nextTransition = $currentTime + 3600;
 
-        $this->context
-            ->method('getPropertyFromAspect')
-            ->willReturnMap([
-                ['workspace', 'id', 0, 0],
-                ['language', 'id', 0, 0],
-            ]);
-
         $this->configuration
             ->method('getDefaultMaxLifetime')
             ->willReturn(86400); // 24 hours max
 
-        $this->repository
+        $this->scopingStrategy
             ->method('getNextTransition')
             ->willReturn($nextTransition);
 
@@ -100,14 +94,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     /**     */
     public function testGetCacheLifetimeReturnsDefaultWhenNoTransitions(): void
     {
-        $this->context
-            ->method('getPropertyFromAspect')
-            ->willReturnMap([
-                ['workspace', 'id', 0, 0],
-                ['language', 'id', 0, 0],
-            ]);
-
-        $this->repository
+        $this->scopingStrategy
             ->method('getNextTransition')
             ->willReturn(null);
 
@@ -126,14 +113,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         $currentTime = \time();
         $nextTransition = $currentTime + 172800; // 2 days
 
-        $this->context
-            ->method('getPropertyFromAspect')
-            ->willReturnMap([
-                ['workspace', 'id', 0, 0],
-                ['language', 'id', 0, 0],
-            ]);
-
-        $this->repository
+        $this->scopingStrategy
             ->method('getNextTransition')
             ->willReturn($nextTransition);
 
@@ -152,20 +132,36 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         $currentTime = \time();
         $pastTransition = $currentTime - 3600;
 
-        $this->context
-            ->method('getPropertyFromAspect')
-            ->willReturnMap([
-                ['workspace', 'id', 0, 0],
-                ['language', 'id', 0, 0],
-            ]);
-
-        $this->repository
+        $this->scopingStrategy
             ->method('getNextTransition')
             ->willReturn($pastTransition);
 
         $lifetime = $this->subject->getCacheLifetime($this->context);
 
         self::assertSame(60, $lifetime); // Minimum 1 minute
+    }
+
+    /**     */
+    public function testGetCacheLifetimePassesPageIdToScopingStrategy(): void
+    {
+        $currentTime = \time();
+        $nextTransition = $currentTime + 1800;
+
+        $this->configuration
+            ->method('getDefaultMaxLifetime')
+            ->willReturn(86400);
+
+        /** @var ScopingStrategyInterface&MockObject $scopingStrategy */
+        $scopingStrategy = $this->createMock(ScopingStrategyInterface::class);
+        $scopingStrategy
+            ->expects(self::once())
+            ->method('getNextTransition')
+            ->with($this->context, 42)
+            ->willReturn($nextTransition);
+
+        $subject = new DynamicTimingStrategy($scopingStrategy, $this->configuration);
+
+        self::assertSame(1800, $subject->getCacheLifetime($this->context, 42));
     }
 
     /**     */

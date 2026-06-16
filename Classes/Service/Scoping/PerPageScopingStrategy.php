@@ -27,6 +27,8 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class PerPageScopingStrategy implements ScopingStrategyInterface
 {
+    use ResolvesContextAspects;
+
     public function __construct(
         private readonly TemporalContentRepositoryInterface $temporalContentRepository
     ) {
@@ -53,22 +55,33 @@ class PerPageScopingStrategy implements ScopingStrategyInterface
     /**
      * {@inheritdoc}
      *
-     * Returns the next transition across ALL temporal content in the system.
-     * Even though we flush per-page, we still need to check all content
-     * to determine when the next cache lifetime expires.
+     * Per-page scoping watches the smallest set of transitions that can change THIS page:
+     * - every page transition site-wide (a page appearing/disappearing changes menus everywhere)
+     * - content-element transitions on this page only
+     *
+     * This narrows content-driven cache churn to the page being rendered while keeping menus
+     * correct. When no page id is available (e.g. CLI) it falls back to the site-wide transition.
+     *
+     * Note: per-page scoping does not track content embedded from other pages (CONTENT/RECORDS
+     * cObjects) - use the per-content strategy for that.
      */
-    public function getNextTransition(Context $context): ?int
+    public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
-        $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
-        $languageId = $context->getPropertyFromAspect('language', 'id', 0);
-        \assert(\is_int($workspaceId));
-        \assert(\is_int($languageId));
+        $workspaceId = $this->resolveWorkspaceId($context);
+        $languageId = $this->resolveLanguageId($context);
 
-        return $this->temporalContentRepository->getNextTransition(
-            \time(),
-            $workspaceId,
-            $languageId
-        );
+        $now = \time();
+
+        if ($pageId === null) {
+            return $this->temporalContentRepository->getNextTransition($now, $workspaceId, $languageId);
+        }
+
+        $candidates = \array_filter([
+            $this->temporalContentRepository->getNextPageTransition($now, $workspaceId, $languageId),
+            $this->temporalContentRepository->getNextContentTransitionForPage($pageId, $now, $workspaceId, $languageId),
+        ], static fn (?int $value): bool => $value !== null);
+
+        return empty($candidates) ? null : \min($candidates);
     }
 
     /**

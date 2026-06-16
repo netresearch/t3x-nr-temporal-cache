@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Configuration;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -16,12 +17,12 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class ExtensionConfigurationTest extends UnitTestCase
 {
-    private Typo3ExtensionConfiguration&MockObject $typo3ExtensionConfiguration;
+    private Typo3ExtensionConfiguration&Stub $typo3ExtensionConfiguration;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->typo3ExtensionConfiguration = $this->createMock(Typo3ExtensionConfiguration::class);
+        $this->typo3ExtensionConfiguration = $this->createStub(Typo3ExtensionConfiguration::class);
     }
 
     /**     */
@@ -32,13 +33,15 @@ final class ExtensionConfigurationTest extends UnitTestCase
             'timing' => ['strategy' => 'scheduler'],
         ];
 
-        $this->typo3ExtensionConfiguration
+        /** @var Typo3ExtensionConfiguration&MockObject $typo3ExtensionConfiguration */
+        $typo3ExtensionConfiguration = $this->createMock(Typo3ExtensionConfiguration::class);
+        $typo3ExtensionConfiguration
             ->expects(self::once())
             ->method('get')
             ->with('nr_temporal_cache')
             ->willReturn($config);
 
-        $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
+        $subject = new ExtensionConfiguration($typo3ExtensionConfiguration);
 
         self::assertSame('per-content', $subject->getScopingStrategy());
         self::assertSame('scheduler', $subject->getTimingStrategy());

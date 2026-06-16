@@ -7,7 +7,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Command;
 use Netresearch\TemporalCache\Command\ListCommand;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -18,17 +18,17 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class ListCommandTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&MockObject $repository;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private TemporalContentRepositoryInterface&Stub $repository;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private ListCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new ListCommand($this->repository);
     }
@@ -43,16 +43,10 @@ final class ListCommandTest extends UnitTestCase
     public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults('table');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->stubOutputDefaults($this->output);
+        $this->stubRepositoryReturns([]);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn([]);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
@@ -67,13 +61,9 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => null,
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
@@ -88,13 +78,9 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => null,
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
@@ -109,105 +95,59 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'invalid_format',
             'limit' => null,
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
     public function testExecuteWithTableFormatDisplaysTable(): void
     {
         $this->setupInputDefaults('table');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->stubOutputDefaults($this->output);
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Test Page',
-                pid: 0,
-                starttime: \time() + 3600,
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time() + 3600),
+        ]);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
     public function testExecuteWithJsonFormatOutputsJson(): void
     {
         $this->setupInputDefaults('json');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Test Page',
-                pid: 0,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
+        $output = $this->createMock(OutputInterface::class);
+        $this->stubOutputDefaults($output);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time()),
+        ]);
 
         // Expect JSON output
-        $this->output
+        $output
             ->expects(self::atLeastOnce())
             ->method('writeln')
             ->with(self::stringContains('"table":'));
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $output));
     }
 
     /**     */
     public function testExecuteWithCsvFormatOutputsCsv(): void
     {
         $this->setupInputDefaults('csv');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Test Page',
-                pid: 0,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
+        $output = $this->createMock(OutputInterface::class);
+        $this->stubOutputDefaults($output);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time()),
+        ]);
 
         // Expect CSV output with header
-        $this->output
+        $output
             ->expects(self::atLeastOnce())
             ->method('writeln')
             ->with(self::logicalOr(
@@ -215,9 +155,7 @@ final class ListCommandTest extends UnitTestCase
                 self::stringContains('pages,1')
             ));
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $output));
     }
 
     /**     */
@@ -232,40 +170,14 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => null,
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Page', starttime: \time()),
+            $this->makeContent(uid: 2, tableName: 'tt_content', title: 'Content', pid: 1, starttime: \time()),
+        ]);
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Page',
-                pid: 0,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-            new TemporalContent(
-                uid: 2,
-                tableName: 'tt_content',
-                title: 'Content',
-                pid: 1,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
-
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
@@ -280,43 +192,17 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => null,
         ]);
-
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->stubOutputDefaults($this->output);
 
         $futureTime = \time() + 3600;
         $pastTime = \time() - 3600;
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Future',
-                pid: 0,
-                starttime: $futureTime,
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-            new TemporalContent(
-                uid: 2,
-                tableName: 'pages',
-                title: 'Past',
-                pid: 0,
-                starttime: $pastTime,
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Future', starttime: $futureTime),
+            $this->makeContent(uid: 2, title: 'Past', starttime: $pastTime),
+        ]);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     /**     */
@@ -331,40 +217,14 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => '1',
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->stubRepositoryReturns([
+            $this->makeContent(uid: 1, title: 'Page 1', starttime: \time()),
+            $this->makeContent(uid: 2, title: 'Page 2', starttime: \time()),
+        ]);
 
-        $content = [
-            new TemporalContent(
-                uid: 1,
-                tableName: 'pages',
-                title: 'Page 1',
-                pid: 0,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-            new TemporalContent(
-                uid: 2,
-                tableName: 'pages',
-                title: 'Page 2',
-                pid: 0,
-                starttime: \time(),
-                endtime: null,
-                languageUid: 0,
-                workspaceUid: 0
-            ),
-        ];
-
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('sortFieldDataProvider')]
@@ -379,40 +239,25 @@ final class ListCommandTest extends UnitTestCase
             'format' => 'table',
             'limit' => null,
         ]);
+        $this->stubOutputDefaults($this->output);
 
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
-
-        $content = [
-            new TemporalContent(
+        $this->stubRepositoryReturns([
+            $this->makeContent(
                 uid: 2,
                 tableName: 'tt_content',
                 title: 'B Content',
-                pid: 0,
                 starttime: \time() + 7200,
-                endtime: \time() + 10800,
-                languageUid: 0,
-                workspaceUid: 0
+                endtime: \time() + 10800
             ),
-            new TemporalContent(
+            $this->makeContent(
                 uid: 1,
-                tableName: 'pages',
                 title: 'A Page',
-                pid: 0,
                 starttime: \time() + 3600,
-                endtime: \time() + 14400,
-                languageUid: 0,
-                workspaceUid: 0
+                endtime: \time() + 14400
             ),
-        ];
+        ]);
 
-        $this->repository
-            ->method('findAllWithTemporalFields')
-            ->willReturn($content);
-
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
     public static function sortFieldDataProvider(): array
@@ -426,23 +271,48 @@ final class ListCommandTest extends UnitTestCase
         ];
     }
 
+    /**
+     * Stubs the verbosity/decoration accessors every execution path queries.
+     */
+    private function stubOutputDefaults(OutputInterface&Stub $output): void
+    {
+        $output->method('isDecorated')->willReturn(false);
+        $output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+    }
+
+    /**
+     * @param list<TemporalContent> $content
+     */
+    private function stubRepositoryReturns(array $content): void
+    {
+        $this->repository
+            ->method('findAllWithTemporalFields')
+            ->willReturn($content);
+    }
+
+    private function makeContent(
+        int $uid,
+        string $title,
+        int $starttime,
+        string $tableName = 'pages',
+        int $pid = 0,
+        ?int $endtime = null,
+    ): TemporalContent {
+        return new TemporalContent(
+            uid: $uid,
+            tableName: $tableName,
+            title: $title,
+            pid: $pid,
+            starttime: $starttime,
+            endtime: $endtime,
+            languageUid: 0,
+            workspaceUid: 0
+        );
+    }
+
     private function setupInputDefaults(string $format): void
     {
-        $this->input
-            ->method('bind')
-            ->willReturnSelf();
-
-        $this->input
-            ->method('isInteractive')
-            ->willReturn(false);
-
-        $this->input
-            ->method('hasArgument')
-            ->willReturn(false);
-
-        $this->input
-            ->method('validate')
-            ->willReturnSelf();
+        $this->stubInputBaseline();
 
         $this->input
             ->method('getOption')
@@ -462,6 +332,23 @@ final class ListCommandTest extends UnitTestCase
      */
     private function setupInputDefaultsWithOptions(array $options): void
     {
+        $this->stubInputBaseline();
+
+        $map = [];
+        foreach ($options as $key => $value) {
+            $map[] = [$key, $value];
+        }
+
+        $this->input
+            ->method('getOption')
+            ->willReturnMap($map);
+    }
+
+    /**
+     * Stubs the input methods the Symfony command lifecycle calls regardless of options.
+     */
+    private function stubInputBaseline(): void
+    {
         $this->input
             ->method('bind')
             ->willReturnSelf();
@@ -477,14 +364,5 @@ final class ListCommandTest extends UnitTestCase
         $this->input
             ->method('validate')
             ->willReturnSelf();
-
-        $map = [];
-        foreach ($options as $key => $value) {
-            $map[] = [$key, $value];
-        }
-
-        $this->input
-            ->method('getOption')
-            ->willReturnMap($map);
     }
 }

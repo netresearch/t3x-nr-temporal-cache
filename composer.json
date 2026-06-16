@@ -52,7 +52,13 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "nr_temporal_cache",
-            "web-dir": ".Build/public"
+            "web-dir": ".Build/public",
+            "version": "0.9.0",
+            "Package": {
+                "providesPackages": {
+                    "netresearch/nr-temporal-cache": "nr_temporal_cache"
+                }
+            }
         }
     },
     "config": {

@@ -69,9 +69,9 @@ class TimingStrategyFactory implements TimingStrategyInterface
     /**
      * Delegate to active strategy.
      */
-    public function getCacheLifetime(Context $context): ?int
+    public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
-        return $this->activeStrategy->getCacheLifetime($context);
+        return $this->activeStrategy->getCacheLifetime($context, $pageId);
     }
 
     /**

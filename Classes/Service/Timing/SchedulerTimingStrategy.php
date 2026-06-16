@@ -113,7 +113,7 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
      * Cache invalidation is handled by the scheduler task calling
      * processTransition() when transitions occur.
      */
-    public function getCacheLifetime(Context $context): ?int
+    public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
         // Return null = cache lives indefinitely
         // Scheduler task will flush when needed

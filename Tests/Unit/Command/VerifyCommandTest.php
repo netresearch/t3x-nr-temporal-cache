@@ -9,7 +9,7 @@ use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Index;
 use Netresearch\TemporalCache\Command\VerifyCommand;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -21,19 +21,19 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class VerifyCommandTest extends UnitTestCase
 {
-    private ConnectionPool&MockObject $connectionPool;
-    private ExtensionConfiguration&MockObject $configuration;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private ConnectionPool&Stub $connectionPool;
+    private ExtensionConfiguration&Stub $configuration;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private VerifyCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->connectionPool = $this->createStub(ConnectionPool::class);
+        $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new VerifyCommand(
             $this->connectionPool,
@@ -51,227 +51,76 @@ final class VerifyCommandTest extends UnitTestCase
     public function testExecuteWithAllChecksPassingReturnsSuccess(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
-        // Mock database connection and schema manager
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
 
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($connection);
-
-        $connection
-            ->method('createSchemaManager')
-            ->willReturn($schemaManager);
-
-        // Mock indexes exist
-        $starttimeIndex = $this->createMock(Index::class);
-        $starttimeIndex->method('getColumns')->willReturn(['starttime']);
-
-        $endtimeIndex = $this->createMock(Index::class);
-        $endtimeIndex->method('getColumns')->willReturn(['endtime']);
-
-        $schemaManager
-            ->method('listTableIndexes')
-            ->willReturn([$starttimeIndex, $endtimeIndex]);
-
-        // Mock columns exist
-        $starttimeCol = $this->createMock(Column::class);
-        $endtimeCol = $this->createMock(Column::class);
-        $hiddenCol = $this->createMock(Column::class);
-        $deletedCol = $this->createMock(Column::class);
-        $languageCol = $this->createMock(Column::class);
-        $pidCol = $this->createMock(Column::class);
-
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $starttimeCol,
-                'endtime' => $endtimeCol,
-                'hidden' => $hiddenCol,
-                'deleted' => $deletedCol,
-                'sys_language_uid' => $languageCol,
-                'pid' => $pidCol,
-            ]);
-
-        // Mock valid configuration
-        $this->configuration
-            ->method('getScopingStrategy')
-            ->willReturn('per-page');
-
-        $this->configuration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
+        $this->mockBaseConfiguration('per-page');
 
         $this->configuration
             ->method('isHarmonizationEnabled')
             ->willReturn(false);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runSubject());
     }
 
     /**     */
     public function testExecuteWithInvalidConfigurationReturnsFailure(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
-        // Mock database checks passing
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($connection);
-
-        $connection
-            ->method('createSchemaManager')
-            ->willReturn($schemaManager);
-
-        $starttimeIndex = $this->createMock(Index::class);
-        $starttimeIndex->method('getColumns')->willReturn(['starttime']);
-
-        $endtimeIndex = $this->createMock(Index::class);
-        $endtimeIndex->method('getColumns')->willReturn(['endtime']);
-
-        $schemaManager
-            ->method('listTableIndexes')
-            ->willReturn([$starttimeIndex, $endtimeIndex]);
-
-        $col = $this->createMock(Column::class);
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $col,
-                'endtime' => $col,
-                'hidden' => $col,
-                'deleted' => $col,
-                'sys_language_uid' => $col,
-                'pid' => $col,
-            ]);
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
 
         // Mock invalid configuration
-        $this->configuration
-            ->method('getScopingStrategy')
-            ->willReturn('invalid-strategy');
-
-        $this->configuration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
+        $this->mockBaseConfiguration('invalid-strategy');
 
         $this->configuration
             ->method('isHarmonizationEnabled')
             ->willReturn(false);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->runSubject());
     }
 
     /**     */
     public function testExecuteWithMissingIndexesReturnsFailure(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($connection);
-
-        $connection
-            ->method('createSchemaManager')
-            ->willReturn($schemaManager);
+        $schemaManager = $this->mockSchemaManager();
 
         // No indexes
         $schemaManager
             ->method('listTableIndexes')
             ->willReturn([]);
 
-        $col = $this->createMock(Column::class);
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $col,
-                'endtime' => $col,
-                'hidden' => $col,
-                'deleted' => $col,
-                'sys_language_uid' => $col,
-                'pid' => $col,
-            ]);
+        $this->mockTableColumns($schemaManager);
 
-        $this->configuration
-            ->method('getScopingStrategy')
-            ->willReturn('per-page');
-
-        $this->configuration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
+        $this->mockBaseConfiguration('per-page');
 
         $this->configuration
             ->method('isHarmonizationEnabled')
             ->willReturn(false);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->runSubject());
     }
 
     /**     */
     public function testExecuteWithHarmonizationEnabledVerifiesHarmonizationConfig(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
 
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($connection);
-
-        $connection
-            ->method('createSchemaManager')
-            ->willReturn($schemaManager);
-
-        $starttimeIndex = $this->createMock(Index::class);
-        $starttimeIndex->method('getColumns')->willReturn(['starttime']);
-
-        $endtimeIndex = $this->createMock(Index::class);
-        $endtimeIndex->method('getColumns')->willReturn(['endtime']);
-
-        $schemaManager
-            ->method('listTableIndexes')
-            ->willReturn([$starttimeIndex, $endtimeIndex]);
-
-        $col = $this->createMock(Column::class);
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $col,
-                'endtime' => $col,
-                'hidden' => $col,
-                'deleted' => $col,
-                'sys_language_uid' => $col,
-                'pid' => $col,
-            ]);
-
-        $this->configuration
-            ->method('getScopingStrategy')
-            ->willReturn('per-page');
-
-        $this->configuration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
+        $this->mockBaseConfiguration('per-page');
 
         $this->configuration
             ->method('isHarmonizationEnabled')
@@ -289,58 +138,20 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('isAutoRoundEnabled')
             ->willReturn(true);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(0, $result);
+        self::assertSame(0, $this->runSubject());
     }
 
     /**     */
     public function testExecuteWithInvalidHarmonizationSlotsReturnsFailure(): void
     {
         $this->setupInputDefaults();
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+        $this->setupOutputDefaults();
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
 
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($connection);
-
-        $connection
-            ->method('createSchemaManager')
-            ->willReturn($schemaManager);
-
-        $starttimeIndex = $this->createMock(Index::class);
-        $starttimeIndex->method('getColumns')->willReturn(['starttime']);
-
-        $endtimeIndex = $this->createMock(Index::class);
-        $endtimeIndex->method('getColumns')->willReturn(['endtime']);
-
-        $schemaManager
-            ->method('listTableIndexes')
-            ->willReturn([$starttimeIndex, $endtimeIndex]);
-
-        $col = $this->createMock(Column::class);
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $col,
-                'endtime' => $col,
-                'hidden' => $col,
-                'deleted' => $col,
-                'sys_language_uid' => $col,
-                'pid' => $col,
-            ]);
-
-        $this->configuration
-            ->method('getScopingStrategy')
-            ->willReturn('per-page');
-
-        $this->configuration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
+        $this->mockBaseConfiguration('per-page');
 
         $this->configuration
             ->method('isHarmonizationEnabled')
@@ -355,9 +166,7 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('getHarmonizationTolerance')
             ->willReturn(900);
 
-        $result = $this->subject->run($this->input, $this->output);
-
-        self::assertSame(1, $result);
+        self::assertSame(1, $this->runSubject());
     }
 
     private function setupInputDefaults(): void
@@ -381,5 +190,85 @@ final class VerifyCommandTest extends UnitTestCase
         $this->input
             ->method('getOption')
             ->willReturn(null);
+    }
+
+    private function setupOutputDefaults(): void
+    {
+        $this->output->method('isDecorated')->willReturn(false);
+        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+    }
+
+    /**
+     * Wires connectionPool -> connection -> schema manager and returns the
+     * schema manager stub so the caller can declare its table indexes/columns.
+     */
+    private function mockSchemaManager(): AbstractSchemaManager&Stub
+    {
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $connection
+            ->method('createSchemaManager')
+            ->willReturn($schemaManager);
+
+        return $schemaManager;
+    }
+
+    /**
+     * Declares the expected starttime/endtime indexes on the schema manager.
+     */
+    private function mockTableIndexes(AbstractSchemaManager&Stub $schemaManager): void
+    {
+        $starttimeIndex = $this->createStub(Index::class);
+        $starttimeIndex->method('getColumns')->willReturn(['starttime']);
+
+        $endtimeIndex = $this->createStub(Index::class);
+        $endtimeIndex->method('getColumns')->willReturn(['endtime']);
+
+        $schemaManager
+            ->method('listTableIndexes')
+            ->willReturn([$starttimeIndex, $endtimeIndex]);
+    }
+
+    /**
+     * Declares the expected table columns on the schema manager.
+     */
+    private function mockTableColumns(AbstractSchemaManager&Stub $schemaManager): void
+    {
+        $col = $this->createStub(Column::class);
+
+        $schemaManager
+            ->method('listTableColumns')
+            ->willReturn([
+                'starttime' => $col,
+                'endtime' => $col,
+                'hidden' => $col,
+                'deleted' => $col,
+                'sys_language_uid' => $col,
+                'pid' => $col,
+            ]);
+    }
+
+    /**
+     * Declares the scoping strategy plus the default (valid) timing strategy.
+     */
+    private function mockBaseConfiguration(string $scopingStrategy): void
+    {
+        $this->configuration
+            ->method('getScopingStrategy')
+            ->willReturn($scopingStrategy);
+
+        $this->configuration
+            ->method('getTimingStrategy')
+            ->willReturn('dynamic');
+    }
+
+    private function runSubject(): int
+    {
+        return $this->subject->run($this->input, $this->output);
     }
 }

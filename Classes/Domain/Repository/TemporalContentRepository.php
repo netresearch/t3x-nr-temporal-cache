@@ -10,6 +10,7 @@ use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\SingletonInterface;
 
@@ -98,22 +99,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter if t3ver_wsid field exists
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        } else {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    't3ver_wsid',
-                    $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         // Add language filter if sys_language_uid field exists and language specified
         if ($languageUid >= 0 && \in_array('sys_language_uid', $fields, true)) {
@@ -332,36 +318,99 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         int $workspaceUid,
         int $languageUid
     ): ?int {
+        return $this->findNextTransitionForTables(
+            \array_keys($this->monitorRegistry->getAllTables()),
+            $currentTimestamp,
+            $workspaceUid,
+            $languageUid,
+            null
+        );
+    }
+
+    /**
+     * Get the next page-record transition (pages table only).
+     *
+     * Page starttime/endtime transitions change which pages appear in menus, so they
+     * affect the cache of *every* rendered page. Per-page scoping therefore still has to
+     * consider all page transitions site-wide.
+     *
+     * @return int|null Timestamp of the next page transition, or null if none
+     */
+    public function getNextPageTransition(
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int {
+        return $this->findNextTransitionForTables(
+            ['pages'],
+            $currentTimestamp,
+            $workspaceUid,
+            $languageUid,
+            null
+        );
+    }
+
+    /**
+     * Get the next content-element transition for a single page (content tables, scoped by pid).
+     *
+     * A content element's starttime/endtime only affects the page it lives on, so per-page
+     * scoping can limit content churn to the page currently being rendered.
+     *
+     * @param int $pageId The page the rendered output belongs to
+     * @return int|null Timestamp of the next content transition on that page, or null if none
+     */
+    public function getNextContentTransitionForPage(
+        int $pageId,
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int {
+        $contentTables = \array_values(\array_filter(
+            \array_keys($this->monitorRegistry->getAllTables()),
+            static fn (string $table): bool => $table !== 'pages'
+        ));
+
+        return $this->findNextTransitionForTables(
+            $contentTables,
+            $currentTimestamp,
+            $workspaceUid,
+            $languageUid,
+            $pageId
+        );
+    }
+
+    /**
+     * Find the earliest upcoming transition across a set of tables.
+     *
+     * @param array<string> $tables Tables to query
+     * @param int|null $pid Restrict to records on this page (null = no pid restriction)
+     * @return int|null Earliest transition timestamp, or null if none
+     */
+    private function findNextTransitionForTables(
+        array $tables,
+        int $currentTimestamp,
+        int $workspaceUid,
+        int $languageUid,
+        ?int $pid
+    ): ?int {
         $candidates = [];
 
-        // Iterate over all registered tables (default + custom)
-        foreach ($this->monitorRegistry->getAllTables() as $tableName => $fields) {
-            // Query MIN(starttime) for this table
-            $startMin = $this->findMinTransitionForTable(
-                $tableName,
-                'starttime',
-                $currentTimestamp,
-                $workspaceUid,
-                $languageUid
-            );
-            if ($startMin !== null) {
-                $candidates[] = $startMin;
-            }
-
-            // Query MIN(endtime) for this table
-            $endMin = $this->findMinTransitionForTable(
-                $tableName,
-                'endtime',
-                $currentTimestamp,
-                $workspaceUid,
-                $languageUid
-            );
-            if ($endMin !== null) {
-                $candidates[] = $endMin;
+        foreach ($tables as $tableName) {
+            foreach (['starttime', 'endtime'] as $field) {
+                $min = $this->findMinTransitionForTable(
+                    $tableName,
+                    $field,
+                    $currentTimestamp,
+                    $workspaceUid,
+                    $languageUid,
+                    $pid
+                );
+                if ($min !== null) {
+                    $candidates[] = $min;
+                }
             }
         }
 
-        // Return overall minimum, or null if no candidates
         return empty($candidates) ? null : \min($candidates);
     }
 
@@ -382,6 +431,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * @param int $currentTimestamp Reference timestamp
      * @param int $workspaceUid Workspace UID
      * @param int $languageUid Language UID
+     * @param int|null $pid Restrict to records on this page (null = no pid restriction)
      * @return int|null Minimum timestamp, or null if none found
      */
     private function findMinTransitionForTable(
@@ -389,11 +439,14 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         string $fieldName,
         int $currentTimestamp,
         int $workspaceUid,
-        int $languageUid
+        int $languageUid,
+        ?int $pid = null
     ): ?int {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($tableName);
 
-        // Don't use DeletedRestriction here - we want raw MIN() query
+        // Don't use the default restrictions: they would also apply the start/end-time
+        // restriction and hide exactly the future records we need to find. We add the
+        // deleted/hidden restrictions manually below.
         $queryBuilder->getRestrictions()->removeAll();
 
         $queryBuilder
@@ -406,22 +459,22 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        } else {
+        // Ignore deleted and hidden records: their transitions never change frontend output.
+        foreach ($this->getEnableColumns($tableName) as $enableColumn) {
+            $queryBuilder->andWhere($queryBuilder->expr()->eq($enableColumn, 0));
+        }
+
+        // Restrict to a single page when requested (content-element scoping).
+        if ($pid !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
-                    't3ver_wsid',
-                    $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
+                    'pid',
+                    $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)
                 )
             );
         }
+
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         // Add language filter if specified
         if ($languageUid >= 0) {
@@ -441,6 +494,76 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         }
         \assert(\is_int($result));
         return $result;
+    }
+
+    /**
+     * Resolve the "deleted" and "disabled/hidden" column names for a table from TCA.
+     *
+     * Returns an empty list when TCA is unavailable (e.g. in isolated unit tests) so the
+     * query simply runs without those restrictions.
+     *
+     * @return array<string> Enable column names that must equal 0 for an active record
+     */
+    private function getEnableColumns(string $tableName): array
+    {
+        $tca = $GLOBALS['TCA'] ?? [];
+        if (!\is_array($tca)) {
+            return [];
+        }
+
+        $tableTca = $tca[$tableName] ?? null;
+        if (!\is_array($tableTca)) {
+            return [];
+        }
+
+        $ctrl = $tableTca['ctrl'] ?? null;
+        if (!\is_array($ctrl)) {
+            return [];
+        }
+
+        $columns = [];
+
+        $deleteColumn = $ctrl['delete'] ?? null;
+        if (\is_string($deleteColumn) && $deleteColumn !== '') {
+            $columns[] = $deleteColumn;
+        }
+
+        $enableColumns = $ctrl['enablecolumns'] ?? null;
+        if (\is_array($enableColumns)) {
+            $disabledColumn = $enableColumns['disabled'] ?? null;
+            if (\is_string($disabledColumn) && $disabledColumn !== '') {
+                $columns[] = $disabledColumn;
+            }
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Restrict a query to the given workspace.
+     *
+     * Live (workspace 0) matches records whose t3ver_wsid is 0 or NULL; any other workspace
+     * matches that workspace's records exactly.
+     */
+    private function applyWorkspaceRestriction(QueryBuilder $queryBuilder, int $workspaceUid): void
+    {
+        if ($workspaceUid === 0) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
+                    $queryBuilder->expr()->isNull('t3ver_wsid')
+                )
+            );
+
+            return;
+        }
+
+        $queryBuilder->andWhere(
+            $queryBuilder->expr()->eq(
+                't3ver_wsid',
+                $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
+            )
+        );
     }
 
     /**
@@ -552,15 +675,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         $result = $queryBuilder->executeQuery();
         $contentElements = [];
@@ -636,15 +751,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        // Add workspace filter
-        if ($workspaceUid === 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
-            );
-        }
+        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
 
         $row = $queryBuilder->executeQuery()->fetchAssociative();
 

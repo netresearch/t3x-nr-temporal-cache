@@ -2,6 +2,7 @@
 
 [![TYPO3 12](https://img.shields.io/badge/TYPO3-12-orange.svg)](https://get.typo3.org/version/12)
 [![TYPO3 13](https://img.shields.io/badge/TYPO3-13-orange.svg)](https://get.typo3.org/version/13)
+[![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://get.typo3.org/version/14)
 [![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](#)
 [![License](https://img.shields.io/github/license/netresearch/t3x-nr-temporal-cache)](LICENSE)
 
@@ -140,11 +141,12 @@ Search for `nr_temporal_cache` in the Extension Manager.
 ### Requirements
 
 **Required Dependencies:**
-- TYPO3 12.4+ or 13.0+
-- PHP 8.1 - 8.3
+- TYPO3 12.4 LTS, 13.4 LTS or 14.x
+- PHP 8.1 - 8.5
+- `typo3/cms-scheduler` (installed automatically via Composer; required for the scheduler/hybrid timing strategies)
 
 **Optional Dependencies:**
-- `typo3/cms-scheduler` - Required only if using scheduler timing strategy (recommended for high-traffic sites)
+- `typo3/cms-reports` - Adds a Temporal Cache health entry to the Reports module (installed automatically via Composer)
 
 ### Post-Installation
 
@@ -297,6 +299,15 @@ See [Configuration Reference](Documentation/Configuration.rst) for detailed expl
 | Any scoping | Same as above | **Scheduler** | **0 queries** | Same + zero overhead |
 | Any scoping + **Harmonization** | 98%+ fewer transitions | Any timing | Same as timing | Additional 98%+ |
 
+> **How scoping and timing interact:**
+> - **Dynamic timing** caps each rendered page's cache lifetime to its next *relevant* transition, as determined by the scoping strategy:
+>   - `global` — the next transition anywhere (every page expires together).
+>   - `per-page` — the next **page** transition site-wide (menus) **plus** content transitions **on that page only**. This is where per-page scoping reduces content-driven cache churn.
+>   - `per-content` — conservatively uses the site-wide transition for the *lifetime* (content can be embedded into arbitrary pages via references, so a per-page lifetime could serve stale embedded content). Its precise, per-content cache **invalidation** is applied to the flush tags under **scheduler/hybrid** timing.
+> - **Scheduler/Hybrid timing** actively flush the cache tags chosen by the scoping strategy when a transition passes, giving `per-content` its full precision.
+>
+> Rule of thumb: `per-page` + `dynamic` is great for content-heavy pages; large sites with cross-page embedded content should use `per-content` + `scheduler`.
+
 ### Decision Guide
 
 ✅ **Safe for**:
@@ -340,18 +351,19 @@ Comprehensive documentation available in `Documentation/`:
 
 | TYPO3 Version | PHP Version | Support |
 |---------------|-------------|---------|
-| 12.4+         | 8.1 - 8.3   | ✅ Full |
-| 13.0+         | 8.2 - 8.3   | ✅ Full |
+| 12.4 LTS      | 8.1 - 8.5   | ✅ Full |
+| 13.4 LTS      | 8.2 - 8.5   | ✅ Full |
+| 14.x          | 8.2 - 8.5   | ✅ Full |
 
 ## The Three-Phase Roadmap
 
-### Phase 1: Extension with Strategies (Current - v1.0)
+### Phase 1: Extension with Strategies (Current - v0.9, beta)
 - ✅ Dynamic cache lifetime via PSR-14 event
-- ✅ Three scoping strategies (global, per-page, per-content)
+- ✅ Three scoping strategies (global, per-page, per-content), page-aware under dynamic timing
 - ✅ Three timing strategies (dynamic, scheduler, hybrid)
-- ✅ Time harmonization for reduced cache churn
+- ✅ Time harmonization for reduced cache churn (CLI + backend persistence)
 - ✅ Backend module for visual management
-- **Status**: ✅ Implemented and released
+- **Status**: ✅ Implemented (v0.9.0, beta) — not yet released to TER
 
 ### Phase 2: Absolute Expiration API (Future TYPO3 Core)
 - Extend `CacheTag` to support absolute timestamps
@@ -369,7 +381,7 @@ Once Phase 2/3 are in TYPO3 core, this extension will be deprecated.
 
 ## Testing
 
-**61 comprehensive tests** covering all scenarios:
+**400+ automated tests** (316 unit + 90 functional) covering all scenarios:
 
 ```bash
 # All tests (unit + functional)
@@ -386,11 +398,10 @@ composer test:coverage
 ```
 
 ### Test Coverage
-- **Unit Tests**: 9 tests with mocked dependencies
-- **Functional Tests**: 52 tests with real database integration
-  - Core functionality: 14 tests
-  - Backend controller: 38 tests (85% coverage)
-- **Total Coverage**: ~88% (exceeds 70% target)
+- **Unit Tests**: 316 tests with stubbed/mocked dependencies
+- **Functional Tests**: 90 tests with real database integration
+  (event listener, scheduler task, scoping/timing strategies, harmonization persistence, backend controller)
+- **Coverage gate**: CI enforces a minimum line-coverage threshold via `composer ci:test:php:coverage:check`
 
 ## Contributing
 

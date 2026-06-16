@@ -13,7 +13,7 @@ use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Report\TemporalCacheStatusReport;
 use Netresearch\TemporalCache\Service\HarmonizationService;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -25,20 +25,20 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class TemporalCacheStatusReportTest extends UnitTestCase
 {
-    private ExtensionConfiguration&MockObject $extensionConfiguration;
-    private TemporalContentRepositoryInterface&MockObject $contentRepository;
-    private HarmonizationService&MockObject $harmonizationService;
-    private ConnectionPool&MockObject $connectionPool;
+    private ExtensionConfiguration&Stub $extensionConfiguration;
+    private TemporalContentRepositoryInterface&Stub $contentRepository;
+    private HarmonizationService&Stub $harmonizationService;
+    private ConnectionPool&Stub $connectionPool;
     private TemporalCacheStatusReport $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
-        $this->contentRepository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->harmonizationService = $this->createMock(HarmonizationService::class);
-        $this->connectionPool = $this->createMock(ConnectionPool::class);
+        $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
+        $this->contentRepository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->connectionPool = $this->createStub(ConnectionPool::class);
 
         $this->subject = new TemporalCacheStatusReport(
             $this->extensionConfiguration,
@@ -165,14 +165,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
     {
         $this->mockValidConfiguration();
 
-        $connection = $this->createMock(Connection::class);
+        $connection = $this->createStub(Connection::class);
         $connection
-            ->expects(self::any())
             ->method('createSchemaManager')
             ->willThrowException(new \Exception('Database error'));
 
         $this->connectionPool
-            ->expects(self::any())
             ->method('getConnectionForTable')
             ->willReturn($connection);
 
@@ -593,9 +591,9 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
     private function mockDatabaseIndexes(bool $indexesExist): void
     {
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $platform = $this->createMock(AbstractPlatform::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
+        $platform = $this->createStub(AbstractPlatform::class);
 
         $connection
             ->method('createSchemaManager')
@@ -606,12 +604,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->willReturn($platform);
 
         if ($indexesExist) {
-            $starttimeIndex = $this->createMock(Index::class);
+            $starttimeIndex = $this->createStub(Index::class);
             $starttimeIndex
                 ->method('getColumns')
                 ->willReturn(['starttime']);
 
-            $endtimeIndex = $this->createMock(Index::class);
+            $endtimeIndex = $this->createStub(Index::class);
             $endtimeIndex
                 ->method('getColumns')
                 ->willReturn(['endtime']);

@@ -26,10 +26,15 @@ interface ScopingStrategyInterface
     /**
      * Get next temporal transition timestamp for cache lifetime calculation.
      *
+     * The optional page id lets a strategy scope the lifetime to the page currently being
+     * rendered (e.g. per-page scoping only watches content on that page plus all page
+     * transitions). When null, the strategy returns a site-wide transition.
+     *
      * @param Context $context TYPO3 context
+     * @param int|null $pageId The page currently being rendered, or null for a site-wide value
      * @return int|null Timestamp of next transition or null if none
      */
-    public function getNextTransition(Context $context): ?int;
+    public function getNextTransition(Context $context, ?int $pageId = null): ?int;
 
     /**
      * Get strategy name for logging and debugging.

@@ -55,6 +55,32 @@ interface TemporalContentRepositoryInterface
     ): ?int;
 
     /**
+     * Get the next page-record transition (pages table only).
+     *
+     * Page transitions affect menus on every page, so they are never scoped to a single page.
+     *
+     * @return int|null Timestamp of the next page transition, or null if none
+     */
+    public function getNextPageTransition(
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int;
+
+    /**
+     * Get the next content-element transition for a single page (content tables, scoped by pid).
+     *
+     * @param int $pageId The page the rendered output belongs to
+     * @return int|null Timestamp of the next content transition on that page, or null if none
+     */
+    public function getNextContentTransitionForPage(
+        int $pageId,
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int;
+
+    /**
      * Count transitions per day in a date range.
      *
      * @param int $startTimestamp Start of range

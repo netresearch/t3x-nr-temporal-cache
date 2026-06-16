@@ -9,7 +9,6 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -21,26 +20,28 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class HybridTimingStrategyTest extends UnitTestCase
 {
-    private TimingStrategyInterface&MockObject $dynamicStrategy;
-    private TimingStrategyInterface&MockObject $schedulerStrategy;
+    private TimingStrategyInterface&Stub $dynamicStrategy;
+    private TimingStrategyInterface&Stub $schedulerStrategy;
     private ExtensionConfiguration&Stub $configuration;
-    private Context&MockObject $context;
+    private Context&Stub $context;
     private HybridTimingStrategy $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dynamicStrategy = $this->createMock(TimingStrategyInterface::class);
-        $this->schedulerStrategy = $this->createMock(TimingStrategyInterface::class);
+        $this->dynamicStrategy = $this->createStub(TimingStrategyInterface::class);
+        $this->schedulerStrategy = $this->createStub(TimingStrategyInterface::class);
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->context = $this->createMock(Context::class);
+        $this->context = $this->createStub(Context::class);
     }
 
-    private function createSubject(): void
-    {
+    private function createSubject(
+        ?TimingStrategyInterface $dynamicStrategy = null,
+        ?TimingStrategyInterface $schedulerStrategy = null
+    ): void {
         $this->subject = new HybridTimingStrategy(
-            $this->dynamicStrategy,
-            $this->schedulerStrategy,
+            $dynamicStrategy ?? $this->dynamicStrategy,
+            $schedulerStrategy ?? $this->schedulerStrategy,
             $this->configuration
         );
     }
@@ -86,9 +87,11 @@ final class HybridTimingStrategyTest extends UnitTestCase
             ->method('getTimingRules')
             ->willReturn(['pages' => 'dynamic', 'content' => 'scheduler']);
 
-        $this->createSubject();
+        $dynamicStrategy = $this->createMock(TimingStrategyInterface::class);
 
-        $this->dynamicStrategy
+        $this->createSubject($dynamicStrategy);
+
+        $dynamicStrategy
             ->expects(self::once())
             ->method('getCacheLifetime')
             ->with($this->context)
@@ -123,9 +126,11 @@ final class HybridTimingStrategyTest extends UnitTestCase
             ->method('getTimingRules')
             ->willReturn(['pages' => 'dynamic', 'content' => 'scheduler']);
 
-        $this->createSubject();
+        $schedulerStrategy = $this->createMock(TimingStrategyInterface::class);
 
-        $this->schedulerStrategy
+        $this->createSubject(null, $schedulerStrategy);
+
+        $schedulerStrategy
             ->expects(self::once())
             ->method('processTransition')
             ->with($event);

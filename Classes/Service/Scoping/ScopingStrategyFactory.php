@@ -61,9 +61,9 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
     /**
      * Delegate to active strategy.
      */
-    public function getNextTransition(Context $context): ?int
+    public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
-        return $this->activeStrategy->getNextTransition($context);
+        return $this->activeStrategy->getNextTransition($context, $pageId);
     }
 
     /**
