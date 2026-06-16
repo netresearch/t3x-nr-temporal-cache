@@ -14,11 +14,10 @@ $EM_CONF[$_EXTKEY] = [
             'typo3' => '12.4.0-14.99.99',
             'php' => '8.1.0-8.5.99',
             'scheduler' => '12.4.0-14.99.99',
-        ],
-        'conflicts' => [],
-        'suggests' => [
             'reports' => '12.4.0-14.99.99',
         ],
+        'conflicts' => [],
+        'suggests' => [],
     ],
     'autoload' => [
         'psr-4' => [

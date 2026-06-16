@@ -24,7 +24,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 final class TemporalCacheInvalidationTest extends FunctionalTestCase
 {
-    protected array $coreExtensionsToLoad = ['scheduler'];
+    protected array $coreExtensionsToLoad = ['scheduler', 'reports'];
 
     protected array $testExtensionsToLoad = [
         'nr_temporal_cache',
