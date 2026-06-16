@@ -14,7 +14,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * CLI Command: Perform harmonization of temporal fields.
@@ -32,7 +34,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  * Safety features:
  * - Dry-run mode to preview changes before applying
  * - Only processes records where harmonization makes a difference
- * - Uses DataHandler for proper TYPO3 workflow (hooks, logging, etc.)
+ * - Writes directly via the database connection and flushes the pages cache afterwards
  * - Respects workspace and language context
  *
  * Example output (dry-run):
@@ -227,6 +229,9 @@ final class HarmonizeCommand extends Command
 
             $io->section('Applying Changes');
             $this->applyHarmonization($io, $changes, $workspaceUid);
+
+            // Flush the pages cache so the harmonized transition times take effect immediately.
+            GeneralUtility::makeInstance(CacheManager::class)->flushCachesInGroup('pages');
         }
 
         // Calculate impact

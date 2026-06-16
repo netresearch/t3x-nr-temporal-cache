@@ -83,10 +83,12 @@ class TemporalCacheModule {
      * Perform harmonization with TYPO3 Modal confirmation
      */
     async performHarmonization() {
-        const selectedUids = Array.from(document.querySelectorAll('.content-checkbox:checked'))
-            .map(cb => parseInt(cb.dataset.uid));
+        // Carry both uid and table so pages and content elements are routed to the
+        // correct database table (uids are not unique across tables).
+        const selectedItems = Array.from(document.querySelectorAll('.content-checkbox:checked'))
+            .map(cb => ({ uid: parseInt(cb.dataset.uid, 10), table: cb.dataset.table }));
 
-        if (selectedUids.length === 0) {
+        if (selectedItems.length === 0) {
             return;
         }
 
@@ -104,7 +106,7 @@ class TemporalCacheModule {
         // Use TYPO3 Modal for confirmation
         Modal.confirm(
             'Confirm Harmonization',
-            `Harmonize ${selectedUids.length} content elements? This will align temporal boundaries to configured time slots.`,
+            `Harmonize ${selectedItems.length} content elements? This will align temporal boundaries to configured time slots.`,
             Modal.SeverityEnum.warning,
             [
                 {
@@ -118,7 +120,7 @@ class TemporalCacheModule {
                     btnClass: 'btn-warning',
                     trigger: () => {
                         Modal.dismiss();
-                        this.executeHarmonization(harmonizeUri, selectedUids);
+                        this.executeHarmonization(harmonizeUri, selectedItems);
                     }
                 }
             ]
@@ -128,7 +130,7 @@ class TemporalCacheModule {
     /**
      * Execute harmonization AJAX call
      */
-    async executeHarmonization(uri, selectedUids) {
+    async executeHarmonization(uri, selectedItems) {
         try {
             const response = await fetch(uri, {
                 method: 'POST',
@@ -136,7 +138,7 @@ class TemporalCacheModule {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    content: selectedUids,
+                    content: selectedItems,
                     dryRun: false
                 })
             });

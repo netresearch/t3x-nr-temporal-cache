@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Service;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
@@ -33,7 +34,8 @@ class HarmonizationService implements SingletonInterface
     private array $slots = [];
 
     public function __construct(
-        private readonly ExtensionConfiguration $configuration
+        private readonly ExtensionConfiguration $configuration,
+        private readonly ConnectionPool $connectionPool
     ) {
         $this->initializeSlots();
     }
@@ -424,8 +426,35 @@ class HarmonizationService implements SingletonInterface
             ];
         }
 
-        // In a real implementation, this would use DataHandler or ConnectionPool
-        // to persist the changes. For now, we return success with the calculated changes.
+        // Persist the harmonized timestamps to the database.
+        $updateFields = [];
+        foreach ($changes as $field => $change) {
+            $updateFields[$field] = $change['new'];
+        }
+
+        try {
+            $connection = $this->connectionPool->getConnectionForTable($content->tableName);
+            $affectedRows = $connection->update(
+                $content->tableName,
+                $updateFields,
+                ['uid' => $content->uid]
+            );
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to persist harmonized timestamps: ' . $e->getMessage(),
+                'changes' => $changes,
+            ];
+        }
+
+        if ($affectedRows < 1) {
+            return [
+                'success' => false,
+                'message' => \sprintf('Record %s:%d could not be updated', $content->tableName, $content->uid),
+                'changes' => $changes,
+            ];
+        }
+
         return [
             'success' => true,
             'message' => 'Content harmonized successfully',

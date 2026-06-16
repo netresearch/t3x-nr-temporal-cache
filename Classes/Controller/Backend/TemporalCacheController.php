@@ -218,9 +218,30 @@ final class TemporalCacheController extends ActionController
         }
 
         $results = [];
-        foreach ($contentUids as $uid) {
-            \assert(\is_int($uid) || \is_string($uid));
-            $content = $this->contentRepository->findByUid((int)$uid);
+        foreach ($contentUids as $item) {
+            // Each selected item may be either a plain uid (legacy, assumed tt_content)
+            // or an object carrying both uid and table so pages and content are routed
+            // to the correct table. findByUid() rejects tables not registered for monitoring.
+            if (\is_array($item)) {
+                $rawUid = $item['uid'] ?? 0;
+                $rawTable = $item['table'] ?? null;
+                $tableName = \is_string($rawTable) ? $rawTable : 'tt_content';
+            } else {
+                $rawUid = $item;
+                $tableName = 'tt_content';
+            }
+
+            $uid = match (true) {
+                \is_int($rawUid) => $rawUid,
+                \is_string($rawUid) && \is_numeric($rawUid) => (int)$rawUid,
+                default => 0,
+            };
+
+            if ($uid <= 0) {
+                continue;
+            }
+
+            $content = $this->contentRepository->findByUid($uid, $tableName);
             if ($content === null) {
                 continue;
             }

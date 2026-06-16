@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\HarmonizationService;
 use PHPUnit\Framework\MockObject\Stub;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -17,11 +20,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class HarmonizationServiceTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
+    private ConnectionPool&Stub $connectionPool;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->connectionPool = $this->createStub(ConnectionPool::class);
     }
 
     /**     */
@@ -32,7 +37,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('isHarmonizationEnabled')->willReturn(false);
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
@@ -45,7 +50,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
@@ -61,7 +66,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
         $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expectedTimestamp, $subject->harmonizeTimestamp($timestamp));
     }
@@ -76,7 +81,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
         $this->configuration->method('getHarmonizationTolerance')->willReturn(3600); // 1 hour tolerance
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         // Should return original because 3 hours > 1 hour tolerance
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
@@ -93,7 +98,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('getHarmonizationSlots')->willReturn($slots);
         $this->configuration->method('getHarmonizationTolerance')->willReturn($tolerance);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expectedTimestamp, $subject->harmonizeTimestamp($inputTimestamp));
     }
@@ -138,7 +143,7 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '12:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $slots = $subject->getSlotsInRange($start, $end);
 
         // Should have 5 slots: 01-01 00:00, 01-01 12:00, 01-02 00:00, 01-02 12:00, 01-03 00:00
@@ -153,7 +158,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $slots = $subject->getSlotsInRange(1609459200, 1609632000);
 
         self::assertEmpty($slots);
@@ -167,7 +172,7 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expected, $subject->getNextSlot($timestamp));
     }
@@ -180,7 +185,7 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expected, $subject->getNextSlot($timestamp));
     }
@@ -190,7 +195,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertNull($subject->getNextSlot(1609459200));
     }
@@ -203,7 +208,7 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expected, $subject->getPreviousSlot($timestamp));
     }
@@ -216,7 +221,7 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expected, $subject->getPreviousSlot($timestamp));
     }
@@ -226,7 +231,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn([]);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertNull($subject->getPreviousSlot(1609459200));
     }
@@ -236,7 +241,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn($slots);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame($expected, $subject->isOnSlotBoundary($timestamp));
     }
@@ -258,7 +263,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
 
         self::assertSame('00:00', $subject->formatSlot(0));
         self::assertSame('06:00', $subject->formatSlot(21600));
@@ -271,7 +276,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $formatted = $subject->getFormattedSlots();
 
         self::assertSame(['00:00', '06:00', '12:00', '18:00'], $formatted);
@@ -293,7 +298,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
         $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $impact = $subject->calculateHarmonizationImpact($timestamps);
 
         self::assertSame(5, $impact['original']);
@@ -306,7 +311,7 @@ final class HarmonizationServiceTest extends UnitTestCase
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00']);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $impact = $subject->calculateHarmonizationImpact([]);
 
         self::assertSame(0, $impact['original']);
@@ -325,10 +330,121 @@ final class HarmonizationServiceTest extends UnitTestCase
             '06:00',
         ]);
 
-        $subject = new HarmonizationService($this->configuration);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
         $formatted = $subject->getFormattedSlots();
 
         // Only valid slots should be included
         self::assertSame(['00:00', '06:00'], $formatted);
+    }
+
+    private function createContent(?int $starttime, ?int $endtime, string $table = 'tt_content'): TemporalContent
+    {
+        return new TemporalContent(
+            uid: 1,
+            tableName: $table,
+            title: 'Test',
+            pid: 1,
+            starttime: $starttime,
+            endtime: $endtime,
+            languageUid: 0,
+            workspaceUid: 0,
+            hidden: false,
+            deleted: false,
+        );
+    }
+
+    /**     */
+    public function testHarmonizeContentReturnsNoChangesWhenAlreadyHarmonized(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $content = $this->createContent(1609459200, null); // already on the 00:00 slot
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertTrue($result['success']);
+        self::assertSame([], $result['changes']);
+        self::assertStringContainsString('No changes needed', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentDryRunReturnsChangesWithoutPersisting(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $content = $this->createContent(1609461000, null); // 00:30 -> 00:00
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        $result = $subject->harmonizeContent($content, true);
+
+        self::assertTrue($result['success']);
+        self::assertArrayHasKey('starttime', $result['changes']);
+        self::assertSame(1609459200, $result['changes']['starttime']['new']);
+        self::assertStringContainsString('Dry-run', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentPersistsAndReturnsSuccess(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('update')->willReturn(1);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        $content = $this->createContent(1609461000, null);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('harmonized successfully', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentReturnsFailureWhenNoRowsAffected(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('update')->willReturn(0);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        $content = $this->createContent(1609461000, null);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('could not be updated', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentReturnsFailureOnDatabaseException(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('update')->willThrowException(new \RuntimeException('db down'));
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        $content = $this->createContent(1609461000, null);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('Failed to persist', $result['message']);
     }
 }
