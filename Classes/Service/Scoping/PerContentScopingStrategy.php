@@ -118,10 +118,13 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
     /**
      * {@inheritdoc}
      *
-     * Returns the next transition across ALL temporal content in the system.
-     * We need to check all content because any transition could affect cache lifetime.
+     * Per-content scoping returns the site-wide transition for the cache LIFETIME: because
+     * content can be embedded into arbitrary pages via references, narrowing the lifetime per
+     * page would risk serving stale embedded content. The precise, per-content cache
+     * invalidation that gives this strategy its name is applied to the flush TAGS
+     * (getCacheTagsToFlush), which take effect with the scheduler/hybrid timing strategy.
      */
-    public function getNextTransition(Context $context): ?int
+    public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
         $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
         $languageId = $context->getPropertyFromAspect('language', 'id', 0);

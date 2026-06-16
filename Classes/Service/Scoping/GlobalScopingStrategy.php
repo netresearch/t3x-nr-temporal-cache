@@ -45,8 +45,9 @@ class GlobalScopingStrategy implements ScopingStrategyInterface
      * {@inheritdoc}
      *
      * Returns the next transition across ALL temporal content in the system.
+     * Global scoping flushes every page, so the page id is intentionally ignored.
      */
-    public function getNextTransition(Context $context): ?int
+    public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
         $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
         $languageId = $context->getPropertyFromAspect('language', 'id', 0);

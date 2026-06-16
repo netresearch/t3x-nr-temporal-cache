@@ -52,7 +52,7 @@ final class TemporalCacheLifetime
     public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
     {
         try {
-            $lifetime = $this->timingStrategy->getCacheLifetime($this->context);
+            $lifetime = $this->timingStrategy->getCacheLifetime($this->context, $event->getPageId());
 
             if ($lifetime !== null) {
                 // Respect TYPO3's cache configuration hierarchy

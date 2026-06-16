@@ -6,7 +6,7 @@ namespace Netresearch\TemporalCache\Service\Timing;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
-use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
+use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -39,7 +39,7 @@ use TYPO3\CMS\Core\Context\Context;
 class DynamicTimingStrategy implements TimingStrategyInterface
 {
     public function __construct(
-        private readonly TemporalContentRepositoryInterface $temporalContentRepository,
+        private readonly ScopingStrategyInterface $scopingStrategy,
         private readonly ExtensionConfiguration $configuration
     ) {
     }
@@ -83,20 +83,13 @@ class DynamicTimingStrategy implements TimingStrategyInterface
      * - Cache lifetime: 16200 seconds (4.5 hours)
      * - At 14:30:00, cache expires and page regenerates
      */
-    public function getCacheLifetime(Context $context): ?int
+    public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
         $currentTime = \time();
-        $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
-        $languageId = $context->getPropertyFromAspect('language', 'id', 0);
-        \assert(\is_int($workspaceId));
-        \assert(\is_int($languageId));
 
-        // Find next transition
-        $nextTransition = $this->temporalContentRepository->getNextTransition(
-            $currentTime,
-            $workspaceId,
-            $languageId
-        );
+        // Delegate transition discovery to the scoping strategy so per-page/per-content
+        // scoping can narrow the cache lifetime to the page currently being rendered.
+        $nextTransition = $this->scopingStrategy->getNextTransition($context, $pageId);
 
         // No transitions? Cache for maximum lifetime
         if ($nextTransition === null) {

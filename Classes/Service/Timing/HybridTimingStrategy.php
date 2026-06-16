@@ -97,11 +97,11 @@ class HybridTimingStrategy implements TimingStrategyInterface
      * determine if specific content elements on the page use different strategies.
      * We use the 'pages' rule as the default for cache lifetime calculation.
      */
-    public function getCacheLifetime(Context $context): ?int
+    public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
         // Use the strategy configured for pages (most common case)
         $strategy = $this->getStrategyForContentType('page');
-        return $strategy->getCacheLifetime($context);
+        return $strategy->getCacheLifetime($context, $pageId);
     }
 
     /**

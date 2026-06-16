@@ -37,9 +37,10 @@ interface TimingStrategyInterface
      * Returns null if this strategy doesn't modify cache lifetime.
      *
      * @param Context $context TYPO3 context
+     * @param int|null $pageId The page currently being rendered (enables per-page scoping)
      * @return int|null Seconds until next transition, or null
      */
-    public function getCacheLifetime(Context $context): ?int;
+    public function getCacheLifetime(Context $context, ?int $pageId = null): ?int;
 
     /**
      * Get strategy name for logging and debugging.

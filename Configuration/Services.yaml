@@ -107,7 +107,7 @@ services:
   Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy:
     public: false
     arguments:
-      $temporalContentRepository: '@Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository'
+      $scopingStrategy: '@Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface'
       $configuration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
     tags:
       - { name: 'nr_temporal_cache.timing_strategy', identifier: 'dynamic' }
