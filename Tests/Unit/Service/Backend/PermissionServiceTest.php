@@ -6,7 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
 use Netresearch\TemporalCache\Service\Backend\PermissionService;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -16,7 +16,7 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class PermissionServiceTest extends UnitTestCase
 {
     private TemporalMonitorRegistry $monitorRegistry;
-    private BackendUserAuthentication&MockObject $backendUser;
+    private BackendUserAuthentication&Stub $backendUser;
     private PermissionService $subject;
 
     protected function setUp(): void
@@ -24,7 +24,7 @@ final class PermissionServiceTest extends UnitTestCase
         parent::setUp();
         // Use real registry - it's a simple singleton data holder
         $this->monitorRegistry = new TemporalMonitorRegistry();
-        $this->backendUser = $this->createMock(BackendUserAuthentication::class);
+        $this->backendUser = $this->createStub(BackendUserAuthentication::class);
 
         // Mock global backend user
         $GLOBALS['BE_USER'] = $this->backendUser;
@@ -53,11 +53,14 @@ final class PermissionServiceTest extends UnitTestCase
     /**     */
     public function testCanModifyTemporalContentChecksSpecificTableWhenProvided(): void
     {
-        $this->backendUser
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $backendUser
             ->method('isAdmin')
             ->willReturn(false);
 
-        $this->backendUser
+        $backendUser
             ->expects(self::once())
             ->method('check')
             ->with('tables_modify', 'pages')

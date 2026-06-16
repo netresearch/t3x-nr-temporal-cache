@@ -7,7 +7,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Command;
 use Netresearch\TemporalCache\Command\ListCommand;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -18,17 +18,17 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class ListCommandTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&MockObject $repository;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private TemporalContentRepositoryInterface&Stub $repository;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private ListCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new ListCommand($this->repository);
     }
@@ -151,8 +151,10 @@ final class ListCommandTest extends UnitTestCase
     public function testExecuteWithJsonFormatOutputsJson(): void
     {
         $this->setupInputDefaults('json');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+
+        $output = $this->createMock(OutputInterface::class);
+        $output->method('isDecorated')->willReturn(false);
+        $output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
         $content = [
             new TemporalContent(
@@ -172,12 +174,12 @@ final class ListCommandTest extends UnitTestCase
             ->willReturn($content);
 
         // Expect JSON output
-        $this->output
+        $output
             ->expects(self::atLeastOnce())
             ->method('writeln')
             ->with(self::stringContains('"table":'));
 
-        $result = $this->subject->run($this->input, $this->output);
+        $result = $this->subject->run($this->input, $output);
 
         self::assertSame(0, $result);
     }
@@ -186,8 +188,10 @@ final class ListCommandTest extends UnitTestCase
     public function testExecuteWithCsvFormatOutputsCsv(): void
     {
         $this->setupInputDefaults('csv');
-        $this->output->method('isDecorated')->willReturn(false);
-        $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
+
+        $output = $this->createMock(OutputInterface::class);
+        $output->method('isDecorated')->willReturn(false);
+        $output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
         $content = [
             new TemporalContent(
@@ -207,7 +211,7 @@ final class ListCommandTest extends UnitTestCase
             ->willReturn($content);
 
         // Expect CSV output with header
-        $this->output
+        $output
             ->expects(self::atLeastOnce())
             ->method('writeln')
             ->with(self::logicalOr(
@@ -215,7 +219,7 @@ final class ListCommandTest extends UnitTestCase
                 self::stringContains('pages,1')
             ));
 
-        $result = $this->subject->run($this->input, $this->output);
+        $result = $this->subject->run($this->input, $output);
 
         self::assertSame(0, $result);
     }

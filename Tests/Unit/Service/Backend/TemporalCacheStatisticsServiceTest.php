@@ -10,7 +10,7 @@ use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
 use Netresearch\TemporalCache\Service\HarmonizationService;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -20,17 +20,17 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class TemporalCacheStatisticsServiceTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&MockObject $contentRepository;
-    private ExtensionConfiguration&MockObject $extensionConfiguration;
-    private HarmonizationService&MockObject $harmonizationService;
+    private TemporalContentRepositoryInterface&Stub $contentRepository;
+    private ExtensionConfiguration&Stub $extensionConfiguration;
+    private HarmonizationService&Stub $harmonizationService;
     private TemporalCacheStatisticsService $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->contentRepository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
-        $this->harmonizationService = $this->createMock(HarmonizationService::class);
+        $this->contentRepository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
+        $this->harmonizationService = $this->createStub(HarmonizationService::class);
 
         $this->subject = new TemporalCacheStatisticsService(
             $this->contentRepository,
@@ -354,7 +354,8 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         $currentTime = \time();
         $daysAhead = 14;
 
-        $this->contentRepository
+        $contentRepository = $this->createMock(TemporalContentRepositoryInterface::class);
+        $contentRepository
             ->expects(self::once())
             ->method('findTransitionsInRange')
             ->with(
@@ -365,7 +366,13 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
             )
             ->willReturn([]);
 
-        $this->subject->buildTimeline($currentTime, $daysAhead);
+        $subject = new TemporalCacheStatisticsService(
+            $contentRepository,
+            $this->extensionConfiguration,
+            $this->harmonizationService
+        );
+
+        $subject->buildTimeline($currentTime, $daysAhead);
     }
 
     /**     */

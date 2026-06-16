@@ -9,7 +9,9 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -20,25 +22,26 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  * @covers \Netresearch\TemporalCache\Command\HarmonizeCommand
  * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
  */
+#[AllowMockObjectsWithoutExpectations]
 final class HarmonizeCommandTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&MockObject $repository;
-    private HarmonizationService&MockObject $harmonizationService;
-    private ExtensionConfiguration&MockObject $configuration;
+    private TemporalContentRepositoryInterface&Stub $repository;
+    private HarmonizationService&Stub $harmonizationService;
+    private ExtensionConfiguration&Stub $configuration;
     private ConnectionPool&MockObject $connectionPool;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private HarmonizeCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->harmonizationService = $this->createMock(HarmonizationService::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->configuration = $this->createStub(ExtensionConfiguration::class);
         $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new HarmonizeCommand(
             $this->repository,

@@ -9,7 +9,6 @@ use Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -19,9 +18,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class ScopingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
-    private GlobalScopingStrategy&MockObject $globalStrategy;
-    private PerPageScopingStrategy&MockObject $perPageStrategy;
-    private PerContentScopingStrategy&MockObject $perContentStrategy;
+    private GlobalScopingStrategy&Stub $globalStrategy;
+    private PerPageScopingStrategy&Stub $perPageStrategy;
+    private PerContentScopingStrategy&Stub $perContentStrategy;
     private ScopingStrategyFactory $subject;
 
     protected function setUp(): void
@@ -29,13 +28,13 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         parent::setUp();
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
 
-        $this->globalStrategy = $this->createMock(GlobalScopingStrategy::class);
+        $this->globalStrategy = $this->createStub(GlobalScopingStrategy::class);
         $this->globalStrategy->method('getName')->willReturn('global');
 
-        $this->perPageStrategy = $this->createMock(PerPageScopingStrategy::class);
+        $this->perPageStrategy = $this->createStub(PerPageScopingStrategy::class);
         $this->perPageStrategy->method('getName')->willReturn('per-page');
 
-        $this->perContentStrategy = $this->createMock(PerContentScopingStrategy::class);
+        $this->perContentStrategy = $this->createStub(PerContentScopingStrategy::class);
         $this->perContentStrategy->method('getName')->willReturn('per-content');
     }
 

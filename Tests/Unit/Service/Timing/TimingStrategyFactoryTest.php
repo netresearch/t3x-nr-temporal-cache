@@ -9,7 +9,6 @@ use Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -19,9 +18,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TimingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
-    private DynamicTimingStrategy&MockObject $dynamicStrategy;
-    private SchedulerTimingStrategy&MockObject $schedulerStrategy;
-    private HybridTimingStrategy&MockObject $hybridStrategy;
+    private DynamicTimingStrategy&Stub $dynamicStrategy;
+    private SchedulerTimingStrategy&Stub $schedulerStrategy;
+    private HybridTimingStrategy&Stub $hybridStrategy;
     private TimingStrategyFactory $subject;
 
     protected function setUp(): void
@@ -29,13 +28,13 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         parent::setUp();
         $this->configuration = $this->createStub(ExtensionConfiguration::class);
 
-        $this->dynamicStrategy = $this->createMock(DynamicTimingStrategy::class);
+        $this->dynamicStrategy = $this->createStub(DynamicTimingStrategy::class);
         $this->dynamicStrategy->method('getName')->willReturn('dynamic');
 
-        $this->schedulerStrategy = $this->createMock(SchedulerTimingStrategy::class);
+        $this->schedulerStrategy = $this->createStub(SchedulerTimingStrategy::class);
         $this->schedulerStrategy->method('getName')->willReturn('scheduler');
 
-        $this->hybridStrategy = $this->createMock(HybridTimingStrategy::class);
+        $this->hybridStrategy = $this->createStub(HybridTimingStrategy::class);
         $this->hybridStrategy->method('getName')->willReturn('hybrid');
     }
 

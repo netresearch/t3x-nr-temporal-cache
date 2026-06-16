@@ -10,7 +10,7 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -22,21 +22,21 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class AnalyzeCommandTest extends UnitTestCase
 {
-    private TemporalContentRepositoryInterface&MockObject $repository;
-    private ExtensionConfiguration&MockObject $configuration;
-    private HarmonizationService&MockObject $harmonizationService;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private TemporalContentRepositoryInterface&Stub $repository;
+    private ExtensionConfiguration&Stub $configuration;
+    private HarmonizationService&Stub $harmonizationService;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private AnalyzeCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createMock(TemporalContentRepositoryInterface::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
-        $this->harmonizationService = $this->createMock(HarmonizationService::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new AnalyzeCommand(
             $this->repository,
@@ -289,7 +289,6 @@ final class AnalyzeCommandTest extends UnitTestCase
 
         $this->repository
             ->method('getStatistics')
-            ->with(1)
             ->willReturn([
                 'total' => 0,
                 'pages' => 0,

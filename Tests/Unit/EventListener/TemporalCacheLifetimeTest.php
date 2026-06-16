@@ -8,7 +8,9 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
@@ -19,24 +21,25 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  *
  * @covers \Netresearch\TemporalCache\EventListener\TemporalCacheLifetime
  */
+#[AllowMockObjectsWithoutExpectations]
 final class TemporalCacheLifetimeTest extends UnitTestCase
 {
     private TemporalCacheLifetime $subject;
-    private ExtensionConfiguration&MockObject $extensionConfiguration;
-    private ScopingStrategyInterface&MockObject $scopingStrategy;
+    private ExtensionConfiguration&Stub $extensionConfiguration;
+    private ScopingStrategyInterface&Stub $scopingStrategy;
     private TimingStrategyInterface&MockObject $timingStrategy;
-    private Context&MockObject $context;
-    private LoggerInterface&MockObject $logger;
+    private Context&Stub $context;
+    private LoggerInterface&Stub $logger;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
-        $this->scopingStrategy = $this->createMock(ScopingStrategyInterface::class);
+        $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
+        $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
         $this->timingStrategy = $this->createMock(TimingStrategyInterface::class);
-        $this->context = $this->createMock(Context::class);
-        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->context = $this->createStub(Context::class);
+        $this->logger = $this->createStub(LoggerInterface::class);
 
         // Configure default mock behaviors
         $this->extensionConfiguration
@@ -176,16 +179,16 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         $lifetime = 3600;
 
         // Arrange: Need fresh subject with debug enabled
-        $debugConfig = $this->createMock(ExtensionConfiguration::class);
+        $debugConfig = $this->createStub(ExtensionConfiguration::class);
         $debugConfig->method('getDefaultMaxLifetime')->willReturn(86400);
         $debugConfig->method('isDebugLoggingEnabled')->willReturn(true);
 
         $debugLogger = $this->createMock(LoggerInterface::class);
-        $debugTimingStrategy = $this->createMock(TimingStrategyInterface::class);
+        $debugTimingStrategy = $this->createStub(TimingStrategyInterface::class);
         $debugTimingStrategy->method('getName')->willReturn('test-timing');
         $debugTimingStrategy->method('getCacheLifetime')->willReturn($lifetime);
 
-        $debugScopingStrategy = $this->createMock(ScopingStrategyInterface::class);
+        $debugScopingStrategy = $this->createStub(ScopingStrategyInterface::class);
         $debugScopingStrategy->method('getName')->willReturn('test-scoping');
 
         $subject = new TemporalCacheLifetime(

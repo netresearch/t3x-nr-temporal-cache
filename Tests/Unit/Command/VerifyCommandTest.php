@@ -9,7 +9,7 @@ use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Index;
 use Netresearch\TemporalCache\Command\VerifyCommand;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -21,19 +21,19 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class VerifyCommandTest extends UnitTestCase
 {
-    private ConnectionPool&MockObject $connectionPool;
-    private ExtensionConfiguration&MockObject $configuration;
-    private InputInterface&MockObject $input;
-    private OutputInterface&MockObject $output;
+    private ConnectionPool&Stub $connectionPool;
+    private ExtensionConfiguration&Stub $configuration;
+    private InputInterface&Stub $input;
+    private OutputInterface&Stub $output;
     private VerifyCommand $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
-        $this->input = $this->createMock(InputInterface::class);
-        $this->output = $this->createMock(OutputInterface::class);
+        $this->connectionPool = $this->createStub(ConnectionPool::class);
+        $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->input = $this->createStub(InputInterface::class);
+        $this->output = $this->createStub(OutputInterface::class);
 
         $this->subject = new VerifyCommand(
             $this->connectionPool,
@@ -55,8 +55,8 @@ final class VerifyCommandTest extends UnitTestCase
         $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
         // Mock database connection and schema manager
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -67,10 +67,10 @@ final class VerifyCommandTest extends UnitTestCase
             ->willReturn($schemaManager);
 
         // Mock indexes exist
-        $starttimeIndex = $this->createMock(Index::class);
+        $starttimeIndex = $this->createStub(Index::class);
         $starttimeIndex->method('getColumns')->willReturn(['starttime']);
 
-        $endtimeIndex = $this->createMock(Index::class);
+        $endtimeIndex = $this->createStub(Index::class);
         $endtimeIndex->method('getColumns')->willReturn(['endtime']);
 
         $schemaManager
@@ -78,12 +78,12 @@ final class VerifyCommandTest extends UnitTestCase
             ->willReturn([$starttimeIndex, $endtimeIndex]);
 
         // Mock columns exist
-        $starttimeCol = $this->createMock(Column::class);
-        $endtimeCol = $this->createMock(Column::class);
-        $hiddenCol = $this->createMock(Column::class);
-        $deletedCol = $this->createMock(Column::class);
-        $languageCol = $this->createMock(Column::class);
-        $pidCol = $this->createMock(Column::class);
+        $starttimeCol = $this->createStub(Column::class);
+        $endtimeCol = $this->createStub(Column::class);
+        $hiddenCol = $this->createStub(Column::class);
+        $deletedCol = $this->createStub(Column::class);
+        $languageCol = $this->createStub(Column::class);
+        $pidCol = $this->createStub(Column::class);
 
         $schemaManager
             ->method('listTableColumns')
@@ -122,8 +122,8 @@ final class VerifyCommandTest extends UnitTestCase
         $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
         // Mock database checks passing
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -133,17 +133,17 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        $starttimeIndex = $this->createMock(Index::class);
+        $starttimeIndex = $this->createStub(Index::class);
         $starttimeIndex->method('getColumns')->willReturn(['starttime']);
 
-        $endtimeIndex = $this->createMock(Index::class);
+        $endtimeIndex = $this->createStub(Index::class);
         $endtimeIndex->method('getColumns')->willReturn(['endtime']);
 
         $schemaManager
             ->method('listTableIndexes')
             ->willReturn([$starttimeIndex, $endtimeIndex]);
 
-        $col = $this->createMock(Column::class);
+        $col = $this->createStub(Column::class);
         $schemaManager
             ->method('listTableColumns')
             ->willReturn([
@@ -180,8 +180,8 @@ final class VerifyCommandTest extends UnitTestCase
         $this->output->method('isDecorated')->willReturn(false);
         $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -196,7 +196,7 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('listTableIndexes')
             ->willReturn([]);
 
-        $col = $this->createMock(Column::class);
+        $col = $this->createStub(Column::class);
         $schemaManager
             ->method('listTableColumns')
             ->willReturn([
@@ -232,8 +232,8 @@ final class VerifyCommandTest extends UnitTestCase
         $this->output->method('isDecorated')->willReturn(false);
         $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -243,17 +243,17 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        $starttimeIndex = $this->createMock(Index::class);
+        $starttimeIndex = $this->createStub(Index::class);
         $starttimeIndex->method('getColumns')->willReturn(['starttime']);
 
-        $endtimeIndex = $this->createMock(Index::class);
+        $endtimeIndex = $this->createStub(Index::class);
         $endtimeIndex->method('getColumns')->willReturn(['endtime']);
 
         $schemaManager
             ->method('listTableIndexes')
             ->willReturn([$starttimeIndex, $endtimeIndex]);
 
-        $col = $this->createMock(Column::class);
+        $col = $this->createStub(Column::class);
         $schemaManager
             ->method('listTableColumns')
             ->willReturn([
@@ -301,8 +301,8 @@ final class VerifyCommandTest extends UnitTestCase
         $this->output->method('isDecorated')->willReturn(false);
         $this->output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 
-        $connection = $this->createMock(Connection::class);
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $connection = $this->createStub(Connection::class);
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -312,17 +312,17 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        $starttimeIndex = $this->createMock(Index::class);
+        $starttimeIndex = $this->createStub(Index::class);
         $starttimeIndex->method('getColumns')->willReturn(['starttime']);
 
-        $endtimeIndex = $this->createMock(Index::class);
+        $endtimeIndex = $this->createStub(Index::class);
         $endtimeIndex->method('getColumns')->willReturn(['endtime']);
 
         $schemaManager
             ->method('listTableIndexes')
             ->willReturn([$starttimeIndex, $endtimeIndex]);
 
-        $col = $this->createMock(Column::class);
+        $col = $this->createStub(Column::class);
         $schemaManager
             ->method('listTableColumns')
             ->willReturn([

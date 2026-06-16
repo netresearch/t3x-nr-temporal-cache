@@ -9,7 +9,9 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
@@ -21,25 +23,26 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
  * @uses \Netresearch\TemporalCache\Domain\Model\TransitionEvent
  */
+#[AllowMockObjectsWithoutExpectations]
 final class SchedulerTimingStrategyTest extends UnitTestCase
 {
     protected bool $resetSingletonInstances = true;
 
-    private ScopingStrategyInterface&MockObject $scopingStrategy;
+    private ScopingStrategyInterface&Stub $scopingStrategy;
     private CacheManager&MockObject $cacheManager;
-    private Context&MockObject $context;
-    private LoggerInterface&MockObject $logger;
-    private ExtensionConfiguration&MockObject $configuration;
+    private Context&Stub $context;
+    private LoggerInterface&Stub $logger;
+    private ExtensionConfiguration&Stub $configuration;
     private SchedulerTimingStrategy $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->scopingStrategy = $this->createMock(ScopingStrategyInterface::class);
+        $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
         $this->cacheManager = $this->createMock(CacheManager::class);
-        $this->context = $this->createMock(Context::class);
-        $this->logger = $this->createMock(LoggerInterface::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->context = $this->createStub(Context::class);
+        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->configuration = $this->createStub(ExtensionConfiguration::class);
 
         $this->subject = new SchedulerTimingStrategy(
             $this->scopingStrategy,
@@ -98,6 +101,7 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
             });
 
         $this->cacheManager
+            ->expects(self::once())
             ->method('getCache')
             ->with('pages')
             ->willReturn($cache);

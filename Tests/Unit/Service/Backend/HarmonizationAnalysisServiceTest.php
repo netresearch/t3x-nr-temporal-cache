@@ -8,7 +8,7 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
 use Netresearch\TemporalCache\Service\HarmonizationService;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -17,15 +17,15 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
  */
 final class HarmonizationAnalysisServiceTest extends UnitTestCase
 {
-    private HarmonizationService&MockObject $harmonizationService;
-    private ExtensionConfiguration&MockObject $extensionConfiguration;
+    private HarmonizationService&Stub $harmonizationService;
+    private ExtensionConfiguration&Stub $extensionConfiguration;
     private HarmonizationAnalysisService $subject;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->harmonizationService = $this->createMock(HarmonizationService::class);
-        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
+        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
 
         $this->subject = new HarmonizationAnalysisService(
             $this->harmonizationService,
@@ -90,7 +90,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->with($currentTime)
             ->willReturn($currentTime + 600); // Different timestamp
 
         $content = new TemporalContent(
@@ -179,7 +178,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->with($currentTime)
             ->willReturn($currentTime + 600);
 
         $content = new TemporalContent(
@@ -210,7 +208,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->with($currentTime)
             ->willReturn($currentTime + 600);
 
         $content = new TemporalContent(
