@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" target-language="hi" datatype="plaintext" original="EXT:temporal_cache/Resources/Private/Language/locallang_reports.xlf" date="2024-01-01T00:00:00Z" product-name="temporal_cache">
+    <file source-language="en" target-language="hi" datatype="plaintext" original="EXT:nr_temporal_cache/Resources/Private/Language/locallang_reports.xlf" date="2024-01-01T00:00:00Z" product-name="nr_temporal_cache">
         <header/>
         <body>
             <trans-unit id="status.title" resname="status.title">
