@@ -86,7 +86,7 @@ class TemporalCacheModule {
         // Carry both uid and table so pages and content elements are routed to the
         // correct database table (uids are not unique across tables).
         const selectedItems = Array.from(document.querySelectorAll('.content-checkbox:checked'))
-            .map(cb => ({ uid: parseInt(cb.dataset.uid, 10), table: cb.dataset.table }));
+            .map(cb => ({ uid: Number.parseInt(cb.dataset.uid, 10), table: cb.dataset.table }));
 
         if (selectedItems.length === 0) {
             return;
