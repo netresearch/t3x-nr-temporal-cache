@@ -28,6 +28,14 @@ final class JavaScriptModulesConfigurationTest extends UnitTestCase
     private string $extensionRoot;
 
     /**
+     * Cached across tests: require_once returns the configuration array only
+     * on the first inclusion (and bool true afterwards).
+     *
+     * @var array{dependencies?: list<string>, imports?: array<string, string>}|null
+     */
+    private static ?array $cachedConfiguration = null;
+
+    /**
      * @var array{dependencies?: list<string>, imports?: array<string, string>}
      */
     private array $configuration;
@@ -38,9 +46,13 @@ final class JavaScriptModulesConfigurationTest extends UnitTestCase
 
         $this->extensionRoot = \dirname(__DIR__, 3);
 
-        /** @var array{dependencies?: list<string>, imports?: array<string, string>} $configuration */
-        $configuration = require $this->extensionRoot . '/Configuration/JavaScriptModules.php';
-        $this->configuration = $configuration;
+        if (self::$cachedConfiguration === null) {
+            /** @var array{dependencies?: list<string>, imports?: array<string, string>} $configuration */
+            $configuration = require_once $this->extensionRoot . '/Configuration/JavaScriptModules.php';
+            self::$cachedConfiguration = $configuration;
+        }
+
+        $this->configuration = self::$cachedConfiguration;
     }
 
     public function testDependsOnBackend(): void
