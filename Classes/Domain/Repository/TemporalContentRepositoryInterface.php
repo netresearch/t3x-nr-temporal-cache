@@ -122,7 +122,6 @@ interface TemporalContentRepositoryInterface
      * @param int $uid Content element UID
      * @param string $tableName Table name ('pages' or 'tt_content')
      * @param int $workspaceUid Workspace UID
-     * @return TemporalContent|null
      */
     public function findByUid(int $uid, string $tableName = 'tt_content', int $workspaceUid = 0): ?TemporalContent;
 }

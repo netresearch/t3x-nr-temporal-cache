@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Configuration;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
@@ -61,7 +62,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('scopingStrategyDataProvider')]
+    #[DataProvider('scopingStrategyDataProvider')]
     public function testGetScopingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
@@ -94,7 +95,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('global', $subject->getScopingStrategy());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('booleanDataProvider')]
+    #[DataProvider('booleanDataProvider')]
     public function testUseRefindexReturnsBooleanValue(mixed $value, bool $expected): void
     {
         $this->typo3ExtensionConfiguration
@@ -130,7 +131,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->useRefindex());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('timingStrategyDataProvider')]
+    #[DataProvider('timingStrategyDataProvider')]
     public function testGetTimingStrategyReturnsConfiguredValue(string $strategy): void
     {
         $this->typo3ExtensionConfiguration
@@ -163,7 +164,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('schedulerIntervalDataProvider')]
+    #[DataProvider('schedulerIntervalDataProvider')]
     public function testGetSchedulerIntervalReturnsConfiguredValue(int $interval, int $expected): void
     {
         $this->typo3ExtensionConfiguration
@@ -390,7 +391,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isDebugLoggingEnabled());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('convenienceMethodDataProvider')]
+    #[DataProvider('convenienceMethodDataProvider')]
     public function testConvenienceMethodsWorkCorrectly(string $method, string $configKey, string $configValue, bool $expected): void
     {
         $this->typo3ExtensionConfiguration

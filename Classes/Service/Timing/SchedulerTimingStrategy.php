@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
@@ -99,7 +100,7 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
             if ($this->isDebugLoggingEnabled()) {
                 $this->logTransitionProcessing($event, $cacheTags);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log error but don't throw - scheduler should continue processing other transitions
             $this->logError($event, $e);
         }
@@ -150,9 +151,9 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
      * Log error during transition processing.
      *
      * @param TransitionEvent $event The transition that failed
-     * @param \Exception $exception The error that occurred
+     * @param Exception $exception The error that occurred
      */
-    private function logError(TransitionEvent $event, \Exception $exception): void
+    private function logError(TransitionEvent $event, Exception $exception): void
     {
         $this->logger->error(
             'Failed to process temporal transition',
@@ -173,7 +174,7 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
     {
         try {
             return $this->configuration->isDebugLoggingEnabled();
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }

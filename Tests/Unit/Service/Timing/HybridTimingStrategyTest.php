@@ -9,6 +9,7 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -21,9 +22,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class HybridTimingStrategyTest extends UnitTestCase
 {
     private TimingStrategyInterface&Stub $dynamicStrategy;
+
     private TimingStrategyInterface&Stub $schedulerStrategy;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private Context&Stub $context;
+
     private HybridTimingStrategy $subject;
 
     protected function setUp(): void
@@ -46,7 +51,7 @@ final class HybridTimingStrategyTest extends UnitTestCase
         );
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('contentTypeHandlingDataProvider')]
+    #[DataProvider('contentTypeHandlingDataProvider')]
     public function testHandlesContentTypeDelegatesToCorrectStrategy(
         string $contentType,
         array $timingRules,

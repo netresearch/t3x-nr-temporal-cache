@@ -15,7 +15,9 @@ namespace TYPO3\CMS\Scheduler\Task;
 abstract class AbstractTask
 {
     protected ?int $taskUid = null;
+
     protected bool $disabled = false;
+
     protected ?int $executionTime = null;
 
     /**

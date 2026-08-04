@@ -29,10 +29,15 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
     protected bool $resetSingletonInstances = true;
 
     private ScopingStrategyInterface&Stub $scopingStrategy;
+
     private CacheManager&MockObject $cacheManager;
+
     private Context&Stub $context;
+
     private LoggerInterface&Stub $logger;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private SchedulerTimingStrategy $subject;
 
     protected function setUp(): void
@@ -96,7 +101,7 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         // Code calls flushByTag() in a loop, not flushByTags() once
         $cache->expects(self::exactly(2))
             ->method('flushByTag')
-            ->willReturnCallback(function ($tag) {
+            ->willReturnCallback(function ($tag): void {
                 self::assertContains($tag, ['pageId_5', 'pageId_10']);
             });
 

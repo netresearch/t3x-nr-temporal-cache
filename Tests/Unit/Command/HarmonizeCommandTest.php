@@ -14,7 +14,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -26,11 +25,17 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class HarmonizeCommandTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private HarmonizationService&Stub $harmonizationService;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private ConnectionPool&MockObject $connectionPool;
+
     private InputInterface&Stub $input;
+
     private OutputInterface&Stub $output;
+
     private HarmonizeCommand $subject;
 
     protected function setUp(): void

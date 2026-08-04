@@ -16,7 +16,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class PermissionServiceTest extends UnitTestCase
 {
     private TemporalMonitorRegistry $monitorRegistry;
+
     private BackendUserAuthentication&Stub $backendUser;
+
     private PermissionService $subject;
 
     protected function setUp(): void

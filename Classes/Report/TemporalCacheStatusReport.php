@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Report;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
@@ -47,6 +48,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
      * Valid configuration values for validation.
      */
     private const VALID_SCOPING_STRATEGIES = ['global', 'per-page', 'per-content'];
+
     private const VALID_TIMING_STRATEGIES = ['dynamic', 'scheduler', 'hybrid'];
 
     public function __construct(
@@ -157,7 +159,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                         $missingIndexes[] = $tableName . '.' . $field;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return new Status(
                     'Database Indexes',
                     'Verification Failed',
@@ -167,7 +169,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             }
         }
 
-        if (!empty($missingIndexes)) {
+        if ($missingIndexes !== []) {
             $message = '<strong>Missing Indexes:</strong>' . \chr(10);
             $message .= '• ' . \implode(\chr(10) . '• ', $missingIndexes) . \chr(10) . \chr(10);
             $message .= '<strong>Performance Impact:</strong>' . \chr(10);
@@ -243,7 +245,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $message,
                 $severity
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new Status(
                 'Temporal Content Statistics',
                 'Error',
@@ -298,12 +300,13 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 if ($content->starttime !== null) {
                     $timestamps[] = $content->starttime;
                 }
+
                 if ($content->endtime !== null) {
                     $timestamps[] = $content->endtime;
                 }
             }
 
-            if (!empty($timestamps)) {
+            if ($timestamps !== []) {
                 $impact = $this->harmonizationService->calculateHarmonizationImpact($timestamps);
 
                 $message .= '<strong>Current Impact:</strong>' . \chr(10);
@@ -322,7 +325,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             } else {
                 $message .= '<strong>Note:</strong> No temporal content with transitions found.';
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $message .= '<strong>Note:</strong> Could not calculate harmonization impact: ' . $e->getMessage();
         }
 
@@ -351,7 +354,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $next7Days
             );
 
-            if (empty($transitions)) {
+            if ($transitions === []) {
                 $message = 'No transitions scheduled in the next 7 days. ' .
                           'Page caches will remain stable with no time-based invalidations.';
 
@@ -370,6 +373,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 if (!isset($transitionsByDay[$day])) {
                     $transitionsByDay[$day] = 0;
                 }
+
                 $transitionsByDay[$day]++;
             }
 
@@ -385,8 +389,10 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                     if ($remaining > 0) {
                         $message .= '• ... and ' . $remaining . ' more transitions' . \chr(10);
                     }
+
                     break;
                 }
+
                 $dayTimestamp = \strtotime($day);
                 \assert($dayTimestamp !== false);
                 $dayName = \date('l', $dayTimestamp);
@@ -413,7 +419,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $message,
                 $severity
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new Status(
                 'Upcoming Transitions',
                 'Error',
@@ -444,7 +450,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             );
 
             $searchColumns = \array_map(
-                fn (string $col): string => \strtolower($col),
+                \strtolower(...),
                 $columns
             );
 
@@ -494,7 +500,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                                'Consider scheduler-based timing if you have many temporal items (>100).';
         }
 
-        if (empty($recommendations)) {
+        if ($recommendations === []) {
             return '<strong>Configuration:</strong> Your current settings are optimized for production use.';
         }
 

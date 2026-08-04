@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -25,10 +26,15 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TemporalCacheLifetimeTest extends UnitTestCase
 {
     private TemporalCacheLifetime $subject;
+
     private ExtensionConfiguration&Stub $extensionConfiguration;
+
     private ScopingStrategyInterface&Stub $scopingStrategy;
+
     private TimingStrategyInterface&MockObject $timingStrategy;
+
     private Context&Stub $context;
+
     private LoggerInterface&Stub $logger;
 
     protected function setUp(): void
@@ -164,7 +170,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         // Arrange: Timing strategy throws exception
         $this->timingStrategy
             ->method('getCacheLifetime')
-            ->willThrowException(new \RuntimeException('Test exception'));
+            ->willThrowException(new RuntimeException('Test exception'));
 
         $event = $this->createEvent(86400);
 

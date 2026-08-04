@@ -105,7 +105,7 @@ class ExtensionConfiguration implements SingletonInterface
         \assert(\is_array($harmonization));
         $slots = $harmonization['slots'] ?? '00:00,06:00,12:00,18:00';
         \assert(\is_string($slots));
-        return \array_map('trim', \explode(',', $slots));
+        return \array_map(trim(...), \explode(',', $slots));
     }
 
     public function getHarmonizationTolerance(): int

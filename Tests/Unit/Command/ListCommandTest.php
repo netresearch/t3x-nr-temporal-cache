@@ -7,6 +7,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Command;
 use Netresearch\TemporalCache\Command\ListCommand;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,8 +20,11 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class ListCommandTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private InputInterface&Stub $input;
+
     private OutputInterface&Stub $output;
+
     private ListCommand $subject;
 
     protected function setUp(): void
@@ -174,7 +178,7 @@ final class ListCommandTest extends UnitTestCase
 
         $this->stubRepositoryReturns([
             $this->makeContent(uid: 1, title: 'Page', starttime: \time()),
-            $this->makeContent(uid: 2, tableName: 'tt_content', title: 'Content', pid: 1, starttime: \time()),
+            $this->makeContent(uid: 2, title: 'Content', starttime: \time(), tableName: 'tt_content', pid: 1),
         ]);
 
         self::assertSame(0, $this->subject->run($this->input, $this->output));
@@ -227,7 +231,7 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('sortFieldDataProvider')]
+    #[DataProvider('sortFieldDataProvider')]
     public function testExecuteWithDifferentSortFieldsSortsCorrectly(string $sortField): void
     {
         $this->setupInputDefaultsWithOptions([
@@ -244,9 +248,9 @@ final class ListCommandTest extends UnitTestCase
         $this->stubRepositoryReturns([
             $this->makeContent(
                 uid: 2,
-                tableName: 'tt_content',
                 title: 'B Content',
                 starttime: \time() + 7200,
+                tableName: 'tt_content',
                 endtime: \time() + 10800
             ),
             $this->makeContent(

@@ -22,9 +22,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class VerifyCommandTest extends UnitTestCase
 {
     private ConnectionPool&Stub $connectionPool;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private InputInterface&Stub $input;
+
     private OutputInterface&Stub $output;
+
     private VerifyCommand $subject;
 
     protected function setUp(): void

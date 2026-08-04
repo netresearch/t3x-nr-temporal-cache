@@ -18,7 +18,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class HarmonizationAnalysisServiceTest extends UnitTestCase
 {
     private HarmonizationService&Stub $harmonizationService;
+
     private ExtensionConfiguration&Stub $extensionConfiguration;
+
     private HarmonizationAnalysisService $subject;
 
     protected function setUp(): void
@@ -123,6 +125,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
                 if ($timestamp === $currentTime) {
                     return $currentTime + 600; // Different for endtime
                 }
+
                 return $timestamp;
             });
 
@@ -191,7 +194,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             workspaceUid: 0
         );
 
-        $result = $this->subject->generateHarmonizationSuggestion($content, $currentTime);
+        $result = $this->subject->generateHarmonizationSuggestion($content);
 
         self::assertSame($content, $result['content']);
         self::assertTrue($result['hasChanges']);
@@ -221,7 +224,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             workspaceUid: 0
         );
 
-        $result = $this->subject->generateHarmonizationSuggestion($content, $currentTime);
+        $result = $this->subject->generateHarmonizationSuggestion($content);
 
         self::assertTrue($result['hasChanges']);
         self::assertArrayHasKey('endtime', $result['suggestions']);
@@ -249,7 +252,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             workspaceUid: 0
         );
 
-        $result = $this->subject->generateHarmonizationSuggestion($content, $currentTime);
+        $result = $this->subject->generateHarmonizationSuggestion($content);
 
         self::assertFalse($result['hasChanges']);
         self::assertEmpty($result['suggestions']);
@@ -338,7 +341,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->willReturnCallback(function ($timestamp) {
+            ->willReturnCallback(function ($timestamp): int|float {
                 return $timestamp + 600; // Always shift by 600 seconds
             });
 
@@ -399,6 +402,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
                 if ($timestamp === $currentTime) {
                     return $currentTime + 600;
                 }
+
                 return $timestamp;
             });
 

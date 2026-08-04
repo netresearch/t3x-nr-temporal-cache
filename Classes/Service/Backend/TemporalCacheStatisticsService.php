@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Service\Backend;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
 
@@ -77,14 +79,14 @@ final class TemporalCacheStatisticsService
         );
 
         // Count by content type
-        $pageCount = \count(\array_filter($allContent, fn ($c) => $c->isPage()));
-        $contentCount = \count(\array_filter($allContent, fn ($c) => $c->isContent()));
+        $pageCount = \count(\array_filter($allContent, fn (TemporalContent $c): bool => $c->isPage()));
+        $contentCount = \count(\array_filter($allContent, fn (TemporalContent $c): bool => $c->isContent()));
 
         // Count by visibility status
-        $activeCount = \count(\array_filter($allContent, fn ($c) => $c->isVisible($currentTime)));
+        $activeCount = \count(\array_filter($allContent, fn (TemporalContent $c): bool => $c->isVisible($currentTime)));
         $futureCount = \count(\array_filter(
             $allContent,
-            fn ($c) => $c->starttime !== null && $c->starttime > $currentTime
+            fn (TemporalContent $c): bool => $c->starttime !== null && $c->starttime > $currentTime
         ));
 
         // Calculate harmonization potential
@@ -145,11 +147,7 @@ final class TemporalCacheStatisticsService
      * @param int $daysAhead Number of days to include in timeline (default 7)
      * @param int $workspaceUid Workspace UID (default 0 = live workspace)
      * @param int $languageUid Language UID (default 0 = default language)
-     * @return array<array{
-     *     date: string,
-     *     timestamp: int,
-     *     transitions: array<\Netresearch\TemporalCache\Domain\Model\TransitionEvent>
-     * }> Timeline data grouped by day
+     * @return array<array{date: string, timestamp: int, transitions: array<TransitionEvent>}> Timeline data grouped by day
      */
     public function buildTimeline(
         int $currentTime,
@@ -179,6 +177,7 @@ final class TemporalCacheStatisticsService
                     'transitions' => [],
                 ];
             }
+
             $timeline[$dayKey]['transitions'][] = $transition;
         }
 
@@ -242,7 +241,7 @@ final class TemporalCacheStatisticsService
             $workspaceUid
         );
 
-        if (empty($transitionsPerDay)) {
+        if ($transitionsPerDay === []) {
             return 0.0;
         }
 
@@ -274,7 +273,7 @@ final class TemporalCacheStatisticsService
             $workspaceUid
         );
 
-        if (empty($transitionsPerDay)) {
+        if ($transitionsPerDay === []) {
             return null;
         }
 

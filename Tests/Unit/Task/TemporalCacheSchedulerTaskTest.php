@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Task;
 
-use Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
+use InvalidArgumentException;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -93,7 +94,7 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
     /**     */
     public function testRegisterTableThrowsExceptionForEmptyTableName(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionCode(1730289600);
 
         $this->subject->registerTable('');
@@ -102,7 +103,7 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
     /**     */
     public function testRegisterTableThrowsExceptionForDefaultTable(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionCode(1730289601);
 
         $this->subject->registerTable('pages');
@@ -111,7 +112,7 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
     /**     */
     public function testRegisterTableThrowsExceptionWhenMissingUid(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionCode(1730289602);
 
         $this->subject->registerTable('tx_news_domain_model_news', ['starttime', 'endtime']);
@@ -120,7 +121,7 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
     /**     */
     public function testRegisterTableThrowsExceptionWhenMissingStarttime(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionCode(1730289602);
 
         $this->subject->registerTable('tx_news_domain_model_news', ['uid', 'endtime']);
@@ -129,7 +130,7 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
     /**     */
     public function testRegisterTableThrowsExceptionWhenMissingEndtime(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionCode(1730289602);
 
         $this->subject->registerTable('tx_news_domain_model_news', ['uid', 'starttime']);

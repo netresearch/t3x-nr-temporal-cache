@@ -132,6 +132,7 @@ final class AnalyzeCommand extends Command
 
         // Get basic statistics
         $io->section('Temporal Content Statistics');
+
         $stats = $this->repository->getStatistics($workspaceUid);
 
         $io->table(
@@ -192,7 +193,7 @@ final class AnalyzeCommand extends Command
             $languageUid
         );
 
-        if (empty($transitions)) {
+        if ($transitions === []) {
             $io->note("No transitions in the next {$days} days.");
             return;
         }
@@ -206,6 +207,7 @@ final class AnalyzeCommand extends Command
             if (!isset($transitionsPerDay[$date])) {
                 $transitionsPerDay[$date] = 0;
             }
+
             $transitionsPerDay[$date]++;
         }
 
@@ -278,7 +280,7 @@ final class AnalyzeCommand extends Command
             $languageUid
         );
 
-        if (empty($transitions)) {
+        if ($transitions === []) {
             return;
         }
 
@@ -353,9 +355,11 @@ final class AnalyzeCommand extends Command
         if ($count >= 10) {
             return '<fg=red>HIGH</>';
         }
+
         if ($count >= 5) {
             return '<fg=yellow>MEDIUM</>';
         }
+
         return '<fg=green>LOW</>';
     }
 }

@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
-use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Routing\Route;
 use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
 use TYPO3\CMS\Extbase\Mvc\Request as ExtbaseRequest;
@@ -57,8 +59,9 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     ];
 
     private TemporalCacheController $controller;
+
     private TemporalContentRepository $repository;
-    private ExtensionConfiguration $configuration;
+
 
     protected function setUp(): void
     {
@@ -72,14 +75,11 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         // Initialize language service for backend (required for ModuleTemplate)
-        $GLOBALS['LANG'] = $this->get(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
+        $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
 
         // Set up global request for TYPO3 13+ ConfigurationManager compatibility
         // This must be done BEFORE getting the controller from DI
         $GLOBALS['TYPO3_REQUEST'] = $this->createRequest();
-
-        // Initialize services
-        $this->configuration = $this->get(ExtensionConfiguration::class);
         $this->repository = $this->get(TemporalContentRepository::class);
 
         // Get controller from DI container to ensure all dependencies are injected
@@ -263,7 +263,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
     // Content Action Tests - Filtering
     // =========================================================================
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('filterTypeProvider')]
+    #[DataProvider('filterTypeProvider')]
     public function testContentActionFiltersContentCorrectly(string $filter): void
     {
         $this->skipRenderingTestsForTypo3v13();
@@ -420,7 +420,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('wizardStepProvider')]
+    #[DataProvider('wizardStepProvider')]
     public function testWizardActionHandlesDifferentSteps(string $step): void
     {
         $this->skipRenderingTestsForTypo3v13();
@@ -744,7 +744,7 @@ final class TemporalCacheControllerTest extends FunctionalTestCase
         $route->setOption('packageName', 'nr_temporal_cache');
 
         // Add required backend request attributes
-        $serverRequest = $serverRequest->withAttribute('applicationType', \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_BE);
+        $serverRequest = $serverRequest->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
         $serverRequest = $serverRequest->withAttribute('route', $route);
         $serverRequest = $serverRequest->withAttribute('module', null);
         $serverRequest = $serverRequest->withAttribute('moduleData', null);

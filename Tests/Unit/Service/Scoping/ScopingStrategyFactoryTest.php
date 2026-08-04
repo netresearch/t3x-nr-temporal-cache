@@ -18,9 +18,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class ScopingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
+
     private GlobalScopingStrategy&Stub $globalStrategy;
+
     private PerPageScopingStrategy&Stub $perPageStrategy;
+
     private PerContentScopingStrategy&Stub $perContentStrategy;
+
     private ScopingStrategyFactory $subject;
 
     protected function setUp(): void

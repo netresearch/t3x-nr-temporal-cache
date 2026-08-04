@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -102,8 +103,7 @@ final class ListCommand extends Command
             'table',
             't',
             InputOption::VALUE_REQUIRED,
-            'Filter by table (pages or tt_content)',
-            null
+            'Filter by table (pages or tt_content)'
         );
 
         $this->addOption(
@@ -149,8 +149,7 @@ final class ListCommand extends Command
             'limit',
             null,
             InputOption::VALUE_REQUIRED,
-            'Limit number of results',
-            null
+            'Limit number of results'
         );
     }
 
@@ -206,20 +205,22 @@ final class ListCommand extends Command
         // Load temporal content
         $allContent = $this->repository->findAllWithTemporalFields($workspaceUid, $languageUid);
 
-        if (empty($allContent)) {
+        if ($allContent === []) {
             if ($format === 'table') {
                 $io->warning('No temporal content found.');
             }
+
             return Command::SUCCESS;
         }
 
         // Apply filters
         $content = $this->applyFilters($allContent, $tableFilter, $upcomingOnly);
 
-        if (empty($content)) {
+        if ($content === []) {
             if ($format === 'table') {
                 $io->warning('No content matches the specified filters.');
             }
+
             return Command::SUCCESS;
         }
 
@@ -232,18 +233,11 @@ final class ListCommand extends Command
         }
 
         // Output in requested format
-        switch ($format) {
-            case 'json':
-                $this->outputJson($output, $content);
-                break;
-            case 'csv':
-                $this->outputCsv($output, $content);
-                break;
-            case 'table':
-            default:
-                $this->outputTable($io, $content, $workspaceUid, $languageUid);
-                break;
-        }
+        match ($format) {
+            'json' => $this->outputJson($output, $content),
+            'csv' => $this->outputCsv($output, $content),
+            default => $this->outputTable($io, $content, $workspaceUid, $languageUid),
+        };
 
         return Command::SUCCESS;
     }
@@ -251,8 +245,8 @@ final class ListCommand extends Command
     /**
      * Apply filters to content list.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
-     * @return array<\Netresearch\TemporalCache\Domain\Model\TemporalContent>
+     * @param array<TemporalContent> $content
+     * @return array<TemporalContent>
      */
     private function applyFilters(array $content, ?string $tableFilter, bool $upcomingOnly): array
     {
@@ -260,7 +254,7 @@ final class ListCommand extends Command
         if ($tableFilter !== null) {
             $content = \array_filter(
                 $content,
-                fn ($item) => $item->tableName === $tableFilter
+                fn (TemporalContent $item): bool => $item->tableName === $tableFilter
             );
         }
 
@@ -269,7 +263,7 @@ final class ListCommand extends Command
             $now = \time();
             $content = \array_filter(
                 $content,
-                fn ($item) => ($item->starttime !== null && $item->starttime > $now) ||
+                fn (TemporalContent $item): bool => ($item->starttime !== null && $item->starttime > $now) ||
                              ($item->endtime !== null && $item->endtime > $now)
             );
         }
@@ -280,20 +274,18 @@ final class ListCommand extends Command
     /**
      * Sort content by specified field.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
-     * @return array<\Netresearch\TemporalCache\Domain\Model\TemporalContent>
+     * @param array<TemporalContent> $content
+     * @return array<TemporalContent>
      */
     private function sortContent(array $content, string $sortField): array
     {
-        \usort($content, function ($a, $b) use ($sortField) {
-            return match ($sortField) {
-                'uid' => $a->uid <=> $b->uid,
-                'title' => \strcasecmp($a->title, $b->title),
-                'table' => \strcasecmp($a->tableName, $b->tableName),
-                'starttime' => ($a->starttime ?? PHP_INT_MAX) <=> ($b->starttime ?? PHP_INT_MAX),
-                'endtime' => ($a->endtime ?? PHP_INT_MAX) <=> ($b->endtime ?? PHP_INT_MAX),
-                default => 0,
-            };
+        \usort($content, fn ($a, $b): int => match ($sortField) {
+            'uid' => $a->uid <=> $b->uid,
+            'title' => \strcasecmp($a->title, $b->title),
+            'table' => \strcasecmp($a->tableName, $b->tableName),
+            'starttime' => ($a->starttime ?? PHP_INT_MAX) <=> ($b->starttime ?? PHP_INT_MAX),
+            'endtime' => ($a->endtime ?? PHP_INT_MAX) <=> ($b->endtime ?? PHP_INT_MAX),
+            default => 0,
         });
 
         return $content;
@@ -302,7 +294,7 @@ final class ListCommand extends Command
     /**
      * Output content as table.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
+     * @param array<TemporalContent> $content
      */
     private function outputTable(SymfonyStyle $io, array $content, int $workspaceUid, int $languageUid): void
     {
@@ -343,26 +335,24 @@ final class ListCommand extends Command
     /**
      * Output content as JSON.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
+     * @param array<TemporalContent> $content
      */
     private function outputJson(OutputInterface $output, array $content): void
     {
-        $data = \array_map(function ($item) {
-            return [
-                'table' => $item->tableName,
-                'uid' => $item->uid,
-                'pid' => $item->pid,
-                'title' => $item->title,
-                'starttime' => $item->starttime,
-                'starttime_formatted' => $item->starttime !== null ? \date('Y-m-d H:i:s', $item->starttime) : null,
-                'endtime' => $item->endtime,
-                'endtime_formatted' => $item->endtime !== null ? \date('Y-m-d H:i:s', $item->endtime) : null,
-                'language_uid' => $item->languageUid,
-                'workspace_uid' => $item->workspaceUid,
-                'hidden' => $item->hidden,
-                'deleted' => $item->deleted,
-            ];
-        }, $content);
+        $data = \array_map(fn (TemporalContent $item): array => [
+            'table' => $item->tableName,
+            'uid' => $item->uid,
+            'pid' => $item->pid,
+            'title' => $item->title,
+            'starttime' => $item->starttime,
+            'starttime_formatted' => $item->starttime !== null ? \date('Y-m-d H:i:s', $item->starttime) : null,
+            'endtime' => $item->endtime,
+            'endtime_formatted' => $item->endtime !== null ? \date('Y-m-d H:i:s', $item->endtime) : null,
+            'language_uid' => $item->languageUid,
+            'workspace_uid' => $item->workspaceUid,
+            'hidden' => $item->hidden,
+            'deleted' => $item->deleted,
+        ], $content);
 
         $jsonOutput = \json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         \assert(\is_string($jsonOutput), 'JSON encoding failed');
@@ -372,7 +362,7 @@ final class ListCommand extends Command
     /**
      * Output content as CSV.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
+     * @param array<TemporalContent> $content
      */
     private function outputCsv(OutputInterface $output, array $content): void
     {
@@ -402,7 +392,7 @@ final class ListCommand extends Command
      * Calculate next transition for an item.
      */
     private function calculateNextTransition(
-        \Netresearch\TemporalCache\Domain\Model\TemporalContent $item,
+        TemporalContent $item,
         int $now
     ): string {
         $nextStart = $item->starttime !== null && $item->starttime > $now ? $item->starttime : null;

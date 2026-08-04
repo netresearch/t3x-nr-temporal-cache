@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service;
 
+use DateTime;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\SingletonInterface;
 
@@ -31,7 +34,7 @@ class HarmonizationService implements SingletonInterface
      *
      * @var array<int>
      */
-    private array $slots = [];
+    private array $slots;
 
     public function __construct(
         private readonly ExtensionConfiguration $configuration,
@@ -102,12 +105,12 @@ class HarmonizationService implements SingletonInterface
             return $timestamp;
         }
 
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return $timestamp;
         }
 
         // Extract time of day (seconds since midnight in local timezone)
-        $dateTime = new \DateTime('@' . $timestamp);
+        $dateTime = new DateTime('@' . $timestamp);
         $timeOfDay = ((int)$dateTime->format('H') * 3600) +
                      ((int)$dateTime->format('i') * 60) +
                      ((int)$dateTime->format('s'));
@@ -141,7 +144,7 @@ class HarmonizationService implements SingletonInterface
      */
     private function findNearestSlot(int $timeOfDay): ?int
     {
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return null;
         }
 
@@ -184,17 +187,17 @@ class HarmonizationService implements SingletonInterface
      */
     public function getSlotsInRange(int $startTimestamp, int $endTimestamp): array
     {
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return [];
         }
 
         $slotTimestamps = [];
 
         // Start from beginning of start day
-        $currentDate = new \DateTime('@' . $startTimestamp);
+        $currentDate = new DateTime('@' . $startTimestamp);
         $currentDate->setTime(0, 0, 0);
 
-        $endDate = new \DateTime('@' . $endTimestamp);
+        $endDate = new DateTime('@' . $endTimestamp);
 
         while ($currentDate <= $endDate) {
             $dayStart = $currentDate->getTimestamp();
@@ -226,11 +229,11 @@ class HarmonizationService implements SingletonInterface
      */
     public function getNextSlot(int $timestamp): ?int
     {
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return null;
         }
 
-        $dateTime = new \DateTime('@' . $timestamp);
+        $dateTime = new DateTime('@' . $timestamp);
         $timeOfDay = ((int)$dateTime->format('H') * 3600) +
                      ((int)$dateTime->format('i') * 60) +
                      ((int)$dateTime->format('s'));
@@ -261,11 +264,11 @@ class HarmonizationService implements SingletonInterface
      */
     public function getPreviousSlot(int $timestamp): ?int
     {
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return null;
         }
 
-        $dateTime = new \DateTime('@' . $timestamp);
+        $dateTime = new DateTime('@' . $timestamp);
         $timeOfDay = ((int)$dateTime->format('H') * 3600) +
                      ((int)$dateTime->format('i') * 60) +
                      ((int)$dateTime->format('s'));
@@ -295,11 +298,11 @@ class HarmonizationService implements SingletonInterface
      */
     public function isOnSlotBoundary(int $timestamp): bool
     {
-        if (empty($this->slots)) {
+        if ($this->slots === []) {
             return false;
         }
 
-        $dateTime = new \DateTime('@' . $timestamp);
+        $dateTime = new DateTime('@' . $timestamp);
         $timeOfDay = ((int)$dateTime->format('H') * 3600) +
                      ((int)$dateTime->format('i') * 60) +
                      ((int)$dateTime->format('s'));
@@ -329,7 +332,7 @@ class HarmonizationService implements SingletonInterface
     public function getFormattedSlots(): array
     {
         return \array_map(
-            fn (int $slot) => $this->formatSlot($slot),
+            $this->formatSlot(...),
             $this->slots
         );
     }
@@ -357,7 +360,7 @@ class HarmonizationService implements SingletonInterface
 
         // Harmonize all timestamps and count unique values
         $harmonized = \array_map(
-            fn (int $ts) => $this->harmonizeTimestamp($ts),
+            $this->harmonizeTimestamp(...),
             $timestamps
         );
 
@@ -375,12 +378,12 @@ class HarmonizationService implements SingletonInterface
     /**
      * Harmonize temporal content (starttime/endtime fields).
      *
-     * @param \Netresearch\TemporalCache\Domain\Model\TemporalContent $content Content to harmonize
+     * @param TemporalContent $content Content to harmonize
      * @param bool $dryRun If true, don't persist changes
      * @return array{success: bool, message: string, changes: array<string, array{old: int|null, new: int|null}>}
      */
     public function harmonizeContent(
-        \Netresearch\TemporalCache\Domain\Model\TemporalContent $content,
+        TemporalContent $content,
         bool $dryRun = false
     ): array {
         $changes = [];
@@ -439,7 +442,7 @@ class HarmonizationService implements SingletonInterface
                 $updateFields,
                 ['uid' => $content->uid]
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'message' => 'Failed to persist harmonized timestamps: ' . $e->getMessage(),

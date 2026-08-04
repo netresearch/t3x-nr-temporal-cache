@@ -112,14 +112,13 @@ final class HarmonizationAnalysisService
      * ```
      *
      * @param TemporalContent $content Content to analyze
-     * @param int $currentTime Current timestamp (for relative time calculations)
      * @return array{
      *     content: TemporalContent,
      *     suggestions: array<string, array{current: int, suggested: int, diff: int}>,
      *     hasChanges: bool
      * } Harmonization suggestion with detailed impact analysis
      */
-    public function generateHarmonizationSuggestion(TemporalContent $content, int $currentTime): array
+    public function generateHarmonizationSuggestion(TemporalContent $content): array
     {
         $suggestions = [];
 
@@ -154,7 +153,7 @@ final class HarmonizationAnalysisService
         return [
             'content' => $content,
             'suggestions' => $suggestions,
-            'hasChanges' => !empty($suggestions),
+            'hasChanges' => $suggestions !== [],
         ];
     }
 
@@ -262,7 +261,7 @@ final class HarmonizationAnalysisService
             return [];
         }
 
-        return \array_filter($contentList, fn ($content) => $this->isHarmonizable($content));
+        return \array_filter($contentList, $this->isHarmonizable(...));
     }
 
     /**

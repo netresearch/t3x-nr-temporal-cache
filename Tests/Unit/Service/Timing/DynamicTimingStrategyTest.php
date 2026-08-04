@@ -22,8 +22,11 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class DynamicTimingStrategyTest extends UnitTestCase
 {
     private ScopingStrategyInterface&Stub $scopingStrategy;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private Context&Stub $context;
+
     private DynamicTimingStrategy $subject;
 
     protected function setUp(): void

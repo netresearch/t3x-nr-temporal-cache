@@ -229,7 +229,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         // Sort transitions by time
         \usort(
             $transitions,
-            fn (TransitionEvent $a, TransitionEvent $b) =>
+            fn (TransitionEvent $a, TransitionEvent $b): int =>
             $a->timestamp <=> $b->timestamp
         );
 
@@ -411,7 +411,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             }
         }
 
-        return empty($candidates) ? null : \min($candidates);
+        return $candidates === [] ? null : \min($candidates);
     }
 
     /**
@@ -492,6 +492,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         if ($result === false || $result === null) {
             return null;
         }
+
         \assert(\is_int($result));
         return $result;
     }

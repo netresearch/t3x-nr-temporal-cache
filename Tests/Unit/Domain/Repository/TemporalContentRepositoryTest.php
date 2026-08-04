@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Repository;
 
+use Doctrine\DBAL\Result;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
@@ -25,9 +26,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TemporalContentRepositoryTest extends UnitTestCase
 {
     private ConnectionPool&MockObject $connectionPool;
+
     private TransitionCache $transitionCache;
+
     private TemporalMonitorRegistry $monitorRegistry;
+
     private DeletedRestriction&Stub $deletedRestriction;
+
     private TemporalContentRepository $subject;
 
     protected function setUp(): void
@@ -52,7 +57,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     public function testGetNextTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -72,7 +77,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $nextTransition = \time() + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -92,7 +97,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $next = \time() + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -108,7 +113,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     public function testGetNextPageTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -126,7 +131,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $next = \time() + 1800;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -144,7 +149,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $next = \time() + 900;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -163,7 +168,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $nextTransition = $currentTime + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -187,7 +192,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     public function testFindAllWithTemporalFieldsReturnsContentArray(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchAssociative')->willReturnOnConsecutiveCalls(
             [
                 'uid' => 1,
@@ -237,9 +242,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
 
         // Use willReturnCallback with no type restrictions
         $queryBuilder->method('createNamedParameter')->willReturnCallback(
-            function () {
-                return ':param_' . \uniqid();
-            }
+            fn (): string => ':param_' . \uniqid()
         );
         $queryBuilder->method('quoteIdentifier')->willReturnArgument(0);
 

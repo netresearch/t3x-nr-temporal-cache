@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Functional\EventListener;
 
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -138,7 +139,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
 
         // Test with language 0 context
         $context = $this->get(Context::class);
-        $context->setAspect('language', new \TYPO3\CMS\Core\Context\LanguageAspect(0, 0, \TYPO3\CMS\Core\Context\LanguageAspect::OVERLAYS_OFF));
+        $context->setAspect('language', new LanguageAspect(0, 0, LanguageAspect::OVERLAYS_OFF));
 
         $subject = $this->get(TemporalCacheLifetime::class);
         $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));

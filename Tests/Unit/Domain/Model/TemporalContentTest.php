@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Model;
 
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -272,7 +273,7 @@ final class TemporalContentTest extends UnitTestCase
         self::assertFalse($subject->isContent());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('visibilityDataProvider')]
+    #[DataProvider('visibilityDataProvider')]
     public function testIsVisibleChecksAllConditions(
         bool $hidden,
         bool $deleted,

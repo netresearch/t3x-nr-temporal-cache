@@ -18,9 +18,20 @@ jobs:
     permissions:
       contents: read
     with:
-      php-versions: '["8.1","8.2","8.3","8.4","8.5"]'
+      # 8.2 leads the list because php-versions[0] is the version the
+      # single-run jobs use (Code Style, Fractor) and the fallback for Rector,
+      # and netresearch/typo3-ci-workflows requires php ^8.2. 8.1 stays in the
+      # matrix, so the ^12.4 cells still cover it.
+      php-versions: '["8.2","8.1","8.3","8.4","8.5"]'
       typo3-versions: '["^12.4","^13.0","^14.0"]'
       matrix-exclude: '[{"php":"8.1","typo3":"^13.0"},{"php":"8.1","typo3":"^14.0"},{"php":"8.2","typo3":"^14.0"},{"php":"8.5","typo3":"^12.4"}]'
       run-functional-tests: true
+      # The Rector job is not matrixed and falls back to php-versions[0] (8.1),
+      # but netresearch/typo3-ci-workflows requires php ^8.2, so pin it.
+      rector-php-version: '8.2'
+      # That same package is unresolvable under typo3/cms-core ^12.4
+      # (saschaegerer/phpstan-typo3 ^2||^3 needs cms-core >=13.4), so drop it
+      # from the ^12.4 matrix cells. The Rector job keeps it.
+      remove-dev-deps: '[{"dep":"netresearch/typo3-ci-workflows","only-for":"^13.0|^14.0"}]'
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

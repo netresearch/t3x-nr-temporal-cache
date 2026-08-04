@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use RuntimeException;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -16,7 +17,7 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class ScopingStrategyFactory implements ScopingStrategyInterface
 {
-    private ScopingStrategyInterface $activeStrategy;
+    private readonly ScopingStrategyInterface $activeStrategy;
 
     /**
      * @param array<ScopingStrategyInterface> $strategies All available strategies
@@ -47,7 +48,7 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
         }
 
         // Fallback to first strategy (should be GlobalScopingStrategy for backward compat)
-        return $strategies[0] ?? throw new \RuntimeException('No scoping strategies registered');
+        return $strategies[0] ?? throw new RuntimeException('No scoping strategies registered');
     }
 
     /**

@@ -23,10 +23,15 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class AnalyzeCommandTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private HarmonizationService&Stub $harmonizationService;
+
     private InputInterface&Stub $input;
+
     private OutputInterface&Stub $output;
+
     private AnalyzeCommand $subject;
 
     protected function setUp(): void

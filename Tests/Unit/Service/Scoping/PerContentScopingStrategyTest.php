@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
@@ -23,9 +24,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class PerContentScopingStrategyTest extends UnitTestCase
 {
     private RefindexService&MockObject $refindexService;
+
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private ExtensionConfiguration&Stub $configuration;
+
     private Context&Stub $context;
+
     private PerContentScopingStrategy $subject;
 
     protected function setUp(): void
@@ -126,7 +131,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         $this->configuration->method('useRefindex')->willReturn(true);
         $this->refindexService
             ->method('findPagesWithContent')
-            ->willThrowException(new \Exception('Refindex error'));
+            ->willThrowException(new Exception('Refindex error'));
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
 
