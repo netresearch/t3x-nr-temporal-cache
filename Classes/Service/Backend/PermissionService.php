@@ -104,7 +104,7 @@ final class PermissionService implements SingletonInterface
         \assert(\is_array($options));
         $hiddenModules = $options['hideModules'] ?? '';
         \assert(\is_string($hiddenModules));
-        $hiddenModulesList = \array_filter(\array_map('trim', \explode(',', $hiddenModules)));
+        $hiddenModulesList = \array_filter(\array_map(trim(...), \explode(',', $hiddenModules)));
 
         return !\in_array('tools_TemporalCache', $hiddenModulesList, true);
     }

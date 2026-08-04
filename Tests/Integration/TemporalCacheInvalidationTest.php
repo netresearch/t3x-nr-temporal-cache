@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Integration;
 
-use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
-use TYPO3\CMS\Core\Cache\CacheManager;
+use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
@@ -30,11 +29,13 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    protected ExtensionConfiguration $configuration;
-    protected TemporalContentRepository $repository;
-    protected TemporalCacheLifetime $eventListener;
-    protected CacheManager $cacheManager;
-    protected Context $context;
+
+    private TemporalContentRepository $repository;
+
+    private TemporalCacheLifetime $eventListener;
+
+
+    private Context $context;
 
     protected function setUp(): void
     {
@@ -42,11 +43,8 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
 
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/tt_content.csv');
-
-        $this->configuration = $this->get(ExtensionConfiguration::class);
         $this->repository = $this->get(TemporalContentRepository::class);
         $this->eventListener = $this->get(TemporalCacheLifetime::class);
-        $this->cacheManager = $this->get(CacheManager::class);
         $this->context = $this->get(Context::class);
     }
 
@@ -59,7 +57,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This proves: Cache will auto-invalidate when content appears
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function cacheLifetimeLimitedWhenFutureContentExists(): void
     {
         $now = \time();
@@ -110,7 +108,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This proves: Cache will auto-invalidate when content disappears
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function cacheLifetimeLimitedWhenContentWillExpire(): void
     {
         $now = \time();
@@ -129,8 +127,8 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         // Calculate cache lifetime for page
         $event = new ModifyCacheLifetimeForPageEvent(
             cacheLifetime: 86400,
-            pageRecord: ['uid' => 1],
             pageId: 1,
+            pageRecord: ['uid' => 1],
             renderingInstructions: [],
             context: $this->context
         );
@@ -161,7 +159,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This proves: Extension correctly handles complex scenarios
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function cacheLifetimeLimitedToEarliestTransition(): void
     {
         $now = \time();
@@ -188,8 +186,8 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
 
         $event = new ModifyCacheLifetimeForPageEvent(
             cacheLifetime: 86400,
-            pageRecord: ['uid' => 1],
             pageId: 1,
+            pageRecord: ['uid' => 1],
             renderingInstructions: [],
             context: $this->context
         );
@@ -220,7 +218,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This proves: Extension doesn't interfere when not needed
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function cacheLifetimeUnchangedWhenNoTemporalContent(): void
     {
         // All content visible without time restrictions
@@ -235,8 +233,8 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
 
         $event = new ModifyCacheLifetimeForPageEvent(
             cacheLifetime: 86400,
-            pageRecord: ['uid' => 1],
             pageId: 1,
+            pageRecord: ['uid' => 1],
             renderingInstructions: [],
             context: $this->context
         );
@@ -262,7 +260,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This proves: Core data retrieval logic is accurate
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function repositoryFindsTemporalContentCorrectly(): void
     {
         $now = \time();
@@ -314,7 +312,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
      *
      * This validates: Scoping strategy affects cache granularity
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function globalScopingAffectsAllPages(): void
     {
         $now = \time();
@@ -342,8 +340,8 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         // Calculate cache lifetime for page 2 with global scoping
         $event = new ModifyCacheLifetimeForPageEvent(
             cacheLifetime: 86400,
-            pageRecord: ['uid' => 1],
             pageId: 2,
+            pageRecord: ['uid' => 1],
             renderingInstructions: [],
             context: $this->context
         );

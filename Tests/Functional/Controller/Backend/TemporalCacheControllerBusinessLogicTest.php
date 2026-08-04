@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
-use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
-use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
-use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
+use PHPUnit\Framework\Attributes\Test;
+use ReflectionClass;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -57,10 +56,11 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     ];
 
     private TemporalCacheController $controller;
+
     private TemporalContentRepository $repository;
-    private ExtensionConfiguration $configuration;
-    private TemporalCacheStatisticsService $statisticsService;
-    private HarmonizationAnalysisService $harmonizationService;
+
+
+
 
     protected function setUp(): void
     {
@@ -72,12 +72,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
         // Set up TYPO3_REQUEST for TYPO3 12/13 compatibility (ConfigurationManager and PageRenderer require request with applicationType)
         $GLOBALS['TYPO3_REQUEST'] = (new ServerRequest('https://example.com/', 'GET'))
             ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
-
-        // Initialize services
-        $this->configuration = $this->get(ExtensionConfiguration::class);
         $this->repository = $this->get(TemporalContentRepository::class);
-        $this->statisticsService = $this->get(TemporalCacheStatisticsService::class);
-        $this->harmonizationService = $this->get(HarmonizationAnalysisService::class);
 
         // Get controller from DI container to ensure all dependencies are injected
         $this->controller = $this->get(TemporalCacheController::class);
@@ -86,7 +81,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'all' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithAllFilterReturnsAllContent(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
@@ -99,7 +94,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'pages' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithPagesFilterReturnsOnlyPages(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
@@ -114,7 +109,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'content' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithContentFilterReturnsOnlyContentElements(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
@@ -129,7 +124,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'active' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithActiveFilterReturnsVisibleContent(): void
     {
         $now = \time();
@@ -145,7 +140,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'scheduled' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithScheduledFilterReturnsFutureContent(): void
     {
         $now = \time();
@@ -162,7 +157,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test filterContent method with 'expired' filter
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function filterContentWithExpiredFilterReturnsExpiredContent(): void
     {
         $now = \time();
@@ -182,7 +177,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test getFilterOptions method returns all expected filters
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function getFilterOptionsReturnsAllFilters(): void
     {
         $options = $this->invokePrivateMethod('getFilterOptions', []);
@@ -197,7 +192,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test getConfigurationPresets returns expected presets
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function getConfigurationPresetsReturnsThreePresets(): void
     {
         $presets = $this->invokePrivateMethod('getConfigurationPresets', []);
@@ -211,7 +206,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test simple preset configuration
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function simplePresetHasExpectedConfiguration(): void
     {
         $presets = $this->invokePrivateMethod('getConfigurationPresets', []);
@@ -226,7 +221,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test balanced preset configuration
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function balancedPresetHasExpectedConfiguration(): void
     {
         $presets = $this->invokePrivateMethod('getConfigurationPresets', []);
@@ -241,7 +236,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test aggressive preset configuration
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function aggressivePresetHasExpectedConfiguration(): void
     {
         $presets = $this->invokePrivateMethod('getConfigurationPresets', []);
@@ -256,7 +251,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     /**
      * Test analyzeConfiguration returns array of recommendations
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function analyzeConfigurationReturnsRecommendationsArray(): void
     {
         $recommendations = $this->invokePrivateMethod('analyzeConfiguration', []);
@@ -276,11 +271,10 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
      * Helper method to invoke private/protected methods using reflection
      *
      * @param array<int, mixed> $args
-     * @return mixed
      */
     private function invokePrivateMethod(string $methodName, array $args = []): mixed
     {
-        $reflection = new \ReflectionClass($this->controller);
+        $reflection = new ReflectionClass($this->controller);
         $method = $reflection->getMethod($methodName);
 
         return $method->invoke($this->controller, ...$args);

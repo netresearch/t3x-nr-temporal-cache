@@ -7,6 +7,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Report;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Index;
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
@@ -26,9 +27,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TemporalCacheStatusReportTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $extensionConfiguration;
+
     private TemporalContentRepositoryInterface&Stub $contentRepository;
+
     private HarmonizationService&Stub $harmonizationService;
+
     private ConnectionPool&Stub $connectionPool;
+
     private TemporalCacheStatusReport $subject;
 
     protected function setUp(): void
@@ -168,7 +173,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $connection = $this->createStub(Connection::class);
         $connection
             ->method('createSchemaManager')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -182,7 +187,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
             self::assertSame(ContextualFeedbackSeverity::ERROR, $indexStatus->getSeverity());
             self::assertStringContainsString('Verification Failed', $indexStatus->getValue());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If the exception is not caught by the Report class, the test should still verify it
             self::assertStringContainsString('Database error', $e->getMessage());
         }
@@ -263,7 +268,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
         $this->contentRepository
             ->method('getStatistics')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $this->contentRepository
             ->method('findTransitionsInRange')
@@ -561,7 +566,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
         $this->contentRepository
             ->method('findTransitionsInRange')
-            ->willThrowException(new \Exception('Database error'));
+            ->willThrowException(new Exception('Database error'));
 
         $statuses = $this->subject->getStatus();
         $transitionsStatus = $statuses['upcomingTransitions'];

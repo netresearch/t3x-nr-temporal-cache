@@ -18,7 +18,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class PerPageScopingStrategyTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private Context&Stub $context;
+
     private PerPageScopingStrategy $subject;
 
     protected function setUp(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service;
 
+use InvalidArgumentException;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
@@ -56,16 +57,16 @@ final class TemporalMonitorRegistry implements SingletonInterface
      *
      * @param string $tableName Name of the table to monitor
      * @param array<string> $fields Fields to select from the table (must include starttime, endtime)
-     * @throws \InvalidArgumentException If table name is empty or reserved, or required fields are missing
+     * @throws InvalidArgumentException If table name is empty or reserved, or required fields are missing
      */
     public function registerTable(string $tableName, array $fields = []): void
     {
         if ($tableName === '') {
-            throw new \InvalidArgumentException('Table name cannot be empty', 1730289600);
+            throw new InvalidArgumentException('Table name cannot be empty', 1730289600);
         }
 
         if (isset(self::DEFAULT_TABLES[$tableName])) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 \sprintf('Table "%s" is already monitored by default and cannot be re-registered', $tableName),
                 1730289601
             );
@@ -80,7 +81,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
         $requiredFields = ['uid', 'starttime', 'endtime'];
         foreach ($requiredFields as $required) {
             if (!\in_array($required, $fields, true)) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     \sprintf('Table "%s" must include required field: %s', $tableName, $required),
                     1730289602
                 );
@@ -139,11 +140,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      */
     public function getTableFields(string $tableName): ?array
     {
-        if (isset(self::DEFAULT_TABLES[$tableName])) {
-            return self::DEFAULT_TABLES[$tableName];
-        }
-
-        return $this->registeredTables[$tableName] ?? null;
+        return self::DEFAULT_TABLES[$tableName] ?? $this->registeredTables[$tableName] ?? null;
     }
 
     /**

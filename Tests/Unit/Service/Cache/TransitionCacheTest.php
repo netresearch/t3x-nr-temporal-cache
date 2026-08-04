@@ -149,6 +149,7 @@ final class TransitionCacheTest extends UnitTestCase
 
         $this->subject->setNextTransition($timestamp, 1, 0, $timestamp + 7200);
         $this->subject->setNextTransition($timestamp, 0, 1, $timestamp + 10800);
+
         $statsWithThreeEntries = $this->subject->getStats();
 
         self::assertGreaterThan($statsWithOneEntry['memory'], $statsWithThreeEntries['memory']);

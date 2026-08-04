@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
 use Symfony\Component\Console\Command\Command;
@@ -127,8 +129,7 @@ final class HarmonizeCommand extends Command
             'table',
             't',
             InputOption::VALUE_REQUIRED,
-            'Limit to specific table (pages or tt_content)',
-            null
+            'Limit to specific table (pages or tt_content)'
         );
     }
 
@@ -189,9 +190,10 @@ final class HarmonizeCommand extends Command
 
         // Load temporal content
         $io->section('Loading Temporal Content');
+
         $allContent = $this->repository->findAllWithTemporalFields($workspaceUid, $languageUid);
 
-        if (empty($allContent)) {
+        if ($allContent === []) {
             $io->warning('No temporal content found to harmonize.');
             return Command::SUCCESS;
         }
@@ -202,7 +204,7 @@ final class HarmonizeCommand extends Command
         if ($tableFilter !== null) {
             $allContent = \array_filter(
                 $allContent,
-                fn ($content) => $content->tableName === $tableFilter
+                fn ($content): bool => $content->tableName === $tableFilter
             );
             $io->writeln(\sprintf('Filtered to <info>%d</info> records from table: %s', \count($allContent), $tableFilter));
         }
@@ -212,7 +214,7 @@ final class HarmonizeCommand extends Command
 
         $changes = $this->analyzeHarmonization($allContent);
 
-        if (empty($changes)) {
+        if ($changes === []) {
             $io->success('No records need harmonization. All timestamps already aligned with configured slots.');
             return Command::SUCCESS;
         }
@@ -249,7 +251,7 @@ final class HarmonizeCommand extends Command
     /**
      * Analyze which records need harmonization.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
+     * @param array<TemporalContent> $content
      * @return array<array{table: string, uid: int, field: string, old: int, new: int}>
      */
     private function analyzeHarmonization(array $content): array
@@ -298,8 +300,8 @@ final class HarmonizeCommand extends Command
      */
     private function displayChangeSummary(SymfonyStyle $io, array $changes): void
     {
-        $pageChanges = \array_filter($changes, fn ($c) => $c['table'] === 'pages');
-        $contentChanges = \array_filter($changes, fn ($c) => $c['table'] === 'tt_content');
+        $pageChanges = \array_filter($changes, fn (array $c): bool => $c['table'] === 'pages');
+        $contentChanges = \array_filter($changes, fn (array $c): bool => $c['table'] === 'tt_content');
 
         $io->table(
             ['Table', 'Changes'],
@@ -311,7 +313,7 @@ final class HarmonizeCommand extends Command
         );
 
         // Show sample changes in verbose mode
-        if ($io->isVerbose() && !empty($changes)) {
+        if ($io->isVerbose() && $changes !== []) {
             $io->writeln("\n<comment>Sample Changes (first 10):</comment>");
             $table = new Table($io);
             $table->setHeaders(['Table', 'UID', 'Field', 'Old Time', 'New Time', 'Shift']);
@@ -368,7 +370,7 @@ final class HarmonizeCommand extends Command
                     ['uid' => $change['uid']]
                 );
                 $updated++;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $failed++;
                 if ($io->isVerbose()) {
                     $io->writeln('');

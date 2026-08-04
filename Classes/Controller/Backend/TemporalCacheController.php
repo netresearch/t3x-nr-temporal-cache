@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Controller\Backend;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
 use Netresearch\TemporalCache\Service\Backend\PermissionService;
@@ -12,6 +13,7 @@ use Netresearch\TemporalCache\Service\Backend\TemporalCacheStatisticsService;
 use Netresearch\TemporalCache\Service\HarmonizationService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
@@ -76,7 +78,7 @@ final class TemporalCacheController extends ActionController
                 self::MODULE_ROUTE,
                 ['action' => $action]
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return '#';
         }
     }
@@ -121,8 +123,8 @@ final class TemporalCacheController extends ActionController
         // Add harmonization suggestions and pre-computed visibility status
         /** @var array<int, array<string, mixed>> $contentWithSuggestions */
         $contentWithSuggestions = \array_map(
-            function (\Netresearch\TemporalCache\Domain\Model\TemporalContent $content) use ($currentTime): array {
-                $suggestion = $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content, $currentTime);
+            function (TemporalContent $content) use ($currentTime): array {
+                $suggestion = $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content);
                 // Pre-compute isVisible for Fluid template (can't call methods with params in Fluid)
                 $suggestion['isVisible'] = $content->isVisible($currentTime);
                 return $suggestion;
@@ -185,7 +187,7 @@ final class TemporalCacheController extends ActionController
         \assert(\is_array($contentUids));
         $dryRun = (bool)($parsedBody['dryRun'] ?? true);
 
-        if (empty($contentUids)) {
+        if ($contentUids === []) {
             $json = \json_encode([
                 'success' => false,
                 'message' => $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:harmonize.error.no_content'),
@@ -242,7 +244,7 @@ final class TemporalCacheController extends ActionController
             }
 
             $content = $this->contentRepository->findByUid($uid, $tableName);
-            if ($content === null) {
+            if (!$content instanceof TemporalContent) {
                 continue;
             }
 
@@ -250,7 +252,7 @@ final class TemporalCacheController extends ActionController
             $results[] = $result;
         }
 
-        $successCount = \count(\array_filter($results, fn ($r) => $r['success']));
+        $successCount = \count(\array_filter($results, fn (array $r) => $r['success']));
         $totalCount = \count($results);
 
         if (!$dryRun) {
@@ -289,7 +291,7 @@ final class TemporalCacheController extends ActionController
         // Add DocHeader buttons (may fail in test environments)
         try {
             $this->addDocHeaderButtons($moduleTemplate, $currentAction);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Gracefully skip button creation in test/CLI environments
         }
 
@@ -310,7 +312,7 @@ final class TemporalCacheController extends ActionController
             }
 
             $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Gracefully skip menu creation in test/CLI environments
         }
     }
@@ -362,17 +364,17 @@ final class TemporalCacheController extends ActionController
     /**
      * Filter content based on selected filter.
      *
-     * @param array<\Netresearch\TemporalCache\Domain\Model\TemporalContent> $content
-     * @return array<\Netresearch\TemporalCache\Domain\Model\TemporalContent>
+     * @param array<TemporalContent> $content
+     * @return array<TemporalContent>
      */
     private function filterContent(array $content, string $filter, int $currentTime): array
     {
         return match ($filter) {
-            'pages' => \array_filter($content, fn ($c) => $c->isPage()),
-            'content' => \array_filter($content, fn ($c) => $c->isContent()),
-            'active' => \array_filter($content, fn ($c) => $c->isVisible($currentTime)),
-            'scheduled' => \array_filter($content, fn ($c) => $c->starttime !== null && $c->starttime > $currentTime),
-            'expired' => \array_filter($content, fn ($c) => $c->endtime !== null && $c->endtime < $currentTime),
+            'pages' => \array_filter($content, fn (TemporalContent $c): bool => $c->isPage()),
+            'content' => \array_filter($content, fn (TemporalContent $c): bool => $c->isContent()),
+            'active' => \array_filter($content, fn (TemporalContent $c): bool => $c->isVisible($currentTime)),
+            'scheduled' => \array_filter($content, fn (TemporalContent $c): bool => $c->starttime !== null && $c->starttime > $currentTime),
+            'expired' => \array_filter($content, fn (TemporalContent $c): bool => $c->endtime !== null && $c->endtime < $currentTime),
             'harmonizable' => $this->harmonizationAnalysisService->filterHarmonizableContent($content),
             default => $content,
         };

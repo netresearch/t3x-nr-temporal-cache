@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Integration;
 
+use DateTime;
+use DateTimeZone;
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
@@ -15,6 +18,7 @@ use Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy;
 use Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask;
+use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -72,11 +76,17 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     ];
 
     private ExtensionConfiguration $configuration;
+
     private TemporalContentRepository $repository;
+
     private HarmonizationService $harmonizationService;
+
     private HarmonizationAnalysisService $harmonizationAnalysisService;
+
     private CacheManager $cacheManager;
+
     private Context $context;
+
     private Registry $registry;
 
     protected function setUp(): void
@@ -105,14 +115,15 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      * SCENARIO: Content with scattered temporal boundaries gets aligned to time slots
      * PROOF: Harmonization reduces cache transitions and improves hit ratio
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function completeHarmonizationWorkflowAlignsTemporalBoundaries(): void
     {
         // Create absolute timestamps within tolerance of 12:00 UTC slot
         // Tolerance is 3600s (1 hour), so times between 11:00-13:00 UTC are harmonizable to 12:00 UTC
         // Use UTC timestamps to match harmonizeTimestamp() timezone handling
-        $tomorrow = new \DateTime('tomorrow', new \DateTimeZone('UTC'));
-        $tomorrow->setTime(0, 0, 0);  // Midnight UTC
+        $tomorrow = new DateTime('tomorrow', new DateTimeZone('UTC'));
+        $tomorrow->setTime(0, 0, 0);
+        // Midnight UTC
         $baseDate = $tomorrow->getTimestamp();
 
         // Create content with times that should harmonize to 12:00 UTC slot
@@ -147,7 +158,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $allContent = $this->repository->findAllWithTemporalFields();
 
         // Find harmonizable content
-        $harmonizable = \array_filter($allContent, fn ($c) => $this->harmonizationAnalysisService->isHarmonizable($c));
+        $harmonizable = \array_filter($allContent, $this->harmonizationAnalysisService->isHarmonizable(...));
 
         self::assertCount(3, $harmonizable, 'Should find 3 harmonizable content elements');
 
@@ -182,7 +193,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         // Verify harmonized time is aligned to slot (00:00, 06:00, 12:00, or 18:00)
         $harmonizedTime = $harmonizedTimestamps[0];
-        $dt = new \DateTime('@' . $harmonizedTime);
+        $dt = new DateTime('@' . $harmonizedTime);
         $hour = (int)$dt->format('H');
         $minute = (int)$dt->format('i');
 
@@ -200,7 +211,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      * SCENARIO: Scheduler task finds and processes content transitions
      * PROOF: Batch processing works for high-traffic scenarios
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function schedulerTaskProcessesTransitionsCorrectly(): void
     {
         $now = \time();
@@ -264,7 +275,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Global scoping invalidates all pages when any temporal content changes
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function globalScopingStrategyGeneratesGlobalCacheTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
@@ -296,7 +307,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Per-page scoping only invalidates affected page
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function perPageScopingStrategyGeneratesPageSpecificTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
@@ -328,7 +339,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Per-content scoping only invalidates pages containing the content
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function perContentScopingStrategyGeneratesContentSpecificTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
@@ -368,7 +379,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Dynamic strategy provides exact cache lifetime
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function dynamicTimingStrategyCalculatesLifetimeCorrectly(): void
     {
         $now = \time();
@@ -397,7 +408,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Scheduler strategy relies on batch invalidation
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function schedulerTimingStrategyReturnsNullForInfiniteCache(): void
     {
         $timingStrategy = $this->get(SchedulerTimingStrategy::class);
@@ -411,7 +422,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Hybrid strategy optimizes based on content type
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function hybridTimingStrategyChoosesAppropriateMode(): void
     {
         $timingStrategy = $this->get(HybridTimingStrategy::class);
@@ -433,7 +444,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
      *
      * PROOF: Cache invalidation actually happens
      */
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function cacheTagsGeneratedAndFlushedCorrectly(): void
     {
         // Get cache instance - use pages cache
@@ -449,7 +460,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         try {
             $cache->set($cacheIdentifier, $cacheData, $cacheTags, 86400);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             self::markTestSkipped('Cache backend not available in test: ' . $e->getMessage());
         }
 

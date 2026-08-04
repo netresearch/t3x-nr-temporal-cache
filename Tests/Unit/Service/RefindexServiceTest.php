@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
+use Doctrine\DBAL\Result;
 use Netresearch\TemporalCache\Service\RefindexService;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -21,8 +22,11 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class RefindexServiceTest extends UnitTestCase
 {
     private ConnectionPool&Stub $connectionPool;
+
     private DeletedRestriction&Stub $deletedRestriction;
+
     private RefindexService $subject;
+
     /** @var array<string, QueryBuilder[]> Queue of query builders by table name */
     private array $queryBuilders = [];
 
@@ -40,6 +44,7 @@ final class RefindexServiceTest extends UnitTestCase
                 if (!empty($this->queryBuilders[$table])) {
                     return \array_shift($this->queryBuilders[$table]);
                 }
+
                 // Otherwise create a default mock
                 return $this->createMockQueryBuilder();
             });
@@ -173,28 +178,28 @@ final class RefindexServiceTest extends UnitTestCase
 
         // Mock for tt_content (getDirectParentPage)
         $qb1 = $this->createMockQueryBuilder();
-        $result1 = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result1 = $this->createStub(Result::class);
         $result1->method('fetchOne')->willReturn(false);
         $qb1->method('executeQuery')->willReturn($result1);
         $this->queryBuilders['tt_content'][] = $qb1;
 
         // Mock for sys_refindex (findReferencesFromRefindex)
         $qb2 = $this->createMockQueryBuilder();
-        $result2 = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result2 = $this->createStub(Result::class);
         $result2->method('fetchAssociative')->willReturn(false);
         $qb2->method('executeQuery')->willReturn($result2);
         $this->queryBuilders['sys_refindex'][] = $qb2;
 
         // Mock for pages (findMountPointReferences)
         $qb3 = $this->createMockQueryBuilder();
-        $result3 = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result3 = $this->createStub(Result::class);
         $result3->method('fetchAssociative')->willReturn(false);
         $qb3->method('executeQuery')->willReturn($result3);
         $this->queryBuilders['pages'][] = $qb3;
 
         // Mock for pages (findShortcutReferences)
         $qb4 = $this->createMockQueryBuilder();
-        $result4 = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result4 = $this->createStub(Result::class);
         $result4->method('fetchAssociative')->willReturn(false);
         $qb4->method('executeQuery')->willReturn($result4);
         $this->queryBuilders['pages'][] = $qb4;
@@ -254,7 +259,7 @@ final class RefindexServiceTest extends UnitTestCase
         $languageUid = 0;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchAssociative')
             ->willReturnOnConsecutiveCalls(
                 ['uid' => 10],
@@ -278,7 +283,7 @@ final class RefindexServiceTest extends UnitTestCase
         $pageId = 999;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchAssociative')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -314,7 +319,7 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockTtContentQuery(int $contentUid, array $row): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($row['pid'] ?? false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -324,7 +329,7 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockRefindexQuery(int $contentUid, int $languageUid, array $rows): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
 
         $calls = \array_map(fn ($row) => $row, $rows);
         $calls[] = false;
@@ -338,7 +343,7 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockPagesQuery(string $field, array $pageIds, array $resultRows): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(\Doctrine\DBAL\Result::class);
+        $result = $this->createStub(Result::class);
 
         $calls = \array_map(fn ($row) => $row, $resultRows);
         $calls[] = false;

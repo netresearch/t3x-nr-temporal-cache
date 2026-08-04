@@ -7,7 +7,9 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
+use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -20,6 +22,7 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class HarmonizationServiceTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
+
     private ConnectionPool&Stub $connectionPool;
 
     protected function setUp(): void
@@ -87,7 +90,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertSame($timestamp, $subject->harmonizeTimestamp($timestamp));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('harmonizationDataProvider')]
+    #[DataProvider('harmonizationDataProvider')]
     public function testHarmonizeTimestampWorksForVariousSlots(
         int $inputTimestamp,
         array $slots,
@@ -236,7 +239,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertNull($subject->getPreviousSlot(1609459200));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('slotBoundaryDataProvider')]
+    #[DataProvider('slotBoundaryDataProvider')]
     public function testIsOnSlotBoundaryDetectsSlotBoundaries(int $timestamp, array $slots, bool $expected): void
     {
         $this->configuration->method('getHarmonizationSlots')->willReturn($slots);
@@ -436,7 +439,7 @@ final class HarmonizationServiceTest extends UnitTestCase
         $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
 
         $connection = $this->createStub(Connection::class);
-        $connection->method('update')->willThrowException(new \RuntimeException('db down'));
+        $connection->method('update')->willThrowException(new RuntimeException('db down'));
         $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
 
         $content = $this->createContent(1609461000, null);

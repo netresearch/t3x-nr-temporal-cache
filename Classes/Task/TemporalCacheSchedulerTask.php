@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Task;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
-use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Registry;
@@ -29,12 +30,17 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
 final class TemporalCacheSchedulerTask extends AbstractTask
 {
     private const REGISTRY_NAMESPACE = 'tx_temporalcache';
+
     private const REGISTRY_KEY_LAST_RUN = 'scheduler_last_run';
 
     private ?TemporalContentRepository $repository = null;
+
     private ?TimingStrategyInterface $timingStrategy = null;
+
     private ?ExtensionConfiguration $extensionConfiguration = null;
+
     private ?Context $context = null;
+
     private ?Registry $registry = null;
 
     /**
@@ -81,11 +87,11 @@ final class TemporalCacheSchedulerTask extends AbstractTask
 
         try {
             // After validation, properties are guaranteed non-null
-            \assert($this->repository !== null);
-            \assert($this->timingStrategy !== null);
-            \assert($this->extensionConfiguration !== null);
-            \assert($this->context !== null);
-            \assert($this->registry !== null);
+            \assert($this->repository instanceof TemporalContentRepository);
+            \assert($this->timingStrategy instanceof TimingStrategyInterface);
+            \assert($this->extensionConfiguration instanceof ExtensionConfiguration);
+            \assert($this->context instanceof Context);
+            \assert($this->registry instanceof Registry);
 
             $lastRun = $this->getLastRunTimestamp();
             $now = \time();
@@ -97,12 +103,13 @@ final class TemporalCacheSchedulerTask extends AbstractTask
             ]);
 
             // Find all transitions that occurred since last run
-            if ($this->repository === null) {
-                throw new \RuntimeException('TemporalContentRepository not injected', 1699876543);
+            if (!$this->repository instanceof TemporalContentRepository) {
+                throw new RuntimeException('TemporalContentRepository not injected', 1699876543);
             }
+
             $transitions = $this->repository->findTransitionsInRange($lastRun ?? 0, $now);
 
-            if (empty($transitions)) {
+            if ($transitions === []) {
                 $this->logDebug('No transitions found in time range');
                 $this->setLastRunTimestamp($now);
                 return true;
@@ -114,12 +121,13 @@ final class TemporalCacheSchedulerTask extends AbstractTask
 
             foreach ($transitions as $event) {
                 try {
-                    if ($this->timingStrategy === null) {
-                        throw new \RuntimeException('TimingStrategy not injected', 1699876544);
+                    if (!$this->timingStrategy instanceof TimingStrategyInterface) {
+                        throw new RuntimeException('TimingStrategy not injected', 1699876544);
                     }
+
                     $this->timingStrategy->processTransition($event);
                     $processedCount++;
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $errorCount++;
                     $this->logError('Failed to process transition', [
                         'content_uid' => $event->content->uid,
@@ -140,7 +148,7 @@ final class TemporalCacheSchedulerTask extends AbstractTask
 
             // Return true if at least some transitions processed
             return $errorCount === 0 || $processedCount > 0;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logError('Scheduler task failed', [
                 'exception' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -154,11 +162,11 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     private function validateDependencies(): bool
     {
-        return $this->repository !== null
-            && $this->timingStrategy !== null
-            && $this->extensionConfiguration !== null
-            && $this->context !== null
-            && $this->registry !== null;
+        return $this->repository instanceof TemporalContentRepository
+            && $this->timingStrategy instanceof TimingStrategyInterface
+            && $this->extensionConfiguration instanceof ExtensionConfiguration
+            && $this->context instanceof Context
+            && $this->registry instanceof Registry;
     }
 
     /**
@@ -166,9 +174,10 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     private function getLastRunTimestamp(): ?int
     {
-        if ($this->registry === null) {
-            throw new \RuntimeException('Registry not injected', 1699876545);
+        if (!$this->registry instanceof Registry) {
+            throw new RuntimeException('Registry not injected', 1699876545);
         }
+
         $lastRun = $this->registry->get(self::REGISTRY_NAMESPACE, self::REGISTRY_KEY_LAST_RUN);
         return \is_int($lastRun) ? $lastRun : null;
     }
@@ -178,9 +187,10 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     private function setLastRunTimestamp(int $timestamp): void
     {
-        if ($this->registry === null) {
-            throw new \RuntimeException('Registry not injected', 1699876546);
+        if (!$this->registry instanceof Registry) {
+            throw new RuntimeException('Registry not injected', 1699876546);
         }
+
         $this->registry->set(self::REGISTRY_NAMESPACE, self::REGISTRY_KEY_LAST_RUN, $timestamp);
     }
 
@@ -196,8 +206,8 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         }
 
         // After validation, properties are guaranteed non-null
-        \assert($this->timingStrategy !== null);
-        \assert($this->registry !== null);
+        \assert($this->timingStrategy instanceof TimingStrategyInterface);
+        \assert($this->registry instanceof Registry);
 
         $lastRun = $this->getLastRunTimestamp();
         $strategy = $this->timingStrategy->getName();
@@ -220,7 +230,7 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     private function getLogger(): LoggerInterface
     {
-        return GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
+        return GeneralUtility::makeInstance(LogManager::class)->getLogger(self::class);
     }
 
     /**
@@ -230,9 +240,10 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     private function logDebug(string $message, array $context = []): void
     {
-        if ($this->extensionConfiguration === null) {
-            throw new \RuntimeException('ExtensionConfiguration not injected', 1699876547);
+        if (!$this->extensionConfiguration instanceof ExtensionConfiguration) {
+            throw new RuntimeException('ExtensionConfiguration not injected', 1699876547);
         }
+
         if ($this->extensionConfiguration->isDebugLoggingEnabled()) {
             $this->getLogger()->debug($message, $context);
         }

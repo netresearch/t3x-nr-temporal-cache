@@ -21,8 +21,11 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TemporalCacheStatisticsServiceTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $contentRepository;
+
     private ExtensionConfiguration&Stub $extensionConfiguration;
+
     private HarmonizationService&Stub $harmonizationService;
+
     private TemporalCacheStatisticsService $subject;
 
     protected function setUp(): void

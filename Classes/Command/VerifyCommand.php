@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -149,12 +150,12 @@ final class VerifyCommand extends Command
 
             try {
                 $tableIndexes = $schemaManager->listTableIndexes($tableName);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error("Failed to check indexes for table '{$tableName}': " . $e->getMessage());
                 return false;
             }
 
-            foreach ($indexes as $indexName => $columns) {
+            foreach ($indexes as $columns) {
                 $indexExists = $this->checkIndexExists($tableIndexes, $columns);
 
                 $results[] = [
@@ -195,7 +196,11 @@ final class VerifyCommand extends Command
     {
         foreach ($tableIndexes as $index) {
             // Type guard: ensure $index has getColumns method
-            if (!\is_object($index) || !\method_exists($index, 'getColumns')) {
+            if (!\is_object($index)) {
+                continue;
+            }
+
+            if (!\method_exists($index, 'getColumns')) {
                 continue;
             }
 
@@ -210,7 +215,7 @@ final class VerifyCommand extends Command
             );
 
             $searchColumns = \array_map(
-                fn (string $col): string => \strtolower($col),
+                \strtolower(...),
                 $columns
             );
 
@@ -291,10 +296,10 @@ final class VerifyCommand extends Command
 
         // Check slots configuration
         $slots = $this->configuration->getHarmonizationSlots();
-        $slotsValid = !empty($slots);
+        $slotsValid = $slots !== [];
         $results[] = [
             'Time Slots',
-            empty($slots) ? 'Not configured' : \implode(', ', $slots),
+            $slots === [] ? 'Not configured' : \implode(', ', $slots),
             $slotsValid ? '<fg=green>OK</>' : '<fg=red>MISSING</>',
         ];
         if (!$slotsValid) {
@@ -369,7 +374,7 @@ final class VerifyCommand extends Command
 
             try {
                 $columns = $schemaManager->listTableColumns($tableName);
-                $columnNames = \array_map('strtolower', \array_keys($columns));
+                $columnNames = \array_map(strtolower(...), \array_keys($columns));
 
                 foreach ($fields as $field) {
                     $fieldExists = \in_array(\strtolower($field), $columnNames, true);
@@ -383,7 +388,7 @@ final class VerifyCommand extends Command
                         $allFieldsExist = false;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error("Failed to check schema for table '{$tableName}': " . $e->getMessage());
                 return false;
             }

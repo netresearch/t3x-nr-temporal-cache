@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Model;
 
+use InvalidArgumentException;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -66,7 +68,7 @@ final class TransitionEventTest extends UnitTestCase
         self::assertSame(0, $subject->languageId);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('validTransitionTypeDataProvider')]
+    #[DataProvider('validTransitionTypeDataProvider')]
     public function testConstructorAcceptsValidTransitionTypes(string $transitionType): void
     {
         $subject = new TransitionEvent(
@@ -90,7 +92,7 @@ final class TransitionEventTest extends UnitTestCase
     /**     */
     public function testConstructorThrowsExceptionForInvalidTransitionType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('TransitionType must be "start", "end", or "unknown"');
 
         new TransitionEvent(
@@ -176,7 +178,7 @@ final class TransitionEventTest extends UnitTestCase
         self::assertStringContainsString(\date('Y-m-d H:i:s', $timestamp), $message);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('transitionScenarioDataProvider')]
+    #[DataProvider('transitionScenarioDataProvider')]
     public function testTransitionEventsWorkForDifferentScenarios(
         string $tableName,
         string $transitionType,

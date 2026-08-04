@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Service\Timing;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
+use RuntimeException;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -16,7 +17,7 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class TimingStrategyFactory implements TimingStrategyInterface
 {
-    private TimingStrategyInterface $activeStrategy;
+    private readonly TimingStrategyInterface $activeStrategy;
 
     /**
      * @param array<TimingStrategyInterface> $strategies All available strategies
@@ -47,7 +48,7 @@ class TimingStrategyFactory implements TimingStrategyInterface
         }
 
         // Fallback to first strategy (should be DynamicTimingStrategy for backward compat)
-        return $strategies[0] ?? throw new \RuntimeException('No timing strategies registered');
+        return $strategies[0] ?? throw new RuntimeException('No timing strategies registered');
     }
 
     /**

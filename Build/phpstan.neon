@@ -1,3 +1,13 @@
+# phpstan/extension-installer is disabled in composer.json, because
+# netresearch/typo3-ci-workflows drags in ergebnis/phpstan-rules and
+# phpstan-strict-rules, whose auto-registration lands 185 uncurated findings
+# on this level-max baseline. Adopting those rule sets is its own migration.
+# The two extensions this project did analyse with before are registered by
+# hand here, so the disabled installer costs no TYPO3 rule coverage.
+includes:
+    - ../.Build/vendor/saschaegerer/phpstan-typo3/extension.neon
+    - ../.Build/vendor/bnf/phpstan-psr-container/extension.neon
+
 parameters:
     level: max
     paths:

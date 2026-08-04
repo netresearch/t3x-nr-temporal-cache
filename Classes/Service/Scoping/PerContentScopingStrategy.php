@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
+use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
@@ -76,7 +77,7 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
 
         // Convert page IDs to cache tags
         return \array_map(
-            fn (int $pageId) => 'pageId_' . $pageId,
+            fn (int $pageId): string => 'pageId_' . $pageId,
             $affectedPages
         );
     }
@@ -105,12 +106,12 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
             );
 
             // If no pages found via refindex, fall back to parent page
-            if (empty($pageIds)) {
+            if ($pageIds === []) {
                 return [$content->pid];
             }
 
             return $pageIds;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // If refindex lookup fails, fall back to parent page for safety
             // This ensures cache invalidation still happens even if refindex has issues
             return [$content->pid];

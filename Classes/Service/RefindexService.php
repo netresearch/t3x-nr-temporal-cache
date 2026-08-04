@@ -97,6 +97,7 @@ class RefindexService implements SingletonInterface
         if ($result === false) {
             return null;
         }
+
         \assert(\is_int($result) || \is_numeric($result));
         return (int)$result;
     }
@@ -169,7 +170,7 @@ class RefindexService implements SingletonInterface
      */
     private function findMountPointReferences(array $pageIds): array
     {
-        if (empty($pageIds)) {
+        if ($pageIds === []) {
             return [];
         }
 
@@ -215,7 +216,7 @@ class RefindexService implements SingletonInterface
      */
     private function findShortcutReferences(array $pageIds): array
     {
-        if (empty($pageIds)) {
+        if ($pageIds === []) {
             return [];
         }
 
@@ -264,7 +265,7 @@ class RefindexService implements SingletonInterface
         $mountPoints = $this->findMountPointReferences([$pageId]);
         $shortcuts = $this->findShortcutReferences([$pageId]);
 
-        return !empty($mountPoints) || !empty($shortcuts);
+        return $mountPoints !== [] || $shortcuts !== [];
     }
 
     /**

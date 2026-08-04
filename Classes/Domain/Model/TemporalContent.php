@@ -34,10 +34,10 @@ final class TemporalContent
     {
         $transitions = \array_filter(
             [$this->starttime, $this->endtime],
-            fn (?int $t) => $t !== null && $t > $currentTime
+            fn (?int $t): bool => $t !== null && $t > $currentTime
         );
 
-        return empty($transitions) ? null : \min($transitions);
+        return $transitions === [] ? null : \min($transitions);
     }
 
     public function getContentType(): string
@@ -77,9 +77,11 @@ final class TemporalContent
         if ($this->starttime === $timestamp) {
             return 'start';
         }
+
         if ($this->endtime === $timestamp) {
             return 'end';
         }
+
         return null;
     }
 }

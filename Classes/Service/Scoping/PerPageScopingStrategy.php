@@ -81,7 +81,7 @@ class PerPageScopingStrategy implements ScopingStrategyInterface
             $this->temporalContentRepository->getNextContentTransitionForPage($pageId, $now, $workspaceId, $languageId),
         ], static fn (?int $value): bool => $value !== null);
 
-        return empty($candidates) ? null : \min($candidates);
+        return $candidates === [] ? null : \min($candidates);
     }
 
     /**

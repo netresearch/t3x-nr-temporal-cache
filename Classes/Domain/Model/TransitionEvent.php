@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Domain\Model;
 
+use InvalidArgumentException;
+
 /**
  * Value object representing a temporal transition event.
  *
@@ -20,7 +22,7 @@ final class TransitionEvent
         public readonly int $languageId = 0
     ) {
         if (!\in_array($this->transitionType, ['start', 'end', 'unknown'], true)) {
-            throw new \InvalidArgumentException('TransitionType must be "start", "end", or "unknown"');
+            throw new InvalidArgumentException('TransitionType must be "start", "end", or "unknown"');
         }
     }
 

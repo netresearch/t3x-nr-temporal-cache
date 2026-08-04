@@ -20,7 +20,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class GlobalScopingStrategyTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
+
     private Context&Stub $context;
+
     private GlobalScopingStrategy $subject;
 
     protected function setUp(): void

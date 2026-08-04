@@ -18,9 +18,13 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 final class TimingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
+
     private DynamicTimingStrategy&Stub $dynamicStrategy;
+
     private SchedulerTimingStrategy&Stub $schedulerStrategy;
+
     private HybridTimingStrategy&Stub $hybridStrategy;
+
     private TimingStrategyFactory $subject;
 
     protected function setUp(): void

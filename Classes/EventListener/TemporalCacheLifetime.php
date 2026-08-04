@@ -8,6 +8,7 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
@@ -77,7 +78,7 @@ final class TemporalCacheLifetime
                     );
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Fail gracefully - don't break page rendering on strategy errors
             $this->logger->error(
                 'Temporal cache lifetime calculation failed',
