@@ -67,6 +67,7 @@
         "bin-dir": ".Build/bin",
         "sort-packages": true,
         "allow-plugins": {
+            "ergebnis/composer-normalize": true,
             "typo3/class-alias-loader": true,
             "typo3/cms-composer-installers": true,
             "phpstan/extension-installer": false,
