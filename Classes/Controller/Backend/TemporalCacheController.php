@@ -252,7 +252,7 @@ final class TemporalCacheController extends ActionController
             $results[] = $result;
         }
 
-        $successCount = \count(\array_filter($results, fn (array $r) => $r['success']));
+        $successCount = \count(\array_filter($results, fn (array $r): bool => $r['success']));
         $totalCount = \count($results);
 
         if (!$dryRun) {
