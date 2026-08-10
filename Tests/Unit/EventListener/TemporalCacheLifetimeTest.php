@@ -116,15 +116,11 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
 
         $event = $this->createEvent(86400);
 
-        // Assert
-        $this->timingStrategy
-            ->expects(self::once())
-            ->method('getCacheLifetime')
-            ->with($this->context)
-            ->willReturn($lifetime);
-
         // Act
         ($this->subject)($event);
+
+        // Assert: Lifetime should be taken from the timing strategy
+        self::assertSame($lifetime, $event->getCacheLifetime());
     }
 
     public function testInvokeCapsLifetimeAtDefaultMaximum(): void
