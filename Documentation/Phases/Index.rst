@@ -7,7 +7,7 @@ Three-Phase Solution & Roadmap
 ================================
 
 .. important::
-   **Extension Status**: This extension is **stable and production-ready**.
+   **Extension Status**: This extension is **beta** (version 0.9.0). The only published tag is a pre-release.
 
    **Approach Status**: The temporal cache solution is **experimental**. This extension
    implements Phase 1 as a pragmatic workaround until TYPO3 core provides native temporal

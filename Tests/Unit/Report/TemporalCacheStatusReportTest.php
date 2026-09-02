@@ -17,6 +17,7 @@ use Netresearch\TemporalCache\Service\HarmonizationService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -689,8 +690,10 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
                 self::callback(static function (array $context): bool {
                     $exception = $context['exception'] ?? null;
 
-                    return \is_string($exception)
-                        && \str_contains($exception, self::EXCEPTION_MARKER);
+                    // PSR-3 reserves 'exception' for the Throwable itself; the
+                    // detail must still be recoverable from it.
+                    return $exception instanceof Throwable
+                        && \str_contains($exception->getMessage(), self::EXCEPTION_MARKER);
                 })
             );
 

@@ -17,7 +17,7 @@ Requirements
 
 **Database:**
 
-- No schema changes required
+- Adds four indexes (starttime/endtime per table) via ext_tables.sql; run the database compare in the Install Tool after installing
 - Uses standard TYPO3 ``starttime/endtime`` fields
 
 Compatibility
@@ -32,21 +32,21 @@ Compatibility
      - Status
      - Notes
    * - 12.4+
-     - 8.1 - 8.3
+     - 8.1 - 8.4
      - ✅ Fully supported
-     - PSR-14 events available
+     - PSR-14 events available; 8.5 is excluded from this cell in CI
    * - 13.0+
-     - 8.2 - 8.3
+     - 8.2 - 8.5
      - ✅ Fully supported
-     - Latest TYPO3 LTS
+     - Previous TYPO3 LTS
+   * - 14.0+
+     - 8.3 - 8.5
+     - ✅ Fully supported
+     - Current TYPO3 LTS
    * - 11.5
      - 7.4 - 8.2
      - ⚠️ Not supported
      - Missing required events
-   * - 14.0 (future)
-     - 8.2+
-     - 🔄 Planned
-     - May be superseded by Phase 2
 
 Installation Methods
 ====================
@@ -56,7 +56,7 @@ Method 1: Composer (Recommended)
 
 Install via composer::
 
-   composer req netresearch/temporal-cache
+   composer req netresearch/nr-temporal-cache
 
 Activate extension::
 
@@ -78,7 +78,7 @@ Method 2: TER (Extension Repository)
 Method 3: Manual Installation
 ------------------------------
 
-1. Download from `GitHub <https://github.com/netresearch/t3x-temporal-cache/releases>`__
+1. Download from `GitHub <https://github.com/netresearch/t3x-nr-temporal-cache/releases>`__
 2. Extract to ``typo3conf/ext/nr_temporal_cache/`` (classic mode) or ``packages/nr_temporal_cache/`` (composer mode)
 3. Activate in Extension Manager
 4. Clear all caches

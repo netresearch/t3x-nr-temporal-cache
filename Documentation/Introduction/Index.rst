@@ -103,7 +103,7 @@ What This Extension Does
 =========================
 
 .. important::
-   **Extension Status**: This extension is **stable and production-ready**.
+   **Extension Status**: This extension is **beta** (version 0.9.0). The only published tag is a pre-release.
    The code is thoroughly tested, follows TYPO3 best practices, and is professionally
    maintained.
 

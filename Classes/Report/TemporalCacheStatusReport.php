@@ -449,16 +449,17 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     /**
      * Log exception details that must not be rendered in the Reports module.
      *
-     * @param array<string, string> $context Additional log context
+     * @param array<string, mixed> $context Additional log context
      */
     private function logException(string $message, Exception $exception, array $context = []): void
     {
+        // PSR-3 reserves the 'exception' key for the Throwable itself, and TYPO3's
+        // and Monolog's exception processors rely on that to render class, message
+        // and trace. Passing the message string instead loses all of it, so the
+        // detail this method exists to preserve never reaches the log.
         $this->logger->error(
             $message,
-            $context + [
-                'exception' => $exception->getMessage(),
-                'trace' => $exception->getTraceAsString(),
-            ]
+            $context + ['exception' => $exception]
         );
     }
 

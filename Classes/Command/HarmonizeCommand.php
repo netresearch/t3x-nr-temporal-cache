@@ -9,6 +9,8 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
@@ -52,7 +54,8 @@ final class HarmonizeCommand extends Command
         private readonly TemporalContentRepositoryInterface $repository,
         private readonly HarmonizationService $harmonizationService,
         private readonly ExtensionConfiguration $configuration,
-        private readonly ConnectionPool $connectionPool
+        private readonly ConnectionPool $connectionPool,
+        private readonly LoggerInterface $logger = new NullLogger()
     ) {
         parent::__construct('temporalcache:harmonize');
     }
@@ -370,8 +373,24 @@ final class HarmonizeCommand extends Command
                     ['uid' => $change['uid']]
                 );
                 $updated++;
+                // Same reason HarmonizationService logs its writes: the update
+                // bypasses DataHandler, so it produces no sys_log and no
+                // sys_history entry. Without this the mutation is unrecorded.
+                $this->logger->info('Harmonized temporal timestamp', [
+                    'table' => $change['table'],
+                    'uid' => $change['uid'],
+                    'field' => $change['field'],
+                    'old' => $change['old'] ?? null,
+                    'new' => $change['new'],
+                ]);
             } catch (Exception $e) {
                 $failed++;
+                $this->logger->error('Failed to harmonize temporal timestamp', [
+                    'table' => $change['table'],
+                    'uid' => $change['uid'],
+                    'field' => $change['field'],
+                    'exception' => $e,
+                ]);
                 if ($io->isVerbose()) {
                     $io->writeln('');
                     $io->error(\sprintf(
