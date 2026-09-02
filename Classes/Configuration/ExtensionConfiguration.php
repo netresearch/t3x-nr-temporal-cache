@@ -68,7 +68,10 @@ class ExtensionConfiguration implements SingletonInterface
     }
 
     /**
-     * @return array{pages: string, content: string}
+     * Keyed by TemporalContent::getContentType(), which HybridTimingStrategy uses to
+     * look the rule up. That is why the page key is 'page' and not 'pages'.
+     *
+     * @return array{page: string, content: string}
      */
     public function getTimingRules(): array
     {
@@ -81,8 +84,11 @@ class ExtensionConfiguration implements SingletonInterface
         $content = $hybrid['content'] ?? 'scheduler';
         \assert(\is_string($content));
 
+        // Keyed by TemporalContent::getContentType(), which yields 'page' (singular)
+        // for the pages table. The extension configuration key stays 'pages'; mapping
+        // it here is what makes timing.hybrid.pages reach HybridTimingStrategy at all.
         return [
-            'pages' => $pages,
+            'page' => $pages,
             'content' => $content,
         ];
     }

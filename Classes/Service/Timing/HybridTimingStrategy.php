@@ -41,7 +41,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
     /**
      * Timing rules: maps content type to strategy name.
      *
-     * @var array{pages: string, content: string}
+     * @var array{page: string, content: string}
      */
     private array $timingRules;
 
@@ -143,7 +143,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
     /**
      * Get all timing rules for debugging and backend module display.
      *
-     * @return array{pages: string, content: string} Timing rules
+     * @return array{page: string, content: string} Timing rules
      */
     public function getTimingRules(): array
     {

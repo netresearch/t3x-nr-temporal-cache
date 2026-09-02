@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Configuration;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
@@ -13,9 +16,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for ExtensionConfiguration
- *
- * @covers \Netresearch\TemporalCache\Configuration\ExtensionConfiguration
  */
+#[CoversClass(ExtensionConfiguration::class)]
+#[UsesClass(TemporalContent::class)]
 final class ExtensionConfigurationTest extends UnitTestCase
 {
     private Typo3ExtensionConfiguration&Stub $typo3ExtensionConfiguration;
@@ -214,8 +217,40 @@ final class ExtensionConfigurationTest extends UnitTestCase
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
         $rules = $subject->getTimingRules();
 
-        self::assertSame('dynamic', $rules['pages']);
+        self::assertSame('dynamic', $rules['page']);
         self::assertSame('scheduler', $rules['content']);
+    }
+
+    /**
+     * getTimingRules() is consumed by HybridTimingStrategy as
+     * $timingRules[$content->getContentType()]. If the key set here drifts from what
+     * getContentType() emits, the lookup misses and the strategy silently falls back
+     * to 'dynamic' — which is exactly how timing.hybrid.pages became dead configuration
+     * (the array was keyed 'pages' while getContentType() yields 'page').
+     */
+    public function testGetTimingRulesIsKeyedByTheContentTypesTemporalContentEmits(): void
+    {
+        $this->typo3ExtensionConfiguration
+            ->method('get')
+            ->willReturn([
+                'timing' => [
+                    'hybrid' => [
+                        'pages' => 'scheduler',
+                        'content' => 'dynamic',
+                    ],
+                ],
+            ]);
+
+        $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
+        $rules = $subject->getTimingRules();
+
+        $page = new TemporalContent(1, 'pages', 'A page', 0, null, null, 0, 0);
+        $content = new TemporalContent(2, 'tt_content', 'An element', 1, null, null, 0, 0);
+
+        self::assertArrayHasKey($page->getContentType(), $rules);
+        self::assertArrayHasKey($content->getContentType(), $rules);
+        self::assertSame('scheduler', $rules[$page->getContentType()]);
+        self::assertSame('dynamic', $rules[$content->getContentType()]);
     }
 
     /**     */
@@ -228,7 +263,7 @@ final class ExtensionConfigurationTest extends UnitTestCase
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
         $rules = $subject->getTimingRules();
 
-        self::assertSame('dynamic', $rules['pages']);
+        self::assertSame('dynamic', $rules['page']);
         self::assertSame('scheduler', $rules['content']);
     }
 
