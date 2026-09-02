@@ -14,7 +14,9 @@ use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Report\TemporalCacheStatusReport;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -22,10 +24,16 @@ use TYPO3\CMS\Reports\Status;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * @covers \Netresearch\TemporalCache\Report\TemporalCacheStatusReport
  */
+#[CoversClass(TemporalCacheStatusReport::class)]
 final class TemporalCacheStatusReportTest extends UnitTestCase
 {
+    /**
+     * Recognisable stand-in for the kind of detail Doctrine DBAL puts into an
+     * exception message: SQL, table names, credentials from the DSN.
+     */
+    private const EXCEPTION_MARKER = 'SQLSTATE[42S02] leak-marker-7f3a: SELECT * FROM tt_content; mysql://user:pw@db-host/typo3<img src=x onerror=alert(1)>';
+
     private ExtensionConfiguration&Stub $extensionConfiguration;
 
     private TemporalContentRepositoryInterface&Stub $contentRepository;
@@ -45,12 +53,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->harmonizationService = $this->createStub(HarmonizationService::class);
         $this->connectionPool = $this->createStub(ConnectionPool::class);
 
-        $this->subject = new TemporalCacheStatusReport(
-            $this->extensionConfiguration,
-            $this->contentRepository,
-            $this->harmonizationService,
-            $this->connectionPool
-        );
+        $this->subject = $this->createSubject($this->createStub(LoggerInterface::class));
     }
 
     /**     */
@@ -575,6 +578,136 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Error', $transitionsStatus->getValue());
     }
 
+    /**
+     * The Reports module renders the status message with f:format.raw(), so the
+     * DBAL exception text must not end up in it.
+     */
+    public function testGetDatabaseIndexesStatusDoesNotExposeExceptionDetails(): void
+    {
+        $this->mockValidConfiguration();
+        $this->mockTemporalContentStatistics();
+
+        $schemaManager = $this->createStub(AbstractSchemaManager::class);
+        $schemaManager
+            ->method('listTableIndexes')
+            ->willThrowException(new Exception(self::EXCEPTION_MARKER));
+
+        $connection = $this->createStub(Connection::class);
+        $connection
+            ->method('createSchemaManager')
+            ->willReturn($schemaManager);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->expectExceptionDetailToBeLogged();
+
+        $indexStatus = $this->subject->getStatus()['databaseIndexes'];
+
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $indexStatus->getSeverity());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $indexStatus->getMessage());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $indexStatus->getValue());
+    }
+
+    /**     */
+    public function testGetTemporalContentStatusDoesNotExposeExceptionDetails(): void
+    {
+        $this->mockValidConfiguration();
+        $this->mockDatabaseIndexes(true);
+
+        $this->contentRepository
+            ->method('getStatistics')
+            ->willThrowException(new Exception(self::EXCEPTION_MARKER));
+
+        $this->contentRepository
+            ->method('findTransitionsInRange')
+            ->willReturn([]);
+
+        $this->expectExceptionDetailToBeLogged();
+
+        $contentStatus = $this->subject->getStatus()['temporalContent'];
+
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $contentStatus->getSeverity());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $contentStatus->getMessage());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $contentStatus->getValue());
+    }
+
+    /**     */
+    public function testGetHarmonizationStatusDoesNotExposeExceptionDetails(): void
+    {
+        $this->mockHarmonizationEnabled();
+        $this->mockDatabaseIndexes(true);
+        $this->mockTemporalContentStatisticsWithoutHarmonizationContent();
+
+        $this->contentRepository
+            ->method('findAllWithTemporalFields')
+            ->willThrowException(new Exception(self::EXCEPTION_MARKER));
+
+        $this->expectExceptionDetailToBeLogged();
+
+        $harmonizationStatus = $this->subject->getStatus()['harmonizationStatus'];
+
+        $message = $harmonizationStatus->getMessage();
+        self::assertStringContainsString('Could not calculate harmonization impact', $message);
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $message);
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $harmonizationStatus->getValue());
+    }
+
+    /**     */
+    public function testGetUpcomingTransitionsStatusDoesNotExposeExceptionDetails(): void
+    {
+        $this->mockValidConfiguration();
+        $this->mockDatabaseIndexes(true);
+        $this->mockTemporalContentStatisticsWithoutHarmonizationContent();
+
+        $this->contentRepository
+            ->method('findTransitionsInRange')
+            ->willThrowException(new Exception(self::EXCEPTION_MARKER));
+
+        $this->expectExceptionDetailToBeLogged();
+
+        $transitionsStatus = $this->subject->getStatus()['upcomingTransitions'];
+
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $transitionsStatus->getSeverity());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $transitionsStatus->getMessage());
+        self::assertStringNotContainsString(self::EXCEPTION_MARKER, $transitionsStatus->getValue());
+    }
+
+    /**
+     * Require that the detail suppressed in the report reaches the log instead,
+     * so the fix cannot be satisfied by silently swallowing the exception.
+     */
+    private function expectExceptionDetailToBeLogged(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects(self::once())
+            ->method('error')
+            ->with(
+                self::anything(),
+                self::callback(static function (array $context): bool {
+                    $exception = $context['exception'] ?? null;
+
+                    return \is_string($exception)
+                        && \str_contains($exception, self::EXCEPTION_MARKER);
+                })
+            );
+
+        $this->subject = $this->createSubject($logger);
+    }
+
+    private function createSubject(LoggerInterface $logger): TemporalCacheStatusReport
+    {
+        return new TemporalCacheStatusReport(
+            $this->extensionConfiguration,
+            $this->contentRepository,
+            $this->harmonizationService,
+            $this->connectionPool,
+            $logger
+        );
+    }
+
     private function mockValidConfiguration(): void
     {
         $this->extensionConfiguration
@@ -592,6 +725,37 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->extensionConfiguration
             ->method('useRefindex')
             ->willReturn(false);
+    }
+
+    private function mockHarmonizationEnabled(): void
+    {
+        $this->extensionConfiguration
+            ->method('getScopingStrategy')
+            ->willReturn('per-page');
+
+        $this->extensionConfiguration
+            ->method('getTimingStrategy')
+            ->willReturn('dynamic');
+
+        $this->extensionConfiguration
+            ->method('isHarmonizationEnabled')
+            ->willReturn(true);
+
+        $this->extensionConfiguration
+            ->method('useRefindex')
+            ->willReturn(false);
+
+        $this->extensionConfiguration
+            ->method('getHarmonizationTolerance')
+            ->willReturn(600);
+
+        $this->extensionConfiguration
+            ->method('isAutoRoundEnabled')
+            ->willReturn(false);
+
+        $this->harmonizationService
+            ->method('getFormattedSlots')
+            ->willReturn(['00:00', '12:00']);
     }
 
     private function mockDatabaseIndexes(bool $indexesExist): void
@@ -657,5 +821,27 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->contentRepository
             ->method('findAllWithTemporalFields')
             ->willReturn([]);
+    }
+
+    /**
+     * Like mockTemporalContentStatistics(), but leaves findTransitionsInRange()
+     * and findAllWithTemporalFields() unstubbed so a test can make them throw.
+     */
+    private function mockTemporalContentStatisticsWithoutHarmonizationContent(): void
+    {
+        $this->contentRepository
+            ->method('getStatistics')
+            ->willReturn([
+                'total' => 10,
+                'pages' => 5,
+                'content' => 5,
+                'withStart' => 3,
+                'withEnd' => 2,
+                'withBoth' => 5,
+            ]);
+
+        $this->contentRepository
+            ->method('getNextTransition')
+            ->willReturn(null);
     }
 }

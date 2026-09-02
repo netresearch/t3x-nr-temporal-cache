@@ -8,6 +8,7 @@ use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Reports\Status;
@@ -51,11 +52,21 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
 
     private const VALID_TIMING_STRATEGIES = ['dynamic', 'scheduler', 'hybrid'];
 
+    /**
+     * Generic message shown instead of raw exception details.
+     *
+     * The Reports module renders status messages unescaped, so exception text
+     * (SQL fragments, table names, connection details) must never reach it.
+     * The detail is written to the TYPO3 log instead.
+     */
+    private const LOG_HINT = ' See the TYPO3 log for details.';
+
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
         private readonly TemporalContentRepositoryInterface $contentRepository,
         private readonly HarmonizationService $harmonizationService,
-        private readonly ConnectionPool $connectionPool
+        private readonly ConnectionPool $connectionPool,
+        private readonly LoggerInterface $logger
     ) {
     }
 
@@ -160,10 +171,12 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                     }
                 }
             } catch (Exception $e) {
+                $this->logException('Failed to verify database indexes', $e, ['table' => $tableName]);
+
                 return new Status(
                     'Database Indexes',
                     'Verification Failed',
-                    'Failed to verify database indexes: ' . $e->getMessage(),
+                    'Failed to verify database indexes.' . self::LOG_HINT,
                     ContextualFeedbackSeverity::ERROR
                 );
             }
@@ -246,10 +259,12 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $severity
             );
         } catch (Exception $e) {
+            $this->logException('Failed to retrieve temporal content statistics', $e);
+
             return new Status(
                 'Temporal Content Statistics',
                 'Error',
-                'Failed to retrieve temporal content statistics: ' . $e->getMessage(),
+                'Failed to retrieve temporal content statistics.' . self::LOG_HINT,
                 ContextualFeedbackSeverity::ERROR
             );
         }
@@ -326,7 +341,9 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $message .= '<strong>Note:</strong> No temporal content with transitions found.';
             }
         } catch (Exception $e) {
-            $message .= '<strong>Note:</strong> Could not calculate harmonization impact: ' . $e->getMessage();
+            $this->logException('Could not calculate harmonization impact', $e);
+
+            $message .= '<strong>Note:</strong> Could not calculate harmonization impact.' . self::LOG_HINT;
         }
 
         return new Status(
@@ -370,9 +387,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             $transitionsByDay = [];
             foreach ($transitions as $transition) {
                 $day = \date('Y-m-d', $transition->timestamp);
-                if (!isset($transitionsByDay[$day])) {
-                    $transitionsByDay[$day] = 0;
-                }
+                $transitionsByDay[$day] ??= 0;
 
                 $transitionsByDay[$day]++;
             }
@@ -420,13 +435,31 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 $severity
             );
         } catch (Exception $e) {
+            $this->logException('Failed to retrieve upcoming transitions', $e);
+
             return new Status(
                 'Upcoming Transitions',
                 'Error',
-                'Failed to retrieve upcoming transitions: ' . $e->getMessage(),
+                'Failed to retrieve upcoming transitions.' . self::LOG_HINT,
                 ContextualFeedbackSeverity::ERROR
             );
         }
+    }
+
+    /**
+     * Log exception details that must not be rendered in the Reports module.
+     *
+     * @param array<string, string> $context Additional log context
+     */
+    private function logException(string $message, Exception $exception, array $context = []): void
+    {
+        $this->logger->error(
+            $message,
+            $context + [
+                'exception' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ]
+        );
     }
 
     /**
