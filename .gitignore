@@ -8,8 +8,11 @@ vendor/
 .vscode/
 
 # DDEV
-.ddev/.gitignore
 .ddev/.global_commands/
+
+# Local environment
+.env
+.env.local
 
 # Testing
 .phpunit.cache/
@@ -32,3 +35,6 @@ test/phpstatus.php
 typo3conf/
 v12/
 v13/
+
+# TYPO3 runtime cache produced by local test runs
+/var/

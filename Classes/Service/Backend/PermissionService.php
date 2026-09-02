@@ -172,6 +172,19 @@ final class PermissionService implements SingletonInterface
     /**
      * Get current backend user.
      *
+     * The single point of access to $GLOBALS['BE_USER'] in this class: every permission
+     * check above goes through here, so the superglobal stays greppable and tests can
+     * swap the user by assigning to $GLOBALS['BE_USER'] once.
+     *
+     * Why the superglobal and not the Context API: the 'backend.user' aspect
+     * (TYPO3\CMS\Core\Context\UserAspect) exposes neither check() nor getTSConfig(),
+     * the two calls this class relies on; both live on BackendUserAuthentication alone.
+     * No TYPO3 version this extension supports (12.4, 13, 14) offers an injectable
+     * backend-user service; core itself reads the superglobal the same way, e.g.
+     * TYPO3\CMS\Backend\Controller\PageLayoutController::getBackendUser().
+     *
+     * What would replace it: an injectable backend-user service, once core provides one.
+     *
      * @return BackendUserAuthentication
      */
     private function getBackendUser(): BackendUserAuthentication

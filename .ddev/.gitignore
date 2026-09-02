@@ -1,0 +1,31 @@
+# DDEV gitignore - manually maintained, no `#ddev-generated` marker so that
+# `ddev start` leaves it alone. It lists only artifacts DDEV generates; the
+# scaffolding this repository tracks on purpose (providers/*.yaml, the apache
+# and nginx_full site configs, *.example, README.*, commands/.gitattributes)
+# is deliberately absent.
+
+# Image build contexts
+/.dbimageBuild
+/.sshimageBuild
+/.webimageBuild
+
+# Generated compose files and downloads
+/.ddev-docker-*.yaml
+/.*downloads
+/.homeadditions
+/.importdb*
+
+# Local-only configuration and state.
+# `config.yaml` is the tracked base config; per-developer overrides go into
+# `config.<name>.yaml` and stay untracked (.ddev/AGENTS.md, Conventions).
+/config.*.y*ml
+/db_snapshots
+/postgres/postgresql.conf
+/xhprof/xhprof_prepend.php
+
+# Mutagen, Traefik and share providers
+/mutagen/mutagen.yml
+/mutagen/.start-synced
+/traefik/
+/share-providers/cloudflared.sh
+/share-providers/ngrok.sh
