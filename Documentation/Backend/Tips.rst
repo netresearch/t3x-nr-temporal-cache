@@ -2,179 +2,127 @@
 
 .. _backend-tips:
 
-============================
-Tips and Best Practices
-============================
+=======================
+Tips and best practices
+=======================
 
-Optimize your temporal cache implementation with proven strategies and troubleshooting guidance.
+.. _backend-tips-indexes:
 
-Optimizing Performance
-======================
-
-1. **Enable Database Indexes**
-
-   Verify indexes exist before enabling extension:
-
-   .. code-block:: sql
-
-      CREATE INDEX idx_temporal_pages ON pages (starttime, endtime, sys_language_uid, hidden, deleted);
-      CREATE INDEX idx_temporal_content ON tt_content (starttime, endtime, sys_language_uid, hidden, deleted);
-
-2. **Start with Conservative Settings**
-
-   Begin with default (global) scoping, then optimize based on performance data
-
-3. **Use Wizard Presets**
-
-   Let the wizard recommend settings based on your site profile
-
-4. **Monitor Dashboard Metrics**
-
-   Review performance metrics regularly to identify issues
-
-Using Harmonization Effectively
+Check the database indexes first
 ================================
 
-1. **Align Slots with Content Schedule**
+The extension ships the indexes it needs in :file:`ext_tables.sql`:
+an index led by ``starttime`` and one led by ``endtime``, on ``pages`` and on ``tt_content``.
+They are created by the schema migrator, not by the extension itself.
 
-   If articles publish at 09:00, 13:00, 17:00, use those as slots:
+.. code-block:: bash
+    :caption: Create the indexes after installing or updating the extension
 
-   .. code-block:: text
+    vendor/bin/typo3 database:updateschema
 
-      harmonization.slots = 09:00,13:00,17:00
+.. code-block:: bash
+    :caption: Confirm that they exist
 
-2. **Consider Business Hours**
+    vendor/bin/typo3 temporalcache:verify
 
-   For corporate sites, use business hours only:
+The same check appears in the :ref:`Reports module <reports-module>`.
+Without these indexes every temporal lookup falls back to a full table scan.
 
-   .. code-block:: text
+.. _backend-tips-harmonization:
 
-      harmonization.slots = 08:00,12:00,17:00
+Using harmonization effectively
+===============================
 
-3. **Bulk Harmonize Existing Content**
+Align the slots with your editorial rhythm
+    If articles are published at 09:00, 13:00 and 17:00, use exactly those times as slots.
+    Timestamps are only moved when they lie within the configured tolerance of a slot, so slots far from your
+    actual publishing times harmonize nothing.
 
-   Use Content tab → Select All → Harmonize Selected to update existing content
+Review the shifts before applying them
+    The :guilabel:`Harmonization Suggestion` column in the :ref:`content view <backend-content>` shows the
+    shift in minutes per record.
+    A large shift moves content visibility noticeably; decide per record whether that is acceptable.
 
-4. **Review Suggestions**
+Preview a bulk run on the command line
+    :ref:`temporalcache:harmonize --dry-run <cli-harmonize>` lists every pending change without writing.
+    Run it before harmonizing from the backend, since the backend writes bypass the DataHandler and leave no
+    history entry to revert.
 
-   Check Harmonization Suggestion column for items with large time shifts
+Start small
+    Harmonize one table at a time with ``--table=pages`` or ``--table=tt_content``.
 
-Managing Temporal Content
-==========================
+.. _backend-tips-content:
 
-1. **Regular Cleanup**
+Managing temporal content
+=========================
 
-   Filter by "Expired" and consider hiding/deleting old content
+Clean up expired records
+    The :guilabel:`Expired` filter lists everything past its end time.
 
-2. **Plan Ahead**
+Watch for clustering
+    The dashboard timeline shows how many transitions fall on the same day.
+    Many transitions on one day mean many cache invalidations on that day; that is where harmonization pays
+    off.
 
-   Use timeline visualization to see upcoming transitions and avoid clustering
+Export an inventory
+    The backend list has no export.
+    Use :ref:`temporalcache:list <cli-list>` with ``--format=csv`` or ``--format=json``.
 
-3. **Export for Analysis**
+.. _backend-tips-troubleshooting:
 
-   Export to CSV for external analysis or reporting
+Troubleshooting
+===============
 
-4. **Use Preview Mode**
+.. _backend-tips-troubleshooting-cache:
 
-   Before harmonizing, preview affected pages to understand impact
+Cache is not updating
+---------------------
 
-Troubleshooting with Module
-============================
+#. Run ``vendor/bin/typo3 temporalcache:verify`` and fix everything it reports.
+#. Check the timing strategy on the dashboard.
+   With the ``scheduler`` or ``hybrid`` strategy, confirm that the scheduler task runs — see
+   :ref:`scheduler-setup`.
+#. Confirm that the affected record is listed at all, with
+   ``vendor/bin/typo3 temporalcache:list --upcoming``.
 
-Cache Not Updating
-------------------
+.. _backend-tips-troubleshooting-harmonization:
 
-1. Check **Dashboard → Performance Metrics**
-2. Verify database query time <20ms (indexes working)
-3. Check **Content Tab** for affected items
-4. If using scheduler, verify task runs regularly
+No harmonization suggestions appear
+-----------------------------------
 
-High Performance Impact
------------------------
-
-1. Review **Dashboard → Performance Metrics**
-2. If cache hit ratio <70%, consider:
-
-   - Switch to per-content scoping
-   - Enable scheduler timing
-   - Enable harmonization
-
-3. Use **Wizard** to test alternative configurations
-
-Harmonization Issues
---------------------
-
-1. Check **Content Tab → Harmonization Suggestion**
-2. If no suggestions appear:
-
-   - Verify harmonization.enabled = 1
-   - Check tolerance setting
-   - Verify items are within tolerance of slots
-
-3. Review tolerance setting if too many items not harmonizing
+#. Harmonization must be enabled in the extension configuration — the suggestion column is not rendered
+   otherwise.
+#. Check slots and tolerance with ``vendor/bin/typo3 temporalcache:verify``, which validates the slot format
+   and the tolerance range.
+#. A timestamp outside the tolerance of every slot is left alone by design; widen the tolerance or add slots.
 
 .. _backend-permissions:
 
-User Permissions
-================
+Access and permissions
+======================
 
-Required Permissions
---------------------
+The module is registered for administrators only (``'access' => 'admin'``) and is available in the Live
+workspace only (``'workspaces' => 'live'``).
+Non-administrators do not see it in the :guilabel:`Tools` section.
 
-Backend users need the following to access the module:
+To hide it from an administrator as well, use TSconfig:
 
-**Module Access**:
+.. code-block:: typoscript
+    :caption: User TSconfig or Group TSconfig
 
-.. code-block:: php
+    options.hideModules := addToList(tools_TemporalCache)
 
-   # User TSconfig or Group TSconfig
-   options.hideModules := removeFromList(tools_TemporalCache)
+Before applying harmonization the module additionally checks write access to every monitored table — by
+default ``pages`` and ``tt_content``, plus any table registered through ``TemporalMonitorRegistry``.
+Administrators pass this check unconditionally.
+When the check fails, the request is rejected with a message naming the tables the user cannot modify.
 
-**Read Permissions**:
+.. _backend-tips-next-steps:
 
-- Read access to `pages` table
-- Read access to `tt_content` table
-
-**Write Permissions** (for harmonization):
-
-- Write access to `pages` table
-- Write access to `tt_content` table
-
-Restricting Access
-------------------
-
-To hide module from specific users/groups:
-
-.. code-block:: php
-
-   # User TSconfig
-   options.hideModules := addToList(tools_TemporalCache)
-
-To limit harmonization features:
-
-The extension checks backend user permissions before allowing harmonization operations:
-
-**Automatic Permission Checks:**
-
-- Users must have write permissions to all monitored tables (pages, tt_content, custom tables)
-- Admin users bypass permission checks
-- Users without write access receive a specific error message
-
-**Permission Levels:**
-
-- **Read-only access**: Users without write permissions can view content but cannot harmonize
-- **Write access**: Users with table write permissions can harmonize temporal content
-- **Module access**: Control via TSconfig using ``options.hideModules`` (see above)
-
-**Custom Tables:**
-
-When custom tables are registered via ``TemporalMonitorRegistry``, permission checks
-automatically include those tables. Users must have write access to ALL registered tables
-to perform harmonization operations.
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`configuration` - Complete configuration reference
-- :ref:`performance-considerations` - Performance impact analysis
-- :ref:`backend-dashboard` - Monitor your temporal cache
+- :ref:`configuration` — complete configuration reference
+- :ref:`command-line` — command reference
+- :ref:`performance-considerations` — performance impact analysis
+- :ref:`backend-dashboard` — monitor your temporal cache

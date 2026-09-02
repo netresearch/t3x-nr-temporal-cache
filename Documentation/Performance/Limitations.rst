@@ -2,402 +2,280 @@
 
 .. _performance-limitations:
 
-================================
-Phase 1 Architectural Limitations
-================================
+===========
+Limitations
+===========
 
-Understanding Phase 1 Constraints
-==================================
+This chapter lists what the approach cannot do and which failure modes to plan for.
+:ref:`performance-model` has the matrix of what each configuration does; this chapter
+assumes it.
 
-.. note::
-   This section describes the global scoping strategy and its architectural constraints.
-   The extension also provides per-page and per-content scoping strategies that mitigate
-   these limitations. See :ref:`performance-strategies` for optimization options.
+.. _performance-limitations-relative-lifetime:
 
-**Key Architectural Constraint**:
+Only a relative lifetime is available
+=====================================
 
-The ``ModifyCacheLifetimeForPageEvent`` (TYPO3 core) does not provide information about which
-page is being cached or its dependencies. Therefore, global scoping must use **global queries**
-across all pages and content within the current workspace and language.
+TYPO3's cache API accepts "keep this for N seconds", not "keep this until timestamp T".
+``ModifyCacheLifetimeForPageEvent`` is the only lever the extension has over a page cache
+entry, and it takes a duration.
 
-**This is a known Phase 1 constraint, not a bug.**
+The event does supply the page id (``getPageId()``) and the rendering instructions, so the
+extension can and does scope by page — but it says nothing about which records were
+rendered into the entry.
+The extension therefore has to infer the relevant transitions from the configured scope
+rather than from the page's actual content.
 
-See :ref:`phases` for how Phase 2/3 (core integration) will eliminate these limitations.
+.. _performance-limitations-synchronized-expiry:
 
-Critical Impact: Site-Wide Cache Synchronization
-=================================================
+Synchronized expiry with global scoping
+=======================================
 
-Behavior
---------
+With ``scoping.strategy = global`` every page cache entry written in the same second
+receives the same expiry timestamp: the earliest upcoming transition anywhere on the site.
 
-With **global scoping** strategy:
+.. code-block:: text
 
-**ALL pages** in a workspace/language expire at the **same timestamp** - the earliest future
-starttime/endtime across the entire site.
+    Site with 10,000 pages
+      Page A has a future starttime at 10:00
+      Every other page has no temporal restriction
 
-Example Scenario
-~~~~~~~~~~~~~~~~
+    Every page cache entry written before 10:00 expires at 10:00.
+    After 10:00 they all miss, and each miss regenerates a page.
 
-::
+Two consequences follow.
 
-   Site with 10,000 pages:
-   - Page A (pid=123): Has future starttime = 10:00 AM
-   - Pages B-J (pid=1-9999): No temporal restrictions
+Cache hit ratio
+   The effective lifetime of the whole page cache becomes the gap between transitions.
+   On a site with frequent transitions that is far shorter than the lifetime the site would
+   otherwise use.
 
-   Result:
-   - ALL 10,000 pages cache expires at 10:00 AM
-   - ALL pages regenerate simultaneously when first accessed after 10:00 AM
+Simultaneous misses
+   Because the expiry is identical rather than staggered, misses arrive together.
+   A CDN or reverse proxy in front of TYPO3 respects the same ``Cache-Control`` window, so
+   the burst reaches the origin as one wave.
 
-Why This Happens
-----------------
+Mitigations
+-----------
 
-The extension queries globally:
-
-.. code-block:: php
-
-   // Queries ALL pages in workspace/language
-   ->from('pages')
-   ->where(
-       $qb->expr()->eq('hidden', 0),
-       $qb->expr()->gt('starttime', $now),
-       $qb->expr()->eq('sys_language_uid', $languageId)
-   )
-
-**No filtering by**:
-
-- Page tree (no rootline check)
-- Current page being cached
-- Page dependencies or relationships
-- Content on specific pages
-
-**Mitigation**: Use per-page or per-content scoping strategies to reduce impact.
-
-Performance Impacts
-===================
-
-1. Reduced Cache Hit Ratio
----------------------------
-
-**Severity**: MEDIUM-HIGH (global scoping only)
-
-**Impact**: Frequent temporal transitions = frequent site-wide cache expirations
-
-**Without Extension**:
-
-- Default cache lifetime: 24 hours (typical)
-- Cache hit ratio: 90-95%
-- Stable, predictable cache behavior
-
-**With Extension (global scoping, temporal-heavy site)**:
-
-- Dynamic cache lifetime: Minutes to hours
-- Cache hit ratio: May drop to 40-70%
-- More cache regenerations = higher server load
-
-**Example**: News site with hourly scheduled articles = hourly site-wide cache flush
-
-**Mitigation**:
-
-✅ Use per-page or per-content scoping (95-99.7% reduction)
-✅ Enable time harmonization (98%+ reduction in transitions)
-✅ Consider scheduler timing for non-critical content
-
-2. Cache Miss Storms (Thundering Herd)
---------------------------------------
-
-**Severity**: HIGH (global scoping + high traffic)
-
-**Impact**: All pages expire simultaneously, causing request spike to origin server
-
-Scenario
-~~~~~~~~
-
-::
-
-   T+0:   10,000 pages cached, expires at T+60 minutes
-   T+60:  ALL 10,000 page caches expire simultaneously
-   T+61:  First 100 concurrent requests hit origin (cache misses)
-   T+62:  Cache warming begins, but load spike occurred
-
-**Risk Factors**:
-
-- High-traffic sites (>1M pageviews/month)
-- Large page counts (>1,000 pages)
-- Using CDN/Varnish (amplifies the effect)
-- Global scoping strategy
-
-**Mitigation Strategies**:
-
-✅ **Cache Warming**:
-
-.. code-block:: bash
-
-   # Proactive cache warming before expiration
-   curl -s https://example.com/sitemap.xml | \
-   grep -o '<loc>[^<]*' | \
-   sed 's/<loc>//' | \
-   xargs -P 10 -I {} curl -s {} > /dev/null
-
-✅ **Stale-While-Revalidate**:
+- Switch to ``per-page`` scoping.
+  Content transitions then expire only the page carrying the content; page transitions
+  still land on every entry, since they change menus everywhere.
+- Switch to ``scheduler`` timing.
+  Nothing expires by time at all; the task flushes what the scoping strategy names.
+- Serve stale content while regenerating, so the burst does not reach the origin at full
+  size.
 
 .. code-block:: apache
-   :caption: Apache .htaccess
+    :caption: Apache
 
-   <IfModule mod_headers.c>
-       Header set Cache-Control "public, max-age=3600, stale-while-revalidate=300"
-   </IfModule>
+    <IfModule mod_headers.c>
+        Header set Cache-Control "public, max-age=3600, stale-while-revalidate=300"
+    </IfModule>
 
 .. code-block:: text
-   :caption: Varnish VCL
+    :caption: Varnish VCL
 
-   sub vcl_backend_response {
-       set beresp.grace = 5m;
-   }
-
-✅ **Origin Rate Limiting**:
+    sub vcl_backend_response {
+        set beresp.grace = 5m;
+    }
 
 .. code-block:: nginx
-   :caption: Nginx
+    :caption: Nginx rate limiting on the origin
 
-   limit_req_zone $binary_remote_addr zone=one:10m rate=10r/s;
-   limit_req zone=one burst=20 nodelay;
+    limit_req_zone $binary_remote_addr zone=one:10m rate=10r/s;
+    limit_req zone=one burst=20 nodelay;
 
-✅ **Use per-page/per-content scoping** - Eliminates synchronized expiration
+- Warm the cache before the transition, using the transition times
+  ``temporalcache:list`` reports.
 
-3. Database Query Overhead
----------------------------
+.. _performance-limitations-query-cost:
 
-**Severity**: MEDIUM (dynamic timing only)
+Query cost on every cache write
+===============================
 
-**Impact**: 4 database queries per page cache generation
-
-Queries Executed
-~~~~~~~~~~~~~~~~
-
-.. code-block:: sql
-
-   -- Query 1: Earliest future starttime for pages
-   SELECT starttime FROM pages
-   WHERE hidden=0 AND starttime>? AND starttime!=0 AND sys_language_uid=?
-   ORDER BY starttime ASC LIMIT 1
-
-   -- Query 2: Earliest future endtime for pages
-   SELECT endtime FROM pages
-   WHERE hidden=0 AND endtime>? AND endtime!=0 AND sys_language_uid=?
-   ORDER BY endtime ASC LIMIT 1
-
-   -- Query 3: Earliest future starttime for content
-   SELECT starttime FROM tt_content
-   WHERE hidden=0 AND starttime>? AND starttime!=0 AND sys_language_uid=?
-   ORDER BY starttime ASC LIMIT 1
-
-   -- Query 4: Earliest future endtime for content
-   SELECT endtime FROM tt_content
-   WHERE hidden=0 AND endtime>? AND endtime!=0 AND sys_language_uid=?
-   ORDER BY endtime ASC LIMIT 1
-
-Performance Cost
-~~~~~~~~~~~~~~~~
-
-- Per query: ~1-5ms with proper indexing
-- Per page cache: ~5-20ms total (4 queries)
-- Cold cache fill (10,000 pages): 50,000-200,000ms (50-200 seconds of query time)
-
-**Mitigation**:
-
-✅ **Mandatory database indexing** (see :ref:`installation`):
+With ``dynamic`` timing, each page cache write runs two ``MIN()`` queries per monitored
+table — four with the default ``pages`` and ``tt_content``.
 
 .. code-block:: sql
+    :caption: The shape of each query (per-page scoping adds the pid clause)
 
-   CREATE INDEX idx_starttime ON pages (starttime);
-   CREATE INDEX idx_endtime ON pages (endtime);
-   CREATE INDEX idx_starttime ON tt_content (starttime);
-   CREATE INDEX idx_endtime ON tt_content (endtime);
+    SELECT MIN(`starttime`) AS min_transition
+    FROM `tt_content`
+    WHERE `starttime` > :now
+      AND `deleted` = 0
+      AND `hidden` = 0
+      AND `pid` = :pageId
+      AND (`t3ver_wsid` = 0 OR `t3ver_wsid` IS NULL)
+      AND `sys_language_uid` = :language
 
-✅ **Use scheduler timing** - Zero per-page overhead
+Notes on that query:
 
-✅ **Database query caching** - Reduces repeated query cost
+- Records with ``starttime = 0`` are excluded by the ``> :now`` comparison; there is no
+  separate ``!= 0`` clause.
+- The ``deleted``/``hidden`` column names come from the table's TCA ``ctrl`` section.
+  Where no TCA is loaded, those clauses are simply absent.
+- The workspace clause is ``t3ver_wsid = :workspace`` for any workspace other than live.
 
-4. CDN/Reverse Proxy Cascade
-----------------------------
+Indexes
+-------
 
-**Severity**: MEDIUM (global scoping + CDN)
+:file:`ext_tables.sql` ships the matching composite indexes for the default tables, so no
+manual ``CREATE INDEX`` is needed — run the database analyzer after installing and confirm
+with ``temporalcache:verify``:
 
-**Impact**: Site-wide cache expiration extends to CDN layer
+- ``pages``: ``idx_temporalcache_starttime (starttime, sys_language_uid)``,
+  ``idx_temporalcache_endtime (endtime, sys_language_uid)``
+- ``tt_content``: the same two
 
-Architecture Flow
-~~~~~~~~~~~~~~~~~
+.. warning::
+    A table registered through ``TemporalMonitorRegistry`` gets **no** index from this
+    extension, and adds two queries to every lookup.
+    Ship the equivalent index with the extension that registers the table.
 
-::
+Only the site-wide lookup is memoized, in a request-scoped singleton keyed by timestamp,
+workspace and language.
+The per-page and per-content lookups are not memoized.
 
-   Browser → CDN (Cloudflare/Varnish) → TYPO3 Origin
-           ↓
-   CDN respects Cache-Control headers from TYPO3
-           ↓
-   When TYPO3 cache expires, CDN cache also expires
-           ↓
-   ALL requests hit TYPO3 origin simultaneously
+.. _performance-limitations-scheduler-cost:
 
-**Risk**: CDN cache miss storm can overwhelm origin server
+The scheduler task is not free
+==============================
 
-**Mitigation**:
+``scheduler`` timing removes the per-request queries, but its task loads **every** record
+that carries a ``starttime`` or ``endtime`` from every monitored table into PHP on each run
+— one query per table, with no time restriction in SQL — and then filters the run's window
+in PHP.
 
-✅ **CDN stale-while-revalidate**:
+Its cost scales with the total volume of temporal content on the site, not with the number
+of transitions that actually occurred.
+On a site with a lot of scheduled content, running the task every minute repeats that load
+every minute.
 
-.. code-block:: text
-   :caption: Cloudflare Page Rule
+The first run has no stored timestamp and therefore processes the range from epoch to now,
+which flushes for every past transition once.
 
-   Cache Level: Cache Everything
-   Edge Cache TTL: 1 hour
-   Origin Cache Control: On
+.. _performance-limitations-scheduler-scope:
 
-✅ **Origin rate limiting** (see above)
+Scheduler flushes are narrower than they look
+=============================================
 
-✅ **Use per-page/per-content scoping** - Reduces cascade effect
+Under ``scheduler`` or ``hybrid`` timing the flush tags come from the scoping strategy:
 
-5. No Granular Control (v1.0.x)
---------------------------------
+- ``global`` flushes the ``pages`` tag — everything.
+- ``per-page`` flushes ``pageId_<uid>`` for a page and ``pageId_<pid>`` for a content
+  element.
+- ``per-content`` flushes one ``pageId_*`` per refindex hit; a page record still yields only
+  its own tag.
 
-**Severity**: LOW-MEDIUM
+So with ``per-page`` or ``per-content`` scoping, a page reaching its ``starttime`` refreshes
+that page's own cache and nothing else.
+Menus on other pages keep showing the old page tree until their entries expire for another
+reason.
+Only ``global`` scoping refreshes them.
 
-**Impact**: All-or-nothing - cannot disable for specific page trees or content types
+.. _performance-limitations-per-content-lifetime:
 
-Current Limitations
-~~~~~~~~~~~~~~~~~~~
+Per-content scoping does not narrow lifetimes
+=============================================
 
-- No TypoScript configuration options
-- No per-page-tree enable/disable
-- No content type filtering (pages vs content vs news vs events)
-- Global behavior across entire workspace/language
+``PerContentScopingStrategy::getNextTransition()`` returns the site-wide transition, the
+same value ``global`` returns.
+Narrowing it per page would risk serving stale content that was embedded from elsewhere.
 
-**Future**: Configuration options planned for v1.2.0+
+Consequence: ``per-content`` combined with ``dynamic`` timing is indistinguishable from
+``global`` in its cache effect.
+The strategy's precision is in its flush tags and needs ``scheduler`` or ``hybrid`` timing
+to have any effect.
 
-**Workaround**: Use custom event listeners to add filtering logic (see :ref:`architecture`)
+.. _performance-limitations-cross-page:
 
-6. Multi-Language Overhead
----------------------------
+Cross-page dependencies with dynamic timing
+===========================================
 
-**Severity**: MEDIUM (multi-language sites)
+``per-page`` scoping looks at content elements by ``pid``.
+An element rendered onto another page through a ``CONTENT`` or ``RECORDS`` cObject is
+therefore invisible to that page's lifetime calculation, and the embedding page keeps its
+long lifetime when the element transitions.
 
-**Impact**: Query overhead multiplies by number of languages
+There is no configuration that fixes this for ``dynamic`` timing.
+``per-content`` scoping resolves the references, but only for flush tags.
 
-Behavior
-~~~~~~~~
+.. _performance-limitations-hybrid:
 
-With 5 languages:
+A hybrid combination that drops transitions
+===========================================
 
-- Global scoping: 4 queries × 5 languages = 20 queries per cache generation
-- Per-page scoping: 4 queries × 5 languages = 20 queries per page
-- Scheduler timing: Background processing, minimal impact
-
-**Mitigation**:
-
-✅ Use scheduler timing (eliminates per-page overhead)
-✅ Database query caching (reduces redundant queries)
-✅ Per-content scoping + refindex (more efficient lookup)
-
-When Phase 1 Limitations Matter
-================================
-
-Phase 1 limitations are most significant for:
-
-❌ **Large Enterprise Sites**
-
-- >50,000 pages
-- >1M pageviews/month
-- >100 temporal transitions/day
-- Mission-critical uptime requirements
-
-❌ **High-Traffic News Sites**
-
-- Hourly/frequent scheduled content
-- High concurrent user load
-- CDN-heavy architecture
-- Performance-sensitive
-
-❌ **Multi-Tenant Platforms**
-
-- Hundreds of independent sites
-- Variable temporal content per site
-- Shared infrastructure
-- Resource constraints
-
-✅ **When Phase 1 Works Well**
-
-- Small to medium sites (<10,000 pages)
-- Moderate temporal content (<50 transitions/day)
-- Standard TYPO3 infrastructure
-- Proper optimization strategies applied
-
-Comparison: Phase 1 vs Phase 2/3
-=================================
+``timing.hybrid.pages`` and ``timing.hybrid.content`` both accept ``dynamic`` and
+``scheduler``, so four combinations are configurable.
+One of them does not work:
 
 .. list-table::
-   :header-rows: 1
-   :widths: 30 35 35
+    :header-rows: 1
+    :widths: 20 20 60
 
-   * - Aspect
-     - Phase 1 (Current)
-     - Phase 2/3 (Future)
-   * - **Scope**
-     - Global by default
-       (per-page/content available)
-     - Per-page native
-   * - **Query Overhead**
-     - 4 queries per cache
-       (dynamic timing)
-     - Zero queries
-   * - **Cache Synchronization**
-     - Site-wide possible
-       (with global scoping)
-     - Per-page always
-   * - **Configuration**
-     - Extension settings
-     - Core API
-   * - **Cross-page Dependencies**
-     - Not detected
-     - Automatic detection
-   * - **Timeline**
-     - Available today
-     - 2026-2027+ (estimated)
+    * - ``pages``
+      - ``content``
+      - Effect
+    * - ``dynamic``
+      - ``scheduler``
+      - The documented pairing. Lifetimes are shortened; content transitions are flushed by
+        the task.
+    * - ``dynamic``
+      - ``dynamic``
+      - Equivalent to ``timing.strategy = dynamic``.
+    * - ``scheduler``
+      - ``scheduler``
+      - Equivalent to ``timing.strategy = scheduler``.
+    * - ``scheduler``
+      - ``dynamic``
+      - **Content transitions are dropped.** The lifetime is ``null`` because the ``pages``
+        rule decides it, and the task hands content transitions to the dynamic strategy,
+        whose ``processTransition()`` does nothing.
 
-See :ref:`phases` for complete roadmap and migration path.
+.. _performance-limitations-scheduler-context:
 
-Mitigation Summary
-==================
+The scheduler task sees only live and the default language
+==========================================================
 
-For each limitation, mitigation strategies are available:
+``TemporalCacheSchedulerTask`` calls ``findTransitionsInRange()`` without a workspace or
+language argument, so it runs with the defaults: workspace ``0`` and
+``sys_language_uid = 0``.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 40 30
+Transitions on translated records are therefore not processed by ``scheduler`` or
+``hybrid`` timing.
+On a multi-language site, use ``dynamic`` timing — which reads workspace and language from
+the request context — for the languages that matter.
 
-   * - Limitation
-     - Mitigation Strategy
-     - Effectiveness
-   * - Cache hit ratio drop
-     - Per-page/per-content scoping
-     - 95-99.7% improvement
-   * - Cache miss storms
-     - Stale-while-revalidate + warming
-     - High
-   * - Query overhead
-     - Scheduler timing + indexing
-     - 100% (zero overhead)
-   * - CDN cascade
-     - CDN grace period + rate limiting
-     - Medium-High
-   * - No granular control
-     - Custom event listeners
-     - Medium (requires code)
-   * - Multi-language overhead
-     - Scheduler timing + query caching
-     - High
+.. _performance-limitations-scope-of-effect:
 
-Next Steps
+Only the page cache
+===================
+
+The listener sets the page cache lifetime.
+Caches written by other code — an extension's own cache, a reverse proxy configured
+independently, a static file cache — keep whatever lifetime that code assigns.
+
+Granularity is one second, because transitions are Unix timestamps.
+
+.. _performance-limitations-no-filtering:
+
+No per-page-tree switch
+=======================
+
+The configuration is global to the installation.
+There is no setting to exclude a page tree, a doktype or a content type from the
+calculation.
+
+The workaround is a second listener on the same event, ordered after this extension's, that
+overrides the lifetime for the pages it wants to exclude — see
+:ref:`architecture-custom-listener`.
+
+.. _performance-limitations-next-steps:
+
+Next steps
 ==========
 
-- :ref:`performance-strategies` - Optimization approaches
-- :ref:`decision-guide` - Site-specific recommendations
-- :ref:`phases` - Future improvements roadmap
-- :ref:`configuration` - Detailed configuration options
+- :ref:`performance-strategies` — the settings that change this behavior
+- :ref:`decision-guide` — which configuration matches which site
+- :ref:`architecture` — the implementation these limits come from
+- :ref:`phases` — what a core solution would change

@@ -2,15 +2,46 @@
 
 .. _configuration-strategies:
 
-========================
-Optimization Strategies
+=======================
+Optimization strategies
+=======================
+
+Reference for the scoping, timing and harmonization settings.
+Each setting is listed with the type, the default and the behaviour the
+extension code derives from it.
+
+For guidance on which combination suits which site, see
+:ref:`performance-strategies`.
+
+.. _configuration-strategies-how-settings-combine:
+
+How the settings combine
 ========================
 
-Configure scoping, timing, and harmonization strategies to optimize cache performance.
+The scoping strategy answers two questions, and the timing strategy decides
+which of the two answers is ever used:
+
+Cache lifetime
+   :php:`ScopingStrategyInterface::getNextTransition()` returns the next
+   transition timestamp.
+   The event listener caps the page cache lifetime at that timestamp.
+   Only the ``dynamic`` timing strategy — and ``hybrid`` when its page rule is
+   ``dynamic`` — asks for it.
+
+Cache tags
+   :php:`ScopingStrategyInterface::getCacheTagsToFlush()` returns the tags a
+   transition flushes.
+   Only the scheduler task calls
+   :php:`TimingStrategyInterface::processTransition()`, so these tags take
+   effect with the ``scheduler`` and ``hybrid`` timing strategies.
+   :php:`DynamicTimingStrategy::processTransition()` is empty.
+
+A scoping strategy whose benefit lies in its tags therefore has no effect while
+``timing.strategy = dynamic``.
 
 .. _configuration-scoping:
 
-Scoping Strategy
+Scoping strategy
 ================
 
 Controls which caches are invalidated when temporal transitions occur.
@@ -21,35 +52,38 @@ Controls which caches are invalidated when temporal transitions occur.
    :Default: ``global``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy']
 
-   Choose cache invalidation scope.
-
-   **Options:**
+   Selects the scoping strategy by its :php:`getName()`.
+   Accepted values are ``global``, ``per-page`` and ``per-content``.
+   A value matching no registered strategy activates the tagged strategy with
+   the highest priority, which is ``global``.
 
    ``global``
-      Invalidates all page caches on every temporal transition.
-
-      - **Zero configuration** required
-      - **Simple** and reliable
-      - **Default strategy**
-      - **Best for**: Small sites (<1,000 pages)
-      - **Impact**: High cache churn on large sites
+      Next transition: the earliest transition in any monitored table, for the
+      current workspace and language.
+      Cache tags: ``pages`` — every page cache is flushed.
 
    ``per-page``
-      Invalidates only the affected page.
-
-      - **Targeted invalidation** reduces cache churn
-      - **95%+ reduction** in cache invalidations
-      - **Best for**: Medium sites (1,000-10,000 pages)
-      - **Impact**: Minimal, proportional to affected pages
+      Next transition: the earlier of the next transition in the ``pages``
+      table site-wide and the next content transition on the page being
+      rendered.
+      Page transitions stay site-wide because a page appearing or disappearing
+      changes menus everywhere.
+      Without a page id, for example on the command line, the site-wide
+      transition is used.
+      Cache tags: ``pageId_<uid>`` for a page record, ``pageId_<pid>`` for a
+      content element.
 
    ``per-content``
-      Finds all pages containing temporal content via sys_refindex.
+      Next transition: the site-wide transition, the same value ``global``
+      returns.
+      Content can be referenced onto arbitrary pages, so narrowing the lifetime
+      per page would risk serving stale embedded content.
+      Cache tags: ``pageId_<uid>`` for a page record; for a content element,
+      one tag per page that references it, resolved through ``sys_refindex``.
 
-      - **Maximum efficiency** - only affected pages
-      - **99.7% reduction** in cache invalidations
-      - **Best for**: Large sites (>10,000 pages)
-      - **Requires**: sys_refindex enabled (use_refindex = 1)
-      - **Impact**: Minimal, most efficient approach
+   The per-content precision lives entirely in the tags, so this strategy
+   changes nothing while ``timing.strategy = dynamic``.
+   Combine it with ``scheduler`` or ``hybrid`` timing.
 
    Example
    -------
@@ -65,19 +99,24 @@ Controls which caches are invalidated when temporal transitions occur.
    :Default: ``true``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['use_refindex']
 
-   Enable sys_refindex for accurate content element tracking.
+   Read by the ``per-content`` scoping strategy only.
+   The other two strategies ignore it.
 
    **When enabled:**
 
-   - Per-content strategy uses refindex to find all pages containing temporal content
-   - Accurate tracking of content element usage across pages
-   - Required for per-content strategy to work correctly
+   ``PerContentScopingStrategy`` asks ``RefindexService`` for every page that
+   references the content element and returns one cache tag per page.
 
    **When disabled:**
 
-   - Per-content strategy falls back to per-page behavior
-   - May miss pages with content elements in non-standard locations
-   - Not recommended except for debugging
+   The lookup is skipped and the strategy flushes the content element's own
+   page (``pid``) only, which is what ``per-page`` does.
+
+   The same fallback to ``pid`` applies when the reference index lookup returns
+   no pages or throws, so a stale ``sys_refindex`` degrades the result instead
+   of dropping the invalidation.
+   Keep the reference index current with
+   :bash:`vendor/bin/typo3 referenceindex:update`.
 
    Example
    -------
@@ -89,7 +128,7 @@ Controls which caches are invalidated when temporal transitions occur.
 
 .. _configuration-timing:
 
-Timing Strategy
+Timing strategy
 ===============
 
 Controls when the extension checks for temporal transitions.
@@ -100,35 +139,30 @@ Controls when the extension checks for temporal transitions.
    :Default: ``dynamic``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['timing']['strategy']
 
-   Choose when to check for transitions.
-
-   **Options:**
+   Selects the timing strategy by its :php:`getName()`.
+   Accepted values are ``dynamic``, ``scheduler`` and ``hybrid``.
+   A value matching no registered strategy activates the tagged strategy with
+   the highest priority, which is ``dynamic``.
 
    ``dynamic``
-      Event-based checking on every page cache generation.
-
-      - **Immediate response** to transitions
-      - **Real-time accuracy**
-      - **Overhead**: 4 database queries per page cache (~5-20ms with indexes)
-      - **Best for**: Sites requiring immediate updates
-      - **Default timing strategy**
+      Calculates a cache lifetime on every page cache generation and caps the
+      page cache at the next transition.
+      With no transition ahead it returns
+      ``advanced.default_max_lifetime``; a transition already in the
+      past yields 60 seconds.
+      Transitions are not processed separately — the cache simply expires.
 
    ``scheduler``
-      Background processing via TYPO3 Scheduler task.
-
-      - **Zero per-page overhead** (no queries during page generation)
-      - **Background processing** at configured intervals
-      - **Requires**: Scheduler task setup (see :ref:`scheduler-setup`)
-      - **Best for**: High-traffic sites
-      - **Slight delay**: Updates only as often as scheduler runs (typically 1 minute)
+      Returns no lifetime, so the extension leaves the page cache lifetime
+      untouched and TYPO3's own cache period applies.
+      Invalidation happens when the scheduler task processes a transition and
+      flushes the scoping strategy's cache tags.
+      Requires the scheduler task, see :ref:`scheduler-setup`.
 
    ``hybrid``
-      Configure different timing strategies per content type.
-
-      - **Flexible**: Dynamic for pages, Scheduler for content
-      - **Best of both worlds**: Real-time menus, background content updates
-      - **Configuration**: Use ``timing.hybrid.pages`` and ``timing.hybrid.content``
-      - **Best for**: Complex requirements
+      Delegates per content type to the dynamic or the scheduler strategy,
+      configured through ``timing.hybrid.pages`` and
+      ``timing.hybrid.content``.
 
    Example
    -------
@@ -137,10 +171,10 @@ Controls when the extension checks for temporal transitions.
 
       # Extension Manager configuration
 
-      # Use scheduler for zero overhead
+      # Flush through the scheduler task
       timing.strategy = scheduler
 
-      # Or hybrid for flexibility
+      # Or split the two content types
       timing.strategy = hybrid
       timing.hybrid.pages = dynamic
       timing.hybrid.content = scheduler
@@ -151,30 +185,21 @@ Controls when the extension checks for temporal transitions.
    :Default: ``60``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['timing']['scheduler_interval']
 
-   Check interval in seconds for scheduler-based timing strategy.
+   Intended check interval in seconds for the scheduler timing strategy.
+   :php:`ExtensionConfiguration::getSchedulerInterval()` reads the value and
+   raises anything below 60 to 60.
 
-   **Guidelines:**
-
-   - **Minimum**: 60 seconds (enforced)
-   - **Default**: 60 seconds (recommended)
-   - **High-traffic sites**: 60-120 seconds
-   - **Low-frequency content**: 300-600 seconds
-
-   **Impact:**
-
-   - Lower interval = More accurate transitions, higher scheduler overhead
-   - Higher interval = Less overhead, potential delay in transitions
+   .. warning::
+      No component of this version reads that getter.
+      How often transitions are actually processed is set by the frequency of
+      the scheduler task itself, not by this value.
 
    Example
    -------
 
    .. code-block:: text
 
-      # Check every minute (default)
       timing.scheduler_interval = 60
-
-      # Check every 5 minutes (low-frequency content)
-      timing.scheduler_interval = 300
 
 .. confval:: timing.hybrid.pages
 
@@ -182,11 +207,26 @@ Controls when the extension checks for temporal transitions.
    :Default: ``dynamic``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['timing']['hybrid']['pages']
 
-   Timing strategy for page transitions (affects menus).
+   Rule for records in the ``pages`` table, whose content type is ``page``.
+   Accepted values are ``dynamic`` and ``scheduler``; any other value falls
+   back to ``dynamic``.
+   Only read when ``timing.strategy = hybrid``.
 
-   Only applies when ``timing.strategy = hybrid``.
+   This rule does double duty.
+   Besides routing page transitions, it is the rule
+   :php:`HybridTimingStrategy::getCacheLifetime()` consults on every page cache
+   generation, because at that point the individual content elements of the
+   page are not known.
+   Leaving it at ``dynamic`` therefore keeps the lifetime calculation running
+   for every cached page; setting it to ``scheduler`` removes the lifetime
+   calculation for the whole site.
 
-   **Recommendation**: Use ``dynamic`` for pages to ensure menus update immediately.
+   .. note::
+      The configuration key is ``pages``, the content type it maps to is
+      ``page``.
+      :php:`ExtensionConfiguration::getTimingRules()` performs that mapping, so
+      the rule reaches :php:`HybridTimingStrategy`, which looks rules up by
+      :php:`TemporalContent::getContentType()`.
 
    Example
    -------
@@ -202,11 +242,16 @@ Controls when the extension checks for temporal transitions.
    :Default: ``scheduler``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['timing']['hybrid']['content']
 
-   Timing strategy for content element transitions.
+   Rule for records in every monitored table other than ``pages``, whose
+   content type is ``content``.
+   Accepted values are ``dynamic`` and ``scheduler``; any other value falls
+   back to ``dynamic``.
+   Only read when ``timing.strategy = hybrid``.
 
-   Only applies when ``timing.strategy = hybrid``.
-
-   **Recommendation**: Use ``scheduler`` for content elements to reduce per-page overhead.
+   This rule applies to transition processing only.
+   The cache lifetime always follows ``timing.hybrid.pages``, so setting
+   this rule to ``dynamic`` means content transitions are neither processed by
+   the scheduler task nor reflected in a lifetime of their own.
 
    Example
    -------
@@ -218,10 +263,11 @@ Controls when the extension checks for temporal transitions.
 
 .. _configuration-harmonization:
 
-Time Harmonization
+Time harmonization
 ==================
 
-Reduces cache churn by rounding transition times to fixed time slots.
+Rounds transition timestamps to fixed time slots so that several transitions
+share one cache flush.
 
 .. confval:: harmonization.enabled
 
@@ -229,29 +275,23 @@ Reduces cache churn by rounding transition times to fixed time slots.
    :Default: ``false``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['harmonization']['enabled']
 
-   Enable time slot harmonization.
-
-   **When enabled:**
-
-   - Transitions are rounded to nearest configured time slot
-   - **98%+ reduction** in cache transitions possible
-   - Multiple transitions group together at slot times
-   - Example: Transitions at 00:05, 00:15, 00:45 all round to 00:00
+   Master switch for ``HarmonizationService``.
 
    **When disabled:**
 
-   - Each transition occurs at its exact scheduled time
-   - More frequent cache invalidations
+   :php:`harmonizeTimestamp()` returns every timestamp unchanged, the Content
+   tab of the backend module hides its harmonization column, and the
+   ``harmonize`` AJAX endpoint refuses the request.
 
-   **Impact Example:**
+   **When enabled:**
 
-   .. code-block:: text
-
-      Without harmonization:
-      500 transitions/day → 500 cache flushes
-
-      With harmonization (4 slots):
-      500 transitions/day → 4 cache flushes (at 00:00, 06:00, 12:00, 18:00)
+   Timestamps are moved to the nearest configured slot, subject to
+   ``harmonization.tolerance``.
+   Harmonization is applied where it is invoked — by the ``Harmonize selected``
+   action in the backend module and by the
+   :bash:`vendor/bin/typo3 temporalcache:harmonize` command, both of which
+   write ``starttime`` and ``endtime`` back to the record.
+   It does not silently rewrite records that editors save.
 
    Example
    -------
@@ -266,15 +306,20 @@ Reduces cache churn by rounding transition times to fixed time slots.
    :Default: ``00:00,06:00,12:00,18:00``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['harmonization']['slots']
 
-   Time slots in HH:MM format for harmonization.
+   Comma-separated list of times of day in ``HH:MM`` format, 24-hour clock.
+   Surrounding whitespace is trimmed and the list is sorted internally.
+   An entry that is not ``HH:MM``, or whose hours exceed 23 or minutes exceed
+   59, is dropped without an error; if that leaves no slot at all,
+   harmonization returns every timestamp unchanged.
 
-   **Format:**
+   The slots repeat every day: a timestamp is compared against the slot times
+   of its own day, in the server timezone.
+   The comparison does not wrap around midnight, so 23:30 is 5 hours 30 minutes
+   from an 18:00 slot and not 30 minutes from the next day's 00:00 slot.
+   A slot at ``00:00`` therefore only attracts timestamps in the early hours.
 
-   - Comma-separated list
-   - HH:MM format (24-hour)
-   - Example: ``00:00,06:00,12:00,18:00``
-
-   **Presets:**
+   Examples
+   --------
 
    .. code-block:: text
 
@@ -284,19 +329,8 @@ Reduces cache churn by rounding transition times to fixed time slots.
       # Every 4 hours (6 slots per day)
       harmonization.slots = 00:00,04:00,08:00,12:00,16:00,20:00
 
-      # Every 2 hours (12 slots per day)
-      harmonization.slots = 00:00,02:00,04:00,06:00,08:00,10:00,12:00,14:00,16:00,18:00,20:00,22:00
-
       # Business hours only
       harmonization.slots = 08:00,12:00,17:00
-
-   Example
-   -------
-
-   .. code-block:: text
-
-      harmonization.enabled = 1
-      harmonization.slots = 00:00,06:00,12:00,18:00
 
 .. confval:: harmonization.tolerance
 
@@ -304,40 +338,39 @@ Reduces cache churn by rounding transition times to fixed time slots.
    :Default: ``3600``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['harmonization']['tolerance']
 
-   Maximum allowed time shift for harmonization in seconds.
+   Largest shift in seconds that harmonization may apply.
+   A timestamp is moved to its nearest slot only when the distance to that slot
+   is at most this many seconds; anything further away is returned unchanged.
 
-   **Purpose:**
+   .. warning::
+      ``0`` does not mean "no limit".
+      With a tolerance of ``0`` only a timestamp that already sits exactly on a
+      slot passes the check, so harmonization changes nothing at all.
+      The label in :file:`ext_conf_template.txt` still reads ``0 = no limit``
+      and is wrong.
+      :bash:`temporalcache:verify` treats a tolerance outside 1-86400 as
+      invalid.
 
-   Prevents unwanted time shifts for content that must appear at specific times.
-
-   **Values:**
-
-   - ``0``: No shift allowed - harmonization is effectively disabled
-   - ``3600`` (default): Max 1 hour shift
-   - ``1800``: Max 30 minutes shift
-   - ``7200``: Max 2 hours shift
-
-   **Example Behavior** (tolerance = 3600, slot = 12:00):
+   **Example behaviour** (slots ``00:00,12:00``, tolerance ``3600``):
 
    .. code-block:: text
 
-      Starttime 11:30 → 12:00 (shift 30 min, within tolerance, harmonized)
-      Starttime 11:00 → 12:00 (shift 1 hour, at tolerance limit, harmonized)
-      Starttime 10:30 → 10:30 (shift would be 90 min, exceeds tolerance, NOT harmonized)
+      11:30 → nearest slot 12:00, distance 30 min → harmonized to 12:00
+      12:45 → nearest slot 12:00, distance 45 min → harmonized to 12:00
+      10:30 → nearest slot 12:00, distance 90 min → left at 10:30
 
-   Example
-   -------
+   When two slots are equally distant, the later one wins.
+
+   Examples
+   --------
 
    .. code-block:: text
 
       # Allow up to 1 hour shift (default)
       harmonization.tolerance = 3600
 
-      # Stricter: Max 30 minutes shift
+      # Stricter: max 30 minutes shift
       harmonization.tolerance = 1800
-
-      # Never shift a transition (harmonization has no effect)
-      harmonization.tolerance = 0
 
 .. confval:: harmonization.auto_round
 
@@ -345,23 +378,15 @@ Reduces cache churn by rounding transition times to fixed time slots.
    :Default: ``false``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['harmonization']['auto_round']
 
-   Automatically suggest harmonized times in backend forms.
-
-   **When enabled:**
-
-   - Backend forms show harmonization suggestions for starttime/endtime
-   - Editors can accept suggested times with one click
-   - Helps ensure content uses harmonized times
-
-   **When disabled:**
-
-   - No automatic suggestions
-   - Editors can still use Backend Module to harmonize content manually
+   Declares that harmonized times should be suggested while editing.
 
    .. note::
-      Backend form integration is currently in development. The configuration setting
-      is read and reported by the extension, but visual form suggestions are not yet
-      implemented. Use the Backend Module's Content tab to apply harmonization suggestions.
+      The value is read and reported — by the Reports module status provider,
+      by :bash:`temporalcache:analyze` and by :bash:`temporalcache:verify` —
+      but no backend form acts on it in this version.
+      Harmonization suggestions are shown in the Content tab of the backend
+      module, which is gated by ``harmonization.enabled``, not by this
+      setting.
 
    Example
    -------
@@ -370,9 +395,9 @@ Reduces cache churn by rounding transition times to fixed time slots.
 
       harmonization.auto_round = 1
 
-Next Steps
+Next steps
 ==========
 
-- :ref:`configuration-advanced` - Advanced options and scheduler setup
-- :ref:`configuration-examples` - See complete configuration examples
-- :ref:`performance-strategies` - Understand optimization trade-offs
+- :ref:`configuration-advanced` - Cache lifetime cap, debug logging, scheduler task
+- :ref:`configuration-examples` - Complete configuration examples
+- :ref:`performance-strategies` - Which combination suits which site

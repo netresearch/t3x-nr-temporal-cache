@@ -6,26 +6,23 @@
 Configuration
 =============
 
-Complete configuration reference for the TYPO3 Temporal Cache extension.
+Reference for the twelve extension configuration settings of
+``nr_temporal_cache``.
 
-Overview
-========
-
-The extension provides flexible configuration options accessible through:
-
-- **Extension Manager**: Admin Tools → Extensions → nr_temporal_cache → Configure
-- **Backend Module**: Tools → Temporal Cache → Wizard (with guided presets)
-
-All configuration is **optional**. The extension works out of the box with sensible defaults (global scoping with dynamic timing).
+All of them are optional.
+With no configuration the extension uses global scoping and dynamic timing, and
+harmonization is off.
 
 .. important::
-   **Performance Impact**: Configuration choices significantly affect cache performance.
+   The choice of scoping and timing strategy changes what the extension does,
+   not only how fast it does it.
+   Read :ref:`configuration-strategies-how-settings-combine` before changing
+   either, and :ref:`performance-considerations` before deploying the change.
 
-   Read :ref:`performance-considerations` before production deployment to understand
-   trade-offs between optimization strategies.
+.. _configuration-chapters:
 
-Configuration Sections
-======================
+Chapters
+========
 
 .. card-grid::
     :columns: 1
@@ -33,80 +30,114 @@ Configuration Sections
     :gap: 4
     :card-height: 100
 
-    ..  card:: 🎯 Optimization Strategies
+    ..  card:: 🎯 Optimization strategies
 
-        Configure scoping, timing, and harmonization strategies to optimize cache
-        performance for your site size and traffic patterns.
+        Scoping, timing and harmonization settings, and how the three interact.
 
-        **Covers**: Scoping (global/per-page/per-content), Timing (dynamic/scheduler/hybrid),
-        Time harmonization slots
+        **Covers**: ``scoping.strategy``, ``scoping.use_refindex``,
+        ``timing.strategy``, ``timing.scheduler_interval``,
+        ``timing.hybrid.pages``, ``timing.hybrid.content``,
+        ``harmonization.enabled``, ``harmonization.slots``,
+        ``harmonization.tolerance``, ``harmonization.auto_round``
 
-        ..  card-footer:: :ref:`Strategy Configuration <configuration-strategies>`
+        ..  card-footer:: :ref:`Strategy configuration <configuration-strategies>`
             :button-style: btn btn-primary stretched-link
 
-    ..  card:: ⚙️ Advanced Options
+    ..  card:: ⚙️ Advanced options
 
-        Fine-tune cache lifetime limits, enable debug logging, and configure scheduler
-        tasks for background processing.
+        Cache lifetime cap, debug logging, and the state of the scheduler task.
 
-        **Covers**: Cache lifetime cap, debug logging, scheduler task setup and intervals
+        **Covers**: ``advanced.default_max_lifetime``,
+        ``advanced.debug_logging``, :ref:`scheduler-setup`
 
-        ..  card-footer:: :ref:`Advanced Settings <configuration-advanced>`
+        ..  card-footer:: :ref:`Advanced settings <configuration-advanced>`
             :button-style: btn btn-info stretched-link
 
-    ..  card:: 📋 Configuration Examples
+    ..  card:: 📋 Examples & presets
 
-        Pre-configured presets for common site profiles and real-world configuration
-        scenarios with complete examples.
+        The presets the backend wizard offers, and worked configurations with
+        what each of them changes.
 
-        **Covers**: Small/Medium/Large/High-traffic presets, Multi-language sites,
-        News/Event sites, E-commerce
-
-        ..  card-footer:: :ref:`Examples & Presets <configuration-examples>`
+        ..  card-footer:: :ref:`Examples & presets <configuration-examples>`
             :button-style: btn btn-success stretched-link
 
     ..  card:: 🔧 Troubleshooting
 
-        Diagnose and resolve common configuration issues including cache synchronization
-        problems and performance concerns.
+        Cache not updating, high database load, harmonization doing nothing,
+        settings that appear to be ignored.
 
-        **Covers**: Cache not updating, High cache invalidation rate, Scheduler issues,
-        Harmonization problems
-
-        ..  card-footer:: :ref:`Configuration Troubleshooting <configuration-troubleshooting>`
+        ..  card-footer:: :ref:`Configuration troubleshooting <configuration-troubleshooting>`
             :button-style: btn btn-warning stretched-link
 
-Quick Reference
-===============
+.. _configuration-defaults:
 
-Default Configuration
----------------------
+All settings at a glance
+========================
 
-Out of the box, the extension uses:
+Defaults as implemented in
+:php:`Netresearch\TemporalCache\Configuration\ExtensionConfiguration`.
 
-.. code-block:: text
+.. list-table::
+   :header-rows: 1
+   :widths: 34 16 22 28
 
-   Scoping:        global (all pages invalidated)
-   Timing:         dynamic (checks on every cache generation)
-   Harmonization:  disabled (precise transition times)
+   * - Setting
+     - Type
+     - Default
+     - Accepted values
+   * - ``scoping.strategy``
+     - string
+     - ``global``
+     - ``global``, ``per-page``, ``per-content``
+   * - ``scoping.use_refindex``
+     - boolean
+     - ``true``
+     - ``0``, ``1``
+   * - ``timing.strategy``
+     - string
+     - ``dynamic``
+     - ``dynamic``, ``scheduler``, ``hybrid``
+   * - ``timing.scheduler_interval``
+     - integer
+     - ``60``
+     - seconds, raised to 60 when lower
+   * - ``timing.hybrid.pages``
+     - string
+     - ``dynamic``
+     - ``dynamic``, ``scheduler``
+   * - ``timing.hybrid.content``
+     - string
+     - ``scheduler``
+     - ``dynamic``, ``scheduler``
+   * - ``harmonization.enabled``
+     - boolean
+     - ``false``
+     - ``0``, ``1``
+   * - ``harmonization.slots``
+     - string
+     - ``00:00,06:00,12:00,18:00``
+     - comma-separated ``HH:MM``
+   * - ``harmonization.tolerance``
+     - integer
+     - ``3600``
+     - seconds; ``0`` harmonizes nothing
+   * - ``harmonization.auto_round``
+     - boolean
+     - ``false``
+     - ``0``, ``1``
+   * - ``advanced.default_max_lifetime``
+     - integer
+     - ``86400``
+     - seconds greater than 0
+   * - ``advanced.debug_logging``
+     - boolean
+     - ``false``
+     - ``0``, ``1``
 
-This works well for small sites (<1,000 pages) but should be optimized for larger deployments.
+.. _configuration-methods:
 
-Recommended for Large Sites
-----------------------------
-
-For sites with >10,000 pages or >50 temporal transitions/day:
-
-.. code-block:: text
-
-   Scoping:        per-content (99.7% reduction)
-   Timing:         scheduler (zero per-page overhead)
-   Harmonization:  enabled (98% fewer transitions)
-
-See :ref:`configuration-examples` for complete configuration examples.
-
-Configuration Methods
-=====================
+Where to configure
+==================
 
 Extension Manager
 -----------------
@@ -115,54 +146,50 @@ Extension Manager
 
    1. Admin Tools → Extensions
    2. Find "nr_temporal_cache"
-   3. Click "Configure" icon
-   4. Adjust settings
+   3. Click the "Configure" icon
+   4. Adjust the settings, grouped by scoping, timing, harmonization, advanced
    5. Save
 
-Backend Module Wizard
-----------------------
+The form is generated from :file:`ext_conf_template.txt`, and the values are
+stored in :file:`config/system/settings.php`.
 
-.. code-block:: text
-
-   1. Tools → Temporal Cache
-   2. Click "Configuration Wizard" tab
-   3. Select site profile (Small/Medium/Large/Custom)
-   4. Choose optimization strategies
-   5. Preview and test configuration
-   6. Apply or export as PHP
-
-For guided setup with performance calculations, use the :ref:`backend-wizard`.
-
-PHP Configuration
+PHP configuration
 -----------------
 
-Add to ``config/system/additional.php`` or ``typo3conf/system/additional.php``:
-
 .. code-block:: php
+   :caption: config/system/additional.php
+
+   <?php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
        'scoping' => [
-           'strategy' => 'per-content',
+           'strategy' => 'per-page',
            'use_refindex' => true,
        ],
        'timing' => [
-           'strategy' => 'scheduler',
-           'scheduler_interval' => 60,
+           'strategy' => 'dynamic',
        ],
        'harmonization' => [
            'enabled' => true,
            'slots' => '00:00,06:00,12:00,18:00',
-           'tolerance' => 300,
+           'tolerance' => 3600,
        ],
    ];
 
-Next Steps
-==========
+:file:`additional.php` is read after :file:`config/system/settings.php`, so it
+wins over the Extension Manager.
 
-- :ref:`configuration-strategies` - Configure optimization strategies
-- :ref:`backend-wizard` - Use guided configuration wizard
-- :ref:`performance-considerations` - Understand performance implications
-- :ref:`phases` - Learn about experimental vs stable status
+Backend module wizard
+---------------------
+
+:guilabel:`Tools → Temporal Cache → Wizard` walks through five steps — welcome,
+analysis, presets, custom, summary — showing statistics for the current site
+and recommending settings.
+
+.. note::
+   The wizard does not write configuration.
+   It shows which values to use, as its own note says; apply them in the
+   Extension Manager or in :file:`additional.php`.
 
 .. toctree::
    :hidden:
@@ -171,3 +198,11 @@ Next Steps
    Advanced
    Examples
    Troubleshooting
+
+Next steps
+==========
+
+- :ref:`configuration-strategies` - Every setting in detail
+- :ref:`configuration-examples` - Complete configurations
+- :ref:`performance-considerations` - Performance implications
+- :ref:`backend-wizard` - The wizard in the backend module

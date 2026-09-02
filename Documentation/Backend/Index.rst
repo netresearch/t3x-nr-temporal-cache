@@ -3,44 +3,35 @@
 .. _backend-module:
 
 ==============
-Backend Module
+Backend module
 ==============
 
-Visual management interface for the TYPO3 Temporal Cache extension.
-
-Overview
-========
-
-The Temporal Cache backend module provides a user-friendly interface for:
-
-- 📊 **Monitoring** temporal content and upcoming transitions
-- ⚡ **Viewing** performance statistics and KPIs
-- 🔧 **Managing** temporal content with bulk operations
-- ⚙️ **Configuring** the extension with guided presets
-- 🧪 **Testing** and optimizing configuration
+The extension registers a backend module :guilabel:`Temporal Cache` in the :guilabel:`Tools` section.
+It shows what temporal content exists, which transitions are coming up, which configuration is active, and it
+can apply harmonization to selected records.
 
 .. _backend-module-access:
 
-Accessing the Module
+Accessing the module
 ====================
 
-Location
---------
+Navigate to :guilabel:`Tools > Temporal Cache`.
 
-Navigate to: **Tools → Temporal Cache**
+Access
+    The module is registered for administrators only and is available in the Live workspace only.
+    See :ref:`backend-permissions`.
 
-Requirements
-------------
+TYPO3 versions
+    The extension supports TYPO3 12.4, 13 and 14 — see :ref:`installation`.
 
-**Permissions**: Backend users require the following:
+The module menu offers three views.
+A fourth controller action, ``harmonize``, is the endpoint the content view calls when applying harmonization;
+it has no view of its own.
 
-- Access to the **Tools** module
-- Permission for **Temporal Cache** module (configured in user/group settings)
+.. _backend-module-views:
 
-**TYPO3 Versions**: Compatible with TYPO3 12.4+ and 13.0+
-
-Module Features
-===============
+Views
+=====
 
 .. card-grid::
     :columns: 1
@@ -50,100 +41,79 @@ Module Features
 
     ..  card:: 📊 Dashboard
 
-        Comprehensive overview of temporal cache status with statistics, timeline
-        visualization, and performance metrics.
+        Counters for temporal content, the active configuration, and a day-by-day timeline of the transitions
+        due in the next seven days.
 
-        ..  card-footer:: :ref:`View Dashboard <backend-dashboard>`
+        ..  card-footer:: :ref:`View dashboard <backend-dashboard>`
             :button-style: btn btn-primary stretched-link
 
-    ..  card:: 📝 Content Management
+    ..  card:: 📝 Content
 
-        Browse and manage all temporal content (pages and content elements) with
-        filtering, bulk operations, and detailed views.
+        The full list of temporal pages and content elements, with filters, harmonization suggestions and bulk
+        harmonization.
 
-        ..  card-footer:: :ref:`Manage Content <backend-content>`
+        ..  card-footer:: :ref:`Manage content <backend-content>`
             :button-style: btn btn-info stretched-link
 
-    ..  card:: ⚙️ Configuration Wizard
+    ..  card:: ⚙️ Configuration wizard
 
-        Guided configuration setup with presets for different site sizes and
-        performance impact calculator.
+        A walkthrough of the scoping and timing strategies with three ready-made presets.
+        The wizard shows settings, it does not write them.
 
-        ..  card-footer:: :ref:`Configure <backend-wizard>`
+        ..  card-footer:: :ref:`Open wizard <backend-wizard>`
             :button-style: btn btn-success stretched-link
 
-    ..  card:: 💡 Tips & Best Practices
+    ..  card:: 💡 Tips and best practices
 
-        Performance optimization recommendations, user permissions setup, and
-        troubleshooting guidance.
+        Index checks, harmonization advice, troubleshooting and the permission model.
 
-        ..  card-footer:: :ref:`Learn More <backend-tips>`
+        ..  card-footer:: :ref:`Read tips <backend-tips>`
             :button-style: btn btn-secondary stretched-link
 
-Quick Actions
-=============
+.. _backend-module-doc-header:
 
-Common tasks available from the module:
+Doc header buttons
+==================
 
-**Flush Cache**: Clear all page caches to force regeneration
+Every view carries a reload button and a bookmark button.
+The dashboard additionally offers a :guilabel:`View Content` button that opens the content view.
+
+There is no cache-flush, export or configuration-test button in the module.
+Flushing caches is done through the standard TYPO3 tools:
 
 .. code-block:: bash
+    :caption: Flush all caches from the command line
 
-   # Via module button or CLI
-   php vendor/bin/typo3 cache:flush
+    vendor/bin/typo3 cache:flush
 
-**Refresh Statistics**: Update temporal content counters and metrics
+.. _backend-module-cli:
 
-**Export Report**: Download temporal content inventory as CSV
+Command-line equivalents
+========================
 
-**Test Configuration**: Simulate cache behavior with current settings
+Everything the module reads is also available on the command line, and harmonization can be previewed there
+before it is applied:
 
-Module Tabs Overview
+.. code-block:: bash
+    :caption: The commands behind the module views
+
+    vendor/bin/typo3 temporalcache:analyze
+    vendor/bin/typo3 temporalcache:list
+    vendor/bin/typo3 temporalcache:harmonize --dry-run
+    vendor/bin/typo3 temporalcache:verify
+
+See :ref:`command-line` for the full reference.
+
+.. _backend-module-related:
+
+Related documentation
 =====================
 
-Dashboard Tab
--------------
-
-The main overview showing:
-
-- Statistics cards (total, active, pending, expired content)
-- Timeline visualization of upcoming transitions
-- Performance metrics and cache impact
-- Configuration summary
-
-See :ref:`backend-dashboard` for detailed information.
-
-Content Tab
------------
-
-Browse and manage temporal content:
-
-- Filter by status (all, active, pending, expired)
-- Search by page title or content
-- Bulk operations (edit times, clear cache, export)
-- Detailed view per item
-
-See :ref:`backend-content` for detailed information.
-
-Configuration Wizard Tab
--------------------------
-
-Guided setup process:
-
-- Site profile selection (small, medium, large)
-- Preset configurations
-- Performance impact calculator
-- Test and validate settings
-
-See :ref:`backend-wizard` for detailed information.
-
-Related Documentation
-=====================
-
-- :ref:`configuration` - Detailed configuration reference
-- :ref:`performance-considerations` - Performance implications
-- :ref:`installation` - Installation and setup
-- :ref:`phases` - Future improvements roadmap
+- :ref:`configuration` — configuration reference
+- :ref:`command-line` — command reference
+- :ref:`reports-module` — status reporting inside the TYPO3 Reports module
+- :ref:`performance-considerations` — performance implications
+- :ref:`installation` — installation and setup
 
 .. Meta Menu
 

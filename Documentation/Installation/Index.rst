@@ -6,98 +6,113 @@
 Installation
 ============
 
+.. _installation-requirements:
+
 Requirements
 ============
 
-**Minimum:**
+**Minimum**, as declared in :file:`composer.json`:
 
-- TYPO3 12.4 or 13.0+
-- PHP 8.1+
-- Composer (recommended)
+- PHP 8.1 or newer
+- TYPO3 ``^12.4 || ^13.0 || ^14.0``
+- ``typo3/cms-scheduler`` and ``typo3/cms-reports``, both pulled in as
+  dependencies
 
-**Database:**
+**Database**
 
-- Adds four indexes (starttime/endtime per table) via ext_tables.sql; run the database compare in the Install Tool after installing
-- Uses standard TYPO3 ``starttime/endtime`` fields
+- Four indexes are added through :file:`ext_tables.sql`, two on ``pages`` and
+  two on ``tt_content``; run the database compare after installing
+- No tables and no columns are added — the extension reads the standard
+  ``starttime`` and ``endtime`` fields
+
+.. _installation-compatibility:
 
 Compatibility
 =============
+
+The combinations below are the ones the CI matrix in
+:file:`.github/workflows/ci.yml` builds.
 
 .. list-table::
    :header-rows: 1
    :widths: 20 20 20 40
 
-   * - TYPO3 Version
-     - PHP Version
+   * - TYPO3 version
+     - PHP version
      - Status
      - Notes
    * - 12.4+
      - 8.1 - 8.4
-     - ✅ Fully supported
-     - PSR-14 events available; 8.5 is excluded from this cell in CI
+     - ✅ Supported
+     - PHP 8.5 is excluded from this cell in CI
    * - 13.0+
      - 8.2 - 8.5
-     - ✅ Fully supported
-     - Previous TYPO3 LTS
+     - ✅ Supported
+     - PHP 8.1 is excluded from this cell in CI
    * - 14.0+
      - 8.3 - 8.5
-     - ✅ Fully supported
-     - Current TYPO3 LTS
+     - ✅ Supported
+     - PHP 8.1 and 8.2 are excluded from this cell in CI
    * - 11.5
-     - 7.4 - 8.2
+     - —
      - ⚠️ Not supported
-     - Missing required events
+     - Below the ``typo3/cms-core: ^12.4`` requirement
 
-Installation Methods
+.. _installation-methods:
+
+Installation methods
 ====================
 
-Method 1: Composer (Recommended)
----------------------------------
+Method 1: Composer (recommended)
+--------------------------------
 
-Install via composer::
+.. code-block:: bash
 
-   composer req netresearch/nr-temporal-cache
-
-Activate extension::
-
-   vendor/bin/typo3 extension:activate nr_temporal_cache
-
-Clear cache::
-
+   composer require netresearch/nr-temporal-cache
+   vendor/bin/typo3 extension:setup
    vendor/bin/typo3 cache:flush
 
-Method 2: TER (Extension Repository)
--------------------------------------
+:bash:`extension:setup` performs the database migrations, which is what creates
+the four indexes.
 
-1. Go to **Admin Tools > Extensions**
-2. Click **Get Extensions**
+Method 2: TER (Extension Repository)
+------------------------------------
+
+1. Go to :guilabel:`Admin Tools → Extensions`
+2. Click :guilabel:`Get Extensions`
 3. Search for ``nr_temporal_cache``
-4. Click **Import and Install**
+4. Click :guilabel:`Import and Install`
 5. Activate the extension
 
-Method 3: Manual Installation
-------------------------------
+Method 3: Manual installation
+-----------------------------
 
 1. Download from `GitHub <https://github.com/netresearch/t3x-nr-temporal-cache/releases>`__
-2. Extract to ``typo3conf/ext/nr_temporal_cache/`` (classic mode) or ``packages/nr_temporal_cache/`` (composer mode)
-3. Activate in Extension Manager
+2. Extract to :file:`typo3conf/ext/nr_temporal_cache/` (classic mode) or
+   :file:`packages/nr_temporal_cache/` (Composer mode)
+3. Activate in the Extension Manager
 4. Clear all caches
+
+.. _installation-configuration:
 
 Configuration
 =============
 
-Zero Configuration
+Zero configuration
 ------------------
 
-**The extension works immediately after installation with no configuration required.**
-
+The extension works immediately after installation.
 It automatically:
 
-- Registers PSR-14 event listener for ``ModifyCacheLifetimeForPageEvent``
-- Monitors ``pages`` and ``tt_content`` tables for temporal transitions
-- Adjusts cache lifetime dynamically
+- Registers the PSR-14 listener for ``ModifyCacheLifetimeForPageEvent`` under
+  the identifier ``temporal-cache/modify-cache-lifetime``
+- Monitors the ``pages`` and ``tt_content`` tables
+- Caps the page cache lifetime at the next transition, using global scoping and
+  dynamic timing
 
-Optional: Monitor Custom Tables
+All twelve settings and their defaults are listed in :ref:`configuration`.
+
+Optional: Monitor custom tables
 --------------------------------
 
 If you have custom extension tables with ``starttime/endtime`` fields, you can
@@ -138,210 +153,192 @@ register them for temporal cache monitoring using the ``TemporalMonitorRegistry`
        'uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'
    ]);
 
-**Field Requirements:**
+**Field requirements**
 
-- ``uid`` (required): Primary key
-- ``starttime`` (required): Visibility start timestamp
-- ``endtime`` (required): Visibility end timestamp
-- ``pid``: Parent page ID (recommended)
-- ``hidden``: Visibility flag (recommended)
-- ``deleted``: Deletion flag (recommended)
-- ``sys_language_uid``: Language identifier (recommended for multi-language sites)
-- Additional fields like ``title``, ``header``, ``name`` for display purposes
+``registerTable()`` rejects a registration that misses one of these:
 
-**Default Tables:**
+- ``uid``
+- ``starttime``
+- ``endtime``
 
-The extension monitors ``pages`` and ``tt_content`` tables automatically.
-You cannot re-register these default tables.
+Recommended in addition, because the queries and the backend module use them:
 
-Optional: Adjust Maximum Lifetime
-----------------------------------
+- ``pid`` — parent page id
+- ``hidden`` and ``deleted`` — the transition queries exclude records whose
+  TCA ``delete`` and ``enablecolumns.disabled`` fields are set
+- ``sys_language_uid`` — the queries filter on the language of the context
+- a label field such as ``title``, ``header`` or ``name`` for display
 
-The extension provides configurable maximum cache lifetime to prevent extremely long
-cache lifetimes when no temporal content is scheduled for extended periods.
+Passing an empty field list applies the default list
+``uid, pid, title, starttime, endtime, hidden, deleted, sys_language_uid``.
+
+**Default tables**
+
+``pages`` and ``tt_content`` are monitored out of the box.
+Re-registering either of them throws an exception.
+
+Each registered table adds two ``MIN()`` queries to a transition lookup — see
+:ref:`configuration-troubleshooting-performance`.
+
+Optional: Adjust the maximum lifetime
+--------------------------------------
+
+``advanced.default_max_lifetime`` caps the cache lifetime the extension
+calculates, and is the lifetime used when no transition is scheduled at all.
 
 **Default**: 86400 seconds (24 hours)
 
-Configure via Extension Manager or PHP:
-
-**Extension Manager:**
-
-1. Admin Tools → Extensions
-2. Find "nr_temporal_cache"
-3. Click Configure
-4. Adjust "Default Cache Lifetime (seconds)"
-
-**PHP Configuration** (``config/system/additional.php``):
+Configure it in :guilabel:`Admin Tools → Extensions → nr_temporal_cache →
+Configure`, under :guilabel:`Default Cache Lifetime (seconds)`, or in PHP:
 
 .. code-block:: php
+   :caption: config/system/additional.php
 
    <?php
 
-   // Adjust maximum cache lifetime (seconds)
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['default_max_lifetime'] = 43200; // 12 hours
+   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['default_max_lifetime'] = 43200;
 
-For complete configuration details, see :ref:`configuration-advanced`.
+TypoScript ``config.cache_period`` takes precedence over this setting; see
+:ref:`configuration-advanced`.
+
+.. _installation-verification:
 
 Verification
 ============
 
-Test Scheduled Content
+Check the setup
+---------------
+
+.. code-block:: bash
+
+   vendor/bin/typo3 temporalcache:verify
+
+The command confirms that the indexes and the columns the queries rely on
+exist, and that the configured strategy names are valid.
+:guilabel:`System → Reports → Temporal Cache` shows the same configuration from
+the backend.
+
+Test scheduled content
 ----------------------
 
 1. Create a test page:
 
-   - Set **Start** to 5 minutes in the future
-   - Set **In menu** enabled
+   - Set :guilabel:`Start` to 5 minutes in the future
+   - Enable :guilabel:`In menu`
    - Save
 
-2. Check your frontend menu:
+2. Check the frontend menu — the page must not appear yet
 
-   - Page should NOT appear (starttime not reached)
+3. Wait until the start time and reload — the page appears without any cache
+   being cleared by hand
 
-3. Wait 5 minutes, refresh:
+The page cache lifetime is capped at the transition, so the first request after
+the start time regenerates the page.
 
-   - Page should appear automatically (no cache clearing needed!)
-
-4. Monitor cache tags:
-
-   **Console (development):**
-
-   .. code-block:: bash
-
-      # Enable cache debugging
-      vendor/bin/typo3 cache:flush
-
-      # Watch cache lifetime in TYPO3 admin panel
-      # Should show lifetime = seconds until starttime
-
-Test Expiring Content
+Test expiring content
 ---------------------
 
-1. Create content element:
+1. Create a content element with :guilabel:`Stop` 5 minutes in the future
+2. View the page — the element is visible
+3. Wait until the stop time and reload — the element is gone
 
-   - Set **Stop** to 5 minutes in the future
-   - Save
+Inspect what the extension calculated
+-------------------------------------
 
-2. View page:
+.. code-block:: text
 
-   - Content element visible
+   advanced.debug_logging = 1
 
-3. Wait 5 minutes, refresh:
+Each page cache generation then logs the lifetime that was written, the
+uncapped value, and which maximum applied.
+See :ref:`configuration-advanced`.
 
-   - Content element hidden automatically
-
-Performance Check
------------------
-
-Enable TYPO3 Admin Panel to monitor cache behavior:
-
-1. Install admin panel: ``composer req typo3/cms-adminpanel``
-2. Enable in backend: **User Settings > Admin Panel**
-3. Check frontend: Bottom toolbar shows cache info
-4. Verify:
-
-   - Cache hits: Should remain high (95%+)
-   - Cache lifetime: Should show seconds until next transition
-   - Page generation: Should not increase significantly
+.. _installation-troubleshooting:
 
 Troubleshooting
 ===============
 
-Cache Not Updating
-------------------
+Content does not update
+-----------------------
 
-**Symptom:** Content still doesn't update at scheduled times
-
-**Checks:**
-
-1. Verify extension is active::
+1. Confirm the extension is loaded::
 
       vendor/bin/typo3 extension:list
 
-2. Check event listener is registered::
+2. Confirm the timing strategy: ``scheduler`` and ``hybrid`` depend on the
+   scheduler task, and this version registers no task type — see
+   :ref:`scheduler-setup`
 
-      # Should show temporal-cache/modify-cache-lifetime
-      vendor/bin/typo3 config:show TYPO3_CONF_VARS/SYS/eventListeners
-
-3. Clear ALL caches::
+3. Clear all caches::
 
       vendor/bin/typo3 cache:flush
 
-4. Enable debug mode::
+4. Work through :ref:`configuration-troubleshooting`
 
-      $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask'] = '*';
-      $GLOBALS['TYPO3_CONF_VARS']['FE']['debug'] = true;
+Slow page generation
+--------------------
 
-Performance Issues
-------------------
+The dynamic timing strategy runs two ``MIN()`` queries per monitored table on
+every page cache generation.
+Confirm the indexes exist:
 
-**Symptom:** Slow page generation
+.. code-block:: sql
 
-**Diagnosis:**
+   SHOW INDEX FROM pages WHERE Key_name LIKE 'idx_temporalcache%';
+   SHOW INDEX FROM tt_content WHERE Key_name LIKE 'idx_temporalcache%';
 
-Enable database query logging to check temporal queries:
+If they are missing, run the database compare — the definitions ship with the
+extension:
 
-**File:** ``config/system/additional.php``
+.. code-block:: bash
+
+   vendor/bin/typo3 extension:setup
+
+To log the extension's own messages into a separate file:
 
 .. code-block:: php
+   :caption: config/system/additional.php
 
    <?php
 
    $GLOBALS['TYPO3_CONF_VARS']['LOG']['Netresearch']['TemporalCache']['writerConfiguration'] = [
        \TYPO3\CMS\Core\Log\LogLevel::DEBUG => [
            \TYPO3\CMS\Core\Log\Writer\FileWriter::class => [
-               'logFile' => 'typo3temp/var/log/temporal_cache.log'
+               'logFile' => 'typo3temp/var/log/temporal_cache.log',
            ],
        ],
    ];
 
-**Expected:** Queries should be <10ms with proper database indexes.
+Workspace and language
+----------------------
 
-**Fix:** Ensure indexes exist::
+Every transition query resolves the workspace and the language from the
+``Context`` API and filters on both.
+A transition scheduled in another language therefore does not shorten the
+lifetime of the page you are looking at.
 
-   # Check indexes
-   ALTER TABLE pages ADD INDEX idx_temporal (starttime, endtime);
-   ALTER TABLE tt_content ADD INDEX idx_temporal (starttime, endtime);
-
-Workspace Issues
-----------------
-
-**Symptom:** Workspace previews show incorrect content
-
-**Note:** Extension respects workspace context automatically via ``Context`` API.
-
-If issues persist, check:
-
-1. Workspace ID is correct in context
-2. Language overlay is applied properly
-3. Clear workspace-specific caches
+.. _installation-uninstallation:
 
 Uninstallation
 ==============
 
-The extension adds no tables and no columns. It does add four indexes to the core tables
-``pages`` and ``tt_content`` (``idx_temporalcache_starttime`` and
-``idx_temporalcache_endtime``, see :file:`ext_tables.sql`); remove them in
-:guilabel:`Admin Tools → Maintenance → Analyze Database Structure` after uninstalling if you
-do not want to keep them.
+The extension adds no tables and no columns.
+It does add four indexes to ``pages`` and ``tt_content``
+(``idx_temporalcache_starttime`` and ``idx_temporalcache_endtime``, see
+:file:`ext_tables.sql`); remove them in :guilabel:`Admin Tools → Maintenance →
+Analyze Database Structure` after uninstalling if you do not want to keep them.
 
-1. Deactivate extension::
+.. code-block:: bash
 
-      vendor/bin/typo3 extension:deactivate nr_temporal_cache
+   composer remove netresearch/nr-temporal-cache
+   vendor/bin/typo3 cache:flush
 
-2. Remove via composer::
+TYPO3 then reverts to its default behaviour: temporal content becomes visible
+when the page cache happens to expire.
 
-      composer remove netresearch/nr-temporal-cache
-
-3. Clear caches::
-
-      vendor/bin/typo3 cache:flush
-
-**Result:** TYPO3 reverts to default behavior (temporal content requires manual cache clearing)
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`architecture` - Understand how it works
-- :ref:`phases` - Learn about future improvements
-- `GitHub Issues <https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ - Report problems
+- :ref:`configuration` - Every setting and its default
+- :ref:`architecture` - How the listener, strategies and repository fit together
+- `GitHub issues <https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ - Report problems

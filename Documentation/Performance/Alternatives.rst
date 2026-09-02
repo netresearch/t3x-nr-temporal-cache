@@ -2,390 +2,203 @@
 
 .. _performance-alternatives:
 
-================================
-Alternative Approaches
-================================
+======================
+Alternative approaches
+======================
 
-Overview of Alternatives
-========================
+This extension is not the only way to keep time-based content current, and for some sites
+it is not the best one.
+The approaches below solve the same problem outside the page cache lifetime.
 
-If this extension's performance implications are unsuitable for your site, several
-alternative approaches exist to handle temporal content in TYPO3:
+None of them is provided by this extension; they are listed so the choice can be an
+informed one.
 
-1. USER_INT menus (uncached navigation)
-2. SSI/ESI (Server/Edge Side Includes)
-3. AJAX menus (client-side fetching)
-4. Scheduled cache clearing
-5. Manual cache management
+.. _performance-alternatives-comparison:
 
-Each has different trade-offs between accuracy, performance, and complexity.
-
-Comparison Matrix
-=================
-
-.. list-table::
-   :header-rows: 1
-   :widths: 20 16 16 16 16 16
-
-   * - Approach
-     - Setup Complexity
-     - Temporal Accuracy
-     - Performance Impact
-     - Cache Hit Ratio
-     - Best Use Case
-   * - **Extension**
-     - ✅ Simple
-     - ✅✅ Perfect
-     - ⚠️ Burst load
-     - ⚠️ Variable
-     - Rare transitions
-   * - **USER_INT**
-     - ✅ Simple
-     - ✅✅ Perfect
-     - ⚠️ Steady load
-     - ✅ High (pages)
-     - High traffic
-   * - **SSI/ESI**
-     - ⚠️ Complex
-     - ✅✅ Perfect
-     - ✅ Optimized
-     - ✅ High
-     - Edge caching
-   * - **AJAX**
-     - ⚠️ Complex
-     - ✅✅ Perfect
-     - ✅ Client-side
-     - ✅✅ Very high
-     - Modern SPAs
-   * - **Scheduled**
-     - ⚠️ Medium
-     - ❌ Delayed
-     - ✅ Predictable
-     - ✅ High
-     - Low accuracy needs
-
-Alternative 1: USER_INT Menus
+The trade-off in one line each
 ==============================
 
-Make menus uncached (regenerated on every request).
+.. list-table::
+    :header-rows: 1
+    :widths: 22 39 39
 
-How It Works
-------------
+    * - Approach
+      - What it costs
+      - What it buys
+    * - This extension
+      - Cache hits: entries expire earlier, or are flushed by a task.
+      - Correct output for everything on the page, with no template changes.
+    * - Uncached menu (``USER_INT``)
+      - CPU on every request, for the menu only. The page cannot be cached whole at the
+        edge.
+      - Exact menus, no cache churn for the rest of the page.
+    * - SSI / ESI
+      - Infrastructure complexity, and a server or CDN that supports it.
+      - Exact fragments with the rest of the page fully cached, including at the edge.
+    * - Client-side loading
+      - A request after page load; the fragment is invisible to crawlers and needs an
+        accessible fallback.
+      - The page HTML stays fully cacheable and static.
+    * - Scheduled cache clearing
+      - Cache hits at fixed intervals, whether or not anything changed.
+      - Almost no setup.
+    * - Manual clearing
+      - Editorial attention, and it will be forgotten.
+      - Nothing to install.
+
+.. _performance-alternatives-user-int:
+
+Uncached menus (``USER_INT``)
+=============================
+
+Render the navigation outside the page cache so it is rebuilt on every request.
 
 .. code-block:: typoscript
-   :caption: TypoScript Setup
+    :caption: TypoScript
 
-   lib.mainMenu = USER_INT
-   lib.mainMenu {
-       userFunc = MyVendor\MyExtension\Menu\MenuProcessor->render
-   }
+    lib.mainMenu = USER_INT
+    lib.mainMenu {
+        userFunc = MyVendor\MyExtension\Menu\MenuProcessor->render
+    }
 
-**Advantages**:
+Fits when the temporal content is only in menus.
+The rest of the page keeps its normal cache lifetime and nothing has to expire early, which
+is the opposite trade to this extension: a steady per-request cost instead of periodic
+cache loss.
 
-✅ Simple TypoScript configuration
-✅ Perfect temporal accuracy for menus
-✅ Page content remains cached
-✅ Steady, predictable performance
+Does not help with temporal content in the page body, and a page containing a ``USER_INT``
+cannot be delivered from a reverse proxy as a whole.
 
-**Disadvantages**:
+.. _performance-alternatives-esi:
 
-❌ Menu regenerated on EVERY request
-❌ Moderate per-request overhead (~10-50ms)
-❌ Doesn't solve temporal content in page body
-❌ CDN cannot cache dynamic menus
+SSI and ESI
+===========
 
-**Performance Impact**:
+Keep the page cached and let the web server or CDN assemble an uncached fragment into it at
+delivery time.
+
+.. code-block:: html
+    :caption: Template, ESI
+
+    <div class="navigation">
+        <esi:include src="/menu-fragment" />
+    </div>
 
 .. code-block:: text
+    :caption: Varnish VCL
 
-   Cost_per_request = menu_generation_time
-   Daily_cost = requests_per_day × menu_generation_time
-
-   Example:
-   100,000 req/day × 20ms = 2,000 seconds/day of menu generation time
-
-**When to Use**:
-
-✅ Temporal content is ONLY in menus
-✅ High-traffic sites where steady load is preferable to spikes
-✅ Site can tolerate 10-50ms per-request overhead
-
-See :ref:`decision-guide` for comparison formula.
-
-Alternative 2: SSI/ESI (Server/Edge Side Includes)
-===================================================
-
-Split menus into uncached fragments included at serving time.
-
-SSI (Server Side Includes)
----------------------------
+    sub vcl_recv {
+        if (req.url ~ "^/menu-fragment") {
+            return (pass);
+        }
+    }
 
 .. code-block:: apache
-   :caption: Apache .htaccess
+    :caption: Apache, SSI
 
-   <IfModule mod_include.c>
-       Options +Includes
-       AddOutputFilter INCLUDES .html
-   </IfModule>
+    <IfModule mod_include.c>
+        Options +Includes
+        AddOutputFilter INCLUDES .html
+    </IfModule>
 
-.. code-block:: html
-   :caption: Template
+Fits a site that already runs Varnish or a CDN with ESI support.
+It is the only approach here that keeps both the page fully cached at the edge and the
+fragment exact.
 
-   <div class="navigation">
-       <!--#include virtual="/menu-fragment.php" -->
-   </div>
+The cost is operational: another moving part in the delivery chain, and debugging that
+spans TYPO3 and the proxy.
 
-ESI (Edge Side Includes)
--------------------------
+.. _performance-alternatives-client-side:
 
-.. code-block:: text
-   :caption: Varnish VCL
+Client-side loading
+===================
 
-   sub vcl_recv {
-       if (req.url ~ "^/menu-fragment") {
-           return (pass); // Don't cache menu fragments
-       }
-   }
-
-.. code-block:: html
-   :caption: Template
-
-   <div class="navigation">
-       <esi:include src="/menu-fragment.php" />
-   </div>
-
-**Advantages**:
-
-✅ Page body remains fully cached
-✅ Menu freshness without full page regeneration
-✅ Works with CDN (ESI supported by most CDNs)
-✅ Optimal performance characteristics
-
-**Disadvantages**:
-
-❌ Complex server/CDN configuration
-❌ Requires SSI/ESI support in infrastructure
-❌ Debugging is more difficult
-❌ Not all CDNs support ESI
-
-**When to Use**:
-
-✅ Using CDN with ESI support (Fastly, Akamai, Varnish)
-✅ High-traffic sites needing optimal performance
-✅ Team has infrastructure expertise
-
-Alternative 3: AJAX Menus
-==========================
-
-Load menus via JavaScript after page load.
-
-Implementation
---------------
+Ship the page without the time-sensitive fragment and fetch it after load.
 
 .. code-block:: javascript
-   :caption: Frontend JavaScript
+    :caption: Frontend
 
-   // Fetch fresh menu data
-   fetch('/api/menu')
-       .then(response => response.json())
-       .then(data => {
-           document.querySelector('.navigation').innerHTML = renderMenu(data);
-       });
+    const response = await fetch('/api/menu');
+    const items = await response.json();
 
-.. code-block:: php
-   :caption: TYPO3 Menu API Endpoint
+    const list = document.querySelector('.navigation ul');
+    list.replaceChildren(...items.map(item => {
+        const link = document.createElement('a');
+        link.href = item.url;
+        link.textContent = item.title;
 
-   <?php
-   namespace MyVendor\MyExtension\Controller;
+        const entry = document.createElement('li');
+        entry.append(link);
 
-   class MenuController {
-       public function apiAction(): ResponseInterface {
-           $menu = $this->menuRepository->findVisible(time());
-           return $this->jsonResponse($menu);
-       }
-   }
+        return entry;
+    }));
 
-**Advantages**:
+Fits an application-style frontend that is already doing this for other data.
 
-✅ Page HTML fully cached
-✅ Perfect temporal accuracy
-✅ No server-side rendering overhead
-✅ Client-side caching possible (Service Workers)
+For navigation it is usually the wrong choice: search engines and assistive technology need
+the links in the delivered HTML, and a fragment that appears after load is a layout shift.
+If it is used, the server-rendered fallback has to be correct on its own.
 
-**Disadvantages**:
+.. _performance-alternatives-scheduled-clearing:
 
-❌ Requires JavaScript (accessibility concern)
-❌ Flash of empty navigation (FOUC)
-❌ SEO implications (search engines may not see menu)
-❌ More complex frontend development
-
-**When to Use**:
-
-✅ Modern SPA or JavaScript-heavy sites
-✅ Acceptable UX trade-offs
-✅ SEO not critical for menu items
-
-Alternative 4: Scheduled Cache Clearing
-========================================
-
-Clear cache on fixed schedule (e.g., every hour).
-
-Implementation
---------------
+Scheduled cache clearing
+========================
 
 .. code-block:: bash
-   :caption: Crontab
+    :caption: Crontab
 
-   # Clear TYPO3 cache every hour
-   0 * * * * /path/to/typo3/vendor/bin/typo3 cache:flush
+    0 * * * * /path/to/typo3/vendor/bin/typo3 cache:flush
 
-Or with warming:
+Fits a site with a fixed editorial rhythm — everything publishes at 09:00, 12:00 and 17:00 —
+where clearing shortly after those times is enough.
 
-.. code-block:: bash
-   :caption: Crontab with warming
+It does not solve the underlying problem: between two runs the output is stale, and every
+run discards the whole cache whether or not a transition happened.
+Compared to this extension with ``global`` scoping, it is the same full flush on a fixed
+schedule instead of on an actual transition.
 
-   # Clear cache and warm critical pages
-   0 * * * * /path/to/typo3/vendor/bin/typo3 cache:flush && \
-             /path/to/scripts/warm-cache.sh
+Combining harmonization with the extension gets a similar grouping effect without discarding
+caches that nothing invalidated; see :ref:`performance-strategies-harmonization`.
 
-**Advantages**:
+.. _performance-alternatives-manual:
 
-✅ Extremely simple
-✅ Zero code changes
-✅ Predictable resource usage
+Manual clearing
+===============
 
-**Disadvantages**:
+The editor clears the cache after the scheduled moment has passed.
 
-❌ Temporal content can be stale (up to 1 hour)
-❌ Doesn't solve Forge #14277 (menus show wrong content)
-❌ Manual configuration required
-❌ Cache warming creates load spikes
+This is the status quo the extension exists to replace.
+It is listed for completeness: it works, it costs nothing to set up, and it fails the first
+time somebody is on holiday.
 
-**When to Use**:
+.. _performance-alternatives-choosing:
 
-⚠️ **Only suitable for**:
+Choosing between them
+=====================
 
-- Sites that can tolerate temporal inaccuracy
-- Regular content schedules (e.g., always publish at 09:00, 12:00, 17:00)
-- Low temporal content frequency
+Where is the temporal content?
+   Only in menus → an uncached menu or ESI keeps the page cache intact.
+   In the page body → this extension, or client-side loading for that fragment.
 
-Alternative 5: Manual Cache Management
-=======================================
+What is in front of TYPO3?
+   A CDN or Varnish with ESI support makes ESI the strongest option.
+   Without one, ESI is not available and an uncached menu costs origin CPU on every request.
 
-Editors manually clear cache after scheduling content.
+How exact does it have to be?
+   Exact to the second → this extension with ``dynamic`` timing, an uncached menu, or ESI.
+   Within a few minutes → this extension with ``scheduler`` timing, or scheduled clearing.
 
-Implementation
---------------
+Are the approaches mutually exclusive?
+   No.
+   An uncached menu plus this extension for content elements is a reasonable split: the
+   menu never goes stale, and the extension only has to watch ``tt_content``.
 
-.. code-block:: text
+.. _performance-alternatives-next-steps:
 
-   Editor workflow:
-   1. Edit page, set starttime = 10:00 AM
-   2. Save page
-   3. Wait until 10:00 AM
-   4. Go to Admin Tools → Clear Cache
-   5. Clear "Pages" cache
-
-**Advantages**:
-
-✅ Zero technical implementation
-✅ Complete editorial control
-
-**Disadvantages**:
-
-❌ Error-prone (editors forget)
-❌ High editorial overhead
-❌ Doesn't scale with multiple editors
-❌ Doesn't solve the core problem
-
-**When to Use**:
-
-❌ **Not recommended** - defeats the purpose of automatic scheduling
-
-Decision Framework
-==================
-
-**Step 1: Identify Temporal Content Location**
-
-.. code-block:: text
-
-   If temporal content is ONLY in menus:
-       → Consider USER_INT menu (simplest solution)
-
-   If temporal content is in main page body:
-       → Extension or AJAX required
-
-**Step 2: Calculate Your Metrics**
-
-.. code-block:: text
-
-   A = Requests_per_day
-   B = Temporal_transitions_per_day
-   C = Number_of_pages
-   D = Menu_render_time (ms)
-   E = Page_regeneration_time (ms)
-
-**Step 3: Apply Decision Formula**
-
-.. code-block:: text
-
-   USER_INT cost = A × D
-   Extension cost = B × C × E
-
-   If (A × D) < (B × C × E):
-       → Use USER_INT
-   Else:
-       → Use Extension
-
-**Step 4: Consider Infrastructure**
-
-.. code-block:: text
-
-   If has_CDN && complex_menus:
-       → Consider SSI/ESI
-
-   If SPA || modern_frontend:
-       → Consider AJAX
-
-Recommendation by Site Profile
-===============================
-
-**Profile 1: Traditional Corporate Site**
-
-- Pages: <500
-- Traffic: <50,000 req/day
-- Temporal: <5 transitions/day
-
-→ **Recommendation**: Extension (simple, effective)
-
-**Profile 2: News/Magazine Site**
-
-- Pages: 500-5,000
-- Traffic: 100,000-1M req/day
-- Temporal: 10-50 transitions/day
-
-→ **Recommendation**: USER_INT menu or SSI (better performance)
-
-**Profile 3: Enterprise Portal**
-
-- Pages: >10,000
-- Traffic: >1M req/day
-- Temporal: >50 transitions/day
-
-→ **Recommendation**: Wait for Phase 2/3 or custom solution
-
-**Profile 4: E-commerce/SPA**
-
-- Pages: Variable
-- Traffic: High
-- Modern frontend: Yes
-
-→ **Recommendation**: AJAX menu with client-side caching
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`decision-guide` - Site-specific decision matrix
-- :ref:`phases` - Future Phase 2/3 improvements
-- :ref:`installation` - Install this extension
-- :ref:`configuration` - Configure optimization strategies
+- :ref:`decision-guide` — choosing a configuration for this extension
+- :ref:`performance-strategies` — the settings that change its cost
+- :ref:`performance-limitations` — what it cannot do
+- :ref:`installation` — installing it

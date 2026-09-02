@@ -8,345 +8,245 @@ Troubleshooting
 
 Diagnose and resolve common configuration issues.
 
-Cache Not Updating
+.. _configuration-troubleshooting-first:
+
+Start here
+==========
+
+.. code-block:: bash
+
+   vendor/bin/typo3 temporalcache:verify
+
+The command checks the indexes and columns the queries need, the two strategy
+names, and the time slots when harmonization is enabled.
+It reports which check failed and exits with 1.
+See :ref:`configuration-advanced-verify` for the full list of checks.
+
+.. _configuration-troubleshooting-not-updating:
+
+Cache not updating
 ==================
 
-**Symptoms**:
+**Symptoms**
 
-- Temporal content doesn't appear/disappear at scheduled times
-- Menus show stale content
+- Temporal content does not appear or disappear at the scheduled time
+- Menus show pages whose ``starttime`` has not been reached
 
-**Solutions**:
+**Checks**
 
-1. Verify extension is installed and active
-2. Check database indexes exist (see :ref:`installation`)
-3. Enable debug logging: ``advanced.debug_logging = 1``
-4. Check logs for errors: ``var/log/typo3_*.log``
-5. Verify scheduler task is running (if using scheduler timing)
+#. **Which timing strategy is active?**
 
-Detailed Diagnosis Steps
--------------------------
+   .. code-block:: bash
 
-**Step 1: Verify Extension Status**
+      vendor/bin/typo3 temporalcache:analyze
 
-.. code-block:: bash
+   Only ``dynamic`` expires the cache by itself.
+   ``scheduler`` relies entirely on the scheduler task, and ``hybrid`` does for
+   whichever content type is routed to it — and this version registers no task
+   type, so those transitions are never processed.
+   See :ref:`scheduler-setup`.
 
-   # Check if extension is installed
-   ./vendor/bin/typo3 extension:list | grep temporal_cache
+#. **Do the indexes exist?**
 
-**Step 2: Check Database Indexes**
-
-.. code-block:: sql
-
-   -- Verify indexes exist
-   SHOW INDEX FROM pages WHERE Key_name = 'idx_temporal_pages';
-   SHOW INDEX FROM tt_content WHERE Key_name = 'idx_temporal_content';
-
-If indexes don't exist, create them:
-
-.. code-block:: sql
-
-   CREATE INDEX idx_temporal_pages ON pages (starttime, endtime, sys_language_uid, hidden, deleted);
-   CREATE INDEX idx_temporal_content ON tt_content (starttime, endtime, sys_language_uid, hidden, deleted);
-
-**Step 3: Enable Debug Logging**
-
-.. code-block:: text
-
-   advanced.debug_logging = 1
-
-Then check logs:
-
-.. code-block:: bash
-
-   # View recent temporal cache logs
-   grep temporal_cache var/log/typo3_*.log | tail -50
-
-**Step 4: Verify Scheduler Task (if applicable)**
-
-.. code-block:: bash
-
-   # Run scheduler manually
-   ./vendor/bin/typo3 scheduler:run
-
-Check System → Scheduler in backend for task status.
-
-High Performance Impact
-=======================
-
-**Symptoms**:
-
-- Slow page generation
-- High database load
-- Frequent cache misses
-
-**Solutions**:
-
-1. **Add database indexes** (most common issue):
+   The extension ships them in :file:`ext_tables.sql`; TYPO3 creates them
+   during the database compare, not at installation time.
 
    .. code-block:: sql
 
-      CREATE INDEX idx_temporal_pages ON pages (starttime, endtime, sys_language_uid, hidden, deleted);
-      CREATE INDEX idx_temporal_content ON tt_content (starttime, endtime, sys_language_uid, hidden, deleted);
+      SHOW INDEX FROM pages WHERE Key_name LIKE 'idx_temporalcache%';
+      SHOW INDEX FROM tt_content WHERE Key_name LIKE 'idx_temporalcache%';
 
-2. **Switch to more efficient scoping**:
-
-   .. code-block:: text
-
-      scoping.strategy = per-content
-
-3. **Enable scheduler timing**:
-
-   .. code-block:: text
-
-      timing.strategy = scheduler
-
-4. **Enable harmonization**:
-
-   .. code-block:: text
-
-      harmonization.enabled = 1
-
-Performance Analysis
---------------------
-
-**Measure Query Performance**:
-
-.. code-block:: sql
-
-   -- Check query execution time
-   EXPLAIN SELECT uid, starttime, endtime FROM pages
-   WHERE (starttime > 0 OR endtime > 0)
-   AND sys_language_uid = 0
-   AND hidden = 0
-   AND deleted = 0;
-
-Expected: Query should use `idx_temporal_pages` index and complete in <5ms.
-
-**Monitor Cache Hit Ratio**:
-
-1. Go to Backend Module → Dashboard
-2. Check "Cache Hit Ratio" metric
-3. Target: >70% for acceptable performance
-
-**Identify Bottlenecks**:
-
-.. code-block:: text
-
-   If cache hit ratio <70%:
-   → Enable per-content scoping
-   → Enable harmonization
-   → Switch to scheduler timing
-
-   If query time >20ms:
-   → Verify indexes exist
-   → Check database performance
-   → Consider database optimization
-
-Harmonization Not Working
-==========================
-
-**Symptoms**:
-
-- Cache still flushes at every transition
-- Harmonization suggestions not appearing
-
-**Solutions**:
-
-1. Verify harmonization is enabled:
-
-   .. code-block:: text
-
-      harmonization.enabled = 1
-
-2. Check time slots are configured:
-
-   .. code-block:: text
-
-      harmonization.slots = 00:00,06:00,12:00,18:00
-
-3. Verify tolerance allows harmonization:
-
-   .. code-block:: text
-
-      harmonization.tolerance = 3600
-
-4. Check if transitions are within tolerance of slots
-
-Harmonization Diagnosis
-------------------------
-
-**Test Harmonization Logic**:
-
-.. code-block:: text
-
-   Example with slots = 00:00,12:00 and tolerance = 3600 (1 hour):
-
-   Starttime 11:30:
-   - Nearest slot: 12:00
-   - Time shift: 30 minutes
-   - Within tolerance: YES → Harmonized to 12:00
-
-   Starttime 10:30:
-   - Nearest slot: 12:00
-   - Time shift: 90 minutes
-   - Within tolerance: NO → NOT harmonized
-
-**Check Backend Module**:
-
-1. Go to Tools → Temporal Cache → Content
-2. Check "Harmonization Suggestion" column
-3. If no suggestions appear:
-   - Verify harmonization.enabled = 1
-   - Check tolerance setting
-   - Ensure content is within tolerance of slots
-
-Scheduler Task Not Running
-===========================
-
-**Symptoms**:
-
-- Content not updating when using scheduler timing
-- Last execution timestamp not updating
-
-**Solutions**:
-
-1. Verify system cron is configured:
+   Expected on both tables: ``idx_temporalcache_starttime`` over
+   ``(starttime, sys_language_uid)`` and ``idx_temporalcache_endtime`` over
+   ``(endtime, sys_language_uid)``.
+   If they are missing, run the database compare rather than creating them by
+   hand:
 
    .. code-block:: bash
 
-      crontab -l | grep scheduler
+      vendor/bin/typo3 extension:setup
 
-   Should show:
+   :guilabel:`Admin Tools → Maintenance → Analyze Database Structure` does the
+   same from the backend.
 
-   .. code-block:: bash
+   .. note::
+      :bash:`temporalcache:verify` suggests :bash:`database:updateschema` when
+      an index is missing.
+      That command is not part of TYPO3 core; use one of the two above.
 
-      * * * * * /usr/bin/php /path/to/typo3/vendor/bin/typo3 scheduler:run
+#. **Is the record actually visible?**
 
-2. Manually run scheduler:
+   The transition queries skip records that are deleted or hidden, and they
+   filter on the language of the current context.
+   A hidden record's ``starttime`` never triggers anything.
 
-   .. code-block:: bash
-
-      ./vendor/bin/typo3 scheduler:run
-
-3. Check scheduler task is enabled in backend
-4. Verify no errors in scheduler log
-
-Scheduler Configuration Verification
--------------------------------------
-
-**Step 1: Check Cron Setup**
-
-.. code-block:: bash
-
-   # View crontab
-   crontab -l
-
-   # For DDEV
-   ddev ssh
-   crontab -l
-
-**Step 2: Test Manual Execution**
-
-.. code-block:: bash
-
-   # Run scheduler manually
-   ./vendor/bin/typo3 scheduler:run
-
-   # Check output for errors
-   # Should show: "Executed X tasks"
-
-**Step 3: Verify Task Configuration**
-
-1. Go to System → Scheduler
-2. Find "Temporal Cache: Process Transitions" task
-3. Check:
-   - Task is enabled (checkbox checked)
-   - Next execution time is in the future
-   - Last execution was recent (within interval)
-
-**Step 4: Check Logs**
-
-.. code-block:: bash
-
-   # View scheduler logs
-   grep scheduler var/log/typo3_*.log | tail -20
-
-   # View temporal cache logs
-   grep temporal_cache var/log/typo3_*.log | tail -20
-
-Configuration Validation
-=========================
-
-Invalid Configuration Values
-----------------------------
-
-**Symptom**: Extension ignores configuration
-
-**Check for**:
-
-.. code-block:: text
-
-   1. Typos in configuration keys
-   2. Invalid values (e.g., timing.scheduler_interval < 60)
-   3. Missing required values (e.g., harmonization.slots when harmonization.enabled = 1)
-
-**Solution**: Enable debug logging to see configuration parsing errors.
-
-Extension Manager vs PHP Configuration
----------------------------------------
-
-**Issue**: Configuration not taking effect
-
-**Check**: Configuration method consistency
-
-.. code-block:: text
-
-   Priority order (highest to lowest):
-   1. PHP configuration (config/system/additional.php)
-   2. Extension Manager settings
-   3. Default values
-
-**Solution**: Check both locations and ensure no conflicts.
-
-Getting Help
-============
-
-If issues persist after troubleshooting:
-
-1. **Enable debug logging**:
+#. **Turn on debug logging.**
 
    .. code-block:: text
 
       advanced.debug_logging = 1
 
-2. **Gather diagnostic information**:
+   .. code-block:: bash
+
+      grep TemporalCache var/log/typo3_*.log | tail -50
+
+   With ``dynamic`` timing, one entry per page cache generation shows the
+   lifetime that was written and which maximum capped it.
+
+.. _configuration-troubleshooting-performance:
+
+High database load
+==================
+
+**Symptoms**
+
+- Slow page generation with ``timing.strategy = dynamic``
+- Many ``MIN(starttime)`` / ``MIN(endtime)`` queries in the slow query log
+
+**What the extension queries**
+
+The dynamic strategy runs two ``MIN()`` queries per monitored table — one for
+``starttime``, one for ``endtime`` — on every page cache generation.
+With the two default tables that is four queries.
+Each table registered through ``TemporalMonitorRegistry`` adds two more.
+
+The site-wide lookup used by ``global`` and ``per-content`` scoping is cached
+for the duration of the request; the two lookups of ``per-page`` scoping are
+not.
+
+**Options**
+
+#. Make sure the indexes above exist — without them these are full table scans.
+#. Set ``timing.strategy = scheduler`` to remove the queries from page
+   generation entirely.
+   This needs the scheduler task; read :ref:`scheduler-setup` first.
+#. Check the query plan:
+
+   .. code-block:: sql
+
+      EXPLAIN SELECT MIN(starttime) FROM pages
+      WHERE starttime > UNIX_TIMESTAMP()
+        AND hidden = 0 AND deleted = 0
+        AND sys_language_uid = 0;
+
+   The plan should use one of the ``idx_temporalcache_*`` indexes instead of
+   scanning the table.
+
+Changing ``scoping.strategy`` does not reduce this load: under dynamic timing
+every scoping strategy performs the same kind of lookup, and ``per-content``
+performs the site-wide one.
+
+.. _configuration-troubleshooting-harmonization:
+
+Harmonization not working
+=========================
+
+**Symptoms**
+
+- The Content tab shows no harmonization column or no suggestions
+- Timestamps stay where they were
+
+**Checks**
+
+#. ``harmonization.enabled = 1``.
+   While it is off, the service returns every timestamp unchanged and the
+   backend module hides the column.
+
+#. The slots parse.
+   Entries must be ``HH:MM`` with hours 0-23 and minutes 0-59; anything else is
+   dropped silently, and with no valid slot left nothing is harmonized.
+   :bash:`temporalcache:verify` reports the parsed slots when harmonization is
+   enabled.
+
+#. The tolerance is large enough.
+   A timestamp is only moved when its nearest slot is at most
+   ``harmonization.tolerance`` seconds away.
+
+   .. code-block:: text
+
+      Slots 00:00,12:00 with tolerance 3600:
+
+      11:30 → nearest slot 12:00, 30 min away  → harmonized to 12:00
+      10:30 → nearest slot 12:00, 90 min away  → left at 10:30
+
+   ``harmonization.tolerance = 0`` harmonizes nothing at all.
+   The label in :file:`ext_conf_template.txt` calls it "no limit", which is
+   backwards.
+
+#. The distance is measured within the day.
+   23:30 is far from a ``00:00`` slot, not close to the next day's.
+
+#. Harmonization is invoked, not automatic.
+   Nothing rewrites timestamps when an editor saves a record.
+   Use :guilabel:`Harmonize selected` in :guilabel:`Tools → Temporal Cache →
+   Content`, or:
 
    .. code-block:: bash
 
-      # Extension version
-      ./vendor/bin/typo3 extension:list | grep temporal_cache
+      vendor/bin/typo3 temporalcache:harmonize
 
-      # Database indexes
-      SHOW INDEX FROM pages WHERE Key_name = 'idx_temporal_pages';
-      SHOW INDEX FROM tt_content WHERE Key_name = 'idx_temporal_content';
+.. _configuration-troubleshooting-scheduler:
 
-      # Recent logs
-      grep temporal_cache var/log/typo3_*.log | tail -50
+Scheduler task
+==============
 
-3. **Check documentation**:
-   - :ref:`performance-considerations` - Performance impact analysis
-   - :ref:`configuration-strategies` - Strategy configuration details
-   - :ref:`backend-module` - Visual monitoring and diagnostics
+This version registers no scheduler task type, so the task cannot be created in
+:guilabel:`System → Scheduler`.
+:ref:`scheduler-setup` describes what that means for the ``scheduler`` and
+``hybrid`` timing strategies.
 
-4. **Report issues**:
-   - TYPO3 Forge: https://forge.typo3.org/
-   - Include: TYPO3 version, extension version, configuration, logs
+If a task type has been registered on your installation, verify that the
+Scheduler itself runs:
 
-Next Steps
+.. code-block:: bash
+
+   crontab -l | grep scheduler
+   vendor/bin/typo3 scheduler:run
+
+.. _configuration-troubleshooting-values:
+
+Configuration not taking effect
+===============================
+
+**Typos in strategy names are not errors.**
+``ScopingStrategyFactory`` and ``TimingStrategyFactory`` activate the strategy
+whose name matches the configured value and fall back to the highest-priority
+tagged strategy — ``global`` and ``dynamic`` — when none does.
+A misspelled ``per-contnet`` therefore behaves exactly like the default.
+:bash:`temporalcache:verify` flags both values as ``INVALID``.
+
+**Out-of-range values are clamped, not rejected.**
+``timing.scheduler_interval`` below 60 is raised to 60 by the getter, and
+``advanced.default_max_lifetime`` of 0 or less is skipped in favour of 86400.
+
+**Two configuration sources.**
+The Extension Manager writes to :file:`config/system/settings.php`;
+:file:`config/system/additional.php` is read afterwards, so an assignment there
+overrides the Extension Manager value.
+Check both files before concluding that a setting is ignored.
+
+.. _configuration-troubleshooting-help:
+
+Getting help
+============
+
+Collect before reporting:
+
+.. code-block:: bash
+
+   vendor/bin/typo3 extension:list | grep temporal_cache
+   vendor/bin/typo3 temporalcache:verify
+   vendor/bin/typo3 temporalcache:analyze
+   grep TemporalCache var/log/typo3_*.log | tail -50
+
+Report at `GitHub issues
+<https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ with the TYPO3
+version, the extension version and the output above.
+
+Next steps
 ==========
 
-- :ref:`configuration-strategies` - Review optimization strategies
-- :ref:`configuration-examples` - See working configuration examples
-- :ref:`backend-dashboard` - Monitor performance metrics
-- :ref:`performance-considerations` - Understand performance implications
+- :ref:`configuration-strategies` - What each setting does
+- :ref:`configuration-examples` - Complete configuration examples
+- :ref:`backend-dashboard` - What the backend module reports
+- :ref:`performance-considerations` - Performance implications
