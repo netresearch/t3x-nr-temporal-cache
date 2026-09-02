@@ -167,7 +167,7 @@ Configure via Extension Manager or PHP:
 **Extension Manager:**
 
 1. Admin Tools → Extensions
-2. Find "temporal_cache"
+2. Find "nr_temporal_cache"
 3. Click Configure
 4. Adjust "Default Cache Lifetime (seconds)"
 
@@ -319,15 +319,19 @@ If issues persist, check:
 Uninstallation
 ==============
 
-The extension makes no database changes, so uninstallation is clean:
+The extension adds no tables and no columns. It does add four indexes to the core tables
+``pages`` and ``tt_content`` (``idx_temporalcache_starttime`` and
+``idx_temporalcache_endtime``, see :file:`ext_tables.sql`); remove them in
+:guilabel:`Admin Tools → Maintenance → Analyze Database Structure` after uninstalling if you
+do not want to keep them.
 
 1. Deactivate extension::
 
-      vendor/bin/typo3 extension:deactivate temporal_cache
+      vendor/bin/typo3 extension:deactivate nr_temporal_cache
 
 2. Remove via composer::
 
-      composer remove netresearch/typo3-temporal-cache
+      composer remove netresearch/nr-temporal-cache
 
 3. Clear caches::
 
@@ -340,4 +344,4 @@ Next Steps
 
 - :ref:`architecture` - Understand how it works
 - :ref:`phases` - Learn about future improvements
-- `GitHub Issues <https://github.com/netresearch/typo3-temporal-cache/issues>`__ - Report problems
+- `GitHub Issues <https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ - Report problems

@@ -81,18 +81,14 @@ Dynamic Cache Lifetime Strategy
 Instead of fixed lifetime, calculate when next temporal transition will occur:
 
 .. code-block:: php
+   :caption: Illustrative pseudo-code - the real API is shown further down
 
-   function calculateCacheLifetime() {
+   function calculateCacheLifetime(): int
+   {
        $now = time();
 
-       // Find next starttime or endtime across all temporal content
-       $transitions = [
-           getNextPageTransition(),        // Pages becoming visible/expiring
-           getNextContentTransition(),     // Content elements changing
-           getNextCustomTransition(),      // Extension records
-       ];
-
-       $nextTransition = min(array_filter($transitions));
+       // Earliest future starttime/endtime across all monitored tables
+       $nextTransition = findNextTransition($now);
 
        // Cache until that moment
        return max(0, $nextTransition - $now);
@@ -106,23 +102,38 @@ Implementation: PSR-14 Event
 TYPO3 v12+ provides ``ModifyCacheLifetimeForPageEvent`` (Feature-96879):
 
 .. code-block:: php
+   :caption: Classes/EventListener/TemporalCacheLifetime.php (condensed - error handling and debug logging omitted)
 
    namespace Netresearch\TemporalCache\EventListener;
 
-   use TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent;
+   use TYPO3\CMS\Core\Context\Context;
+   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
-   class TemporalCacheLifetime
+   final class TemporalCacheLifetime
    {
+       public function __construct(
+           private readonly ExtensionConfiguration $extensionConfiguration,
+           private readonly ScopingStrategyInterface $scopingStrategy,
+           private readonly TimingStrategyInterface $timingStrategy,
+           private readonly Context $context,
+           private readonly LoggerInterface $logger
+       ) {
+       }
+
        public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
        {
-           $nextTransition = $this->getNextTemporalTransition();
+           $lifetime = $this->timingStrategy->getCacheLifetime($this->context, $event->getPageId());
 
-           if ($nextTransition !== null) {
-               $lifetime = max(0, $nextTransition - time());
-               $event->setCacheLifetime($lifetime);
+           if ($lifetime !== null) {
+               $maxLifetime = $this->determineMaxLifetime($event->getRenderingInstructions());
+               $event->setCacheLifetime(min($lifetime, $maxLifetime));
            }
        }
    }
+
+The listener itself contains no queries. It delegates to the configured timing strategy,
+which in turn asks the configured scoping strategy for the next transition. A ``null``
+lifetime (scheduler timing) leaves TYPO3's own lifetime untouched.
 
 **Registration:** ``Configuration/Services.yaml``
 
@@ -132,66 +143,72 @@ TYPO3 v12+ provides ``ModifyCacheLifetimeForPageEvent`` (Feature-96879):
      Netresearch\TemporalCache\EventListener\TemporalCacheLifetime:
        tags:
          - name: event.listener
-           event: TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent
+           identifier: 'temporal-cache/modify-cache-lifetime'
+           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
 
 Temporal Transition Detection
 ------------------------------
 
-Query pages for next state change:
+All transition lookups live in ``Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository``
+(contract: ``TemporalContentRepositoryInterface``). It exposes three entry points:
 
 .. code-block:: php
+   :caption: Classes/Domain/Repository/TemporalContentRepositoryInterface.php
 
-   private function getNextPageTransition(): ?int
-   {
-       $qb = $this->connectionPool->getQueryBuilderForTable('pages');
-       $now = time();
+   // Earliest transition across every monitored table (site-wide)
+   public function getNextTransition(
+       int $currentTimestamp,
+       int $workspaceUid = 0,
+       int $languageUid = 0
+   ): ?int;
 
-       $result = $qb
-           ->select('starttime', 'endtime')
-           ->from('pages')
-           ->where(
-               $qb->expr()->or(
-                   $qb->expr()->and(
-                       $qb->expr()->gt('starttime', $now),
-                       $qb->expr()->neq('starttime', 0)
-                   ),
-                   $qb->expr()->and(
-                       $qb->expr()->gt('endtime', $now),
-                       $qb->expr()->neq('endtime', 0)
-                   )
-               ),
-               // Context-aware filters (workspace, language)
-           )
-           ->executeQuery()
-           ->fetchAllAssociative();
+   // Earliest transition in the pages table only - page transitions change menus everywhere
+   public function getNextPageTransition(
+       int $currentTimestamp,
+       int $workspaceUid = 0,
+       int $languageUid = 0
+   ): ?int;
 
-       // Extract minimum future timestamp
-       return $this->extractNextTransition($result);
-   }
+   // Earliest content-element transition on one page (content tables, restricted by pid)
+   public function getNextContentTransitionForPage(
+       int $pageId,
+       int $currentTimestamp,
+       int $workspaceUid = 0,
+       int $languageUid = 0
+   ): ?int;
 
-Query content elements similarly:
+Each of them runs one indexed ``MIN()`` query per table and per field
+(``starttime``, ``endtime``) and returns the smallest result. The default restrictions are
+removed deliberately - TYPO3's ``StartTimeRestriction``/``EndTimeRestriction`` would hide
+exactly the future records the lookup needs - and the deleted/hidden, workspace and
+language filters are re-added explicitly.
 
-.. code-block:: php
-
-   private function getNextContentTransition(): ?int
-   {
-       // Same pattern for tt_content table
-       // Returns next starttime/endtime transition
-   }
-
-Combine transitions:
+The scoping strategy decides which of the three is used. Per-page scoping combines the
+two narrow lookups:
 
 .. code-block:: php
+   :caption: Classes/Service/Scoping/PerPageScopingStrategy.php
 
-   private function getNextTemporalTransition(): ?int
+   public function getNextTransition(Context $context, ?int $pageId = null): ?int
    {
-       $transitions = array_filter([
-           $this->getNextPageTransition(),
-           $this->getNextContentTransition(),
-       ]);
+       $workspaceId = $this->resolveWorkspaceId($context);
+       $languageId = $this->resolveLanguageId($context);
+       $now = \time();
 
-       return !empty($transitions) ? min($transitions) : null;
+       if ($pageId === null) {
+           return $this->temporalContentRepository->getNextTransition($now, $workspaceId, $languageId);
+       }
+
+       $candidates = \array_filter([
+           $this->temporalContentRepository->getNextPageTransition($now, $workspaceId, $languageId),
+           $this->temporalContentRepository->getNextContentTransitionForPage($pageId, $now, $workspaceId, $languageId),
+       ], static fn (?int $value): bool => $value !== null);
+
+       return $candidates === [] ? null : \min($candidates);
    }
+
+Global scoping calls ``getNextTransition()`` directly; per-content scoping resolves the
+affected pages through ``sys_refindex`` first.
 
 Timeline Example
 ================
@@ -309,25 +326,27 @@ Each cache regeneration executes:
 
 .. code-block:: sql
 
-   -- Pages query
-   SELECT starttime, endtime FROM pages
-   WHERE (starttime > {now} AND starttime != 0)
-      OR (endtime > {now} AND endtime != 0)
-   -- Context filters...
+   -- One MIN() query per monitored table and per temporal field.
+   -- With the default tables that is four queries: pages/tt_content x starttime/endtime.
 
-   -- Content query
-   SELECT starttime, endtime FROM tt_content
-   WHERE (starttime > {now} AND starttime != 0)
-      OR (endtime > {now} AND endtime != 0)
-   AND hidden = 0
-   -- Context filters...
+   SELECT MIN(starttime) FROM pages
+   WHERE starttime > {now}
+     AND deleted = 0 AND hidden = 0
+     AND sys_language_uid = {language}
+   -- workspace filter...
 
-**Indexes (standard TYPO3):**
+   SELECT MIN(endtime) FROM tt_content
+   WHERE endtime > {now}
+     AND deleted = 0 AND hidden = 0
+     AND sys_language_uid = {language}
+   -- workspace filter, plus "AND pid = {pageId}" for per-page/per-content scoping
 
-- ``pages(starttime)``
-- ``pages(endtime)``
-- ``tt_content(starttime)``
-- ``tt_content(endtime)``
+**Indexes** (added by the extension via :file:`ext_tables.sql`):
+
+- ``pages(starttime, sys_language_uid)``
+- ``pages(endtime, sys_language_uid)``
+- ``tt_content(starttime, sys_language_uid)``
+- ``tt_content(endtime, sys_language_uid)``
 
 **Measured Performance:**
 
@@ -425,19 +444,42 @@ Extensibility
 Custom Tables
 -------------
 
-Register additional tables with temporal fields:
+Additional tables are registered with
+``Netresearch\TemporalCache\Service\TemporalMonitorRegistry``. The registry is an autowired
+singleton service and ``registerTable()`` is an instance method, so obtain it through
+constructor injection - there is no static registration API:
 
 .. code-block:: php
 
-   // ext_localconf.php or config/system/additional.php
+   namespace YourVendor\YourExtension\Service;
 
    use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 
-   TemporalMonitorRegistry::registerTable(
-       tableName: 'tx_news_domain_model_news',
-       startField: 'datetime',  // Custom field name
-       endField: 'archive'      // Custom field name
-   );
+   final class NewsTemporalRegistration
+   {
+       public function __construct(
+           private readonly TemporalMonitorRegistry $monitorRegistry
+       ) {
+           $this->monitorRegistry->registerTable(
+               'tx_news_domain_model_news',
+               ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
+           );
+       }
+   }
+
+The second argument lists the columns to select and is optional; omitting it applies the
+default field list shown above.
+
+.. note::
+   The registry has no field mapping: the table's temporal columns must literally be named
+   ``starttime`` and ``endtime``. ``registerTable()`` throws an ``InvalidArgumentException``
+   when the field list omits ``uid``, ``starttime`` or ``endtime``, when the table name is
+   empty, or when it is ``pages`` or ``tt_content`` - both are monitored by default and
+   cannot be re-registered.
+
+Registered tables are picked up by ``TemporalContentRepository``, which queries every table
+returned by ``TemporalMonitorRegistry::getAllTables()`` when it looks for the next
+transition.
 
 Custom Transition Logic
 ------------------------
@@ -452,7 +494,7 @@ For custom temporal logic, create your own PSR-14 event listener:
 
    namespace YourVendor\YourExtension\EventListener;
 
-   use TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent;
+   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
    final class CustomTemporalLogic
    {
@@ -483,7 +525,7 @@ Register in ``Configuration/Services.yaml``:
        tags:
          - name: event.listener
            identifier: 'your-extension/custom-temporal-logic'
-           event: TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent
+           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
            after: 'temporal-cache/modify-cache-lifetime'
 
 Limitations & Trade-offs
@@ -519,5 +561,5 @@ Next Steps
 ==========
 
 - :ref:`phases` - Future improvements and migration plan
-- `Source Code <https://github.com/netresearch/typo3-temporal-cache>`__ - Examine implementation
+- `Source Code <https://github.com/netresearch/t3x-nr-temporal-cache>`__ - Examine implementation
 - `Forge #14277 <https://forge.typo3.org/issues/14277>`__ - Track core development

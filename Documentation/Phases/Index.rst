@@ -253,7 +253,7 @@ Using this extension in production provides valuable insights for Phase 2/3 desi
 **Where to contribute**:
 
 - `TYPO3 Forge #14277 <https://forge.typo3.org/issues/14277>`__ - Core issue discussion
-- `Extension Repository <https://github.com/netresearch/typo3-temporal-cache>`__ - Bug reports and feature requests
+- `Extension Repository <https://github.com/netresearch/t3x-nr-temporal-cache>`__ - Bug reports and feature requests
 - TYPO3 Slack #typo3-cms - Community discussions
 
 RFC Participation

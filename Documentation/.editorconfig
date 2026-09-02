@@ -1,0 +1,11 @@
+# EditorConfig for the TYPO3 ReST documentation.
+# No `root = true` here: the repository root .editorconfig keeps supplying
+# charset, end_of_line, insert_final_newline and trim_trailing_whitespace.
+#
+# The root file already covers `*.rst`. This adds the `.rst.txt` includes
+# (Includes.rst.txt), which `[*.rst]` does not match.
+
+[*.{rst,rst.txt}]
+indent_style = space
+indent_size = 3
+max_line_length = 80

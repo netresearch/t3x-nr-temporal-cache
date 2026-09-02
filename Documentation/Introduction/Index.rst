@@ -1,5 +1,7 @@
 .. include:: /Includes.rst.txt
 
+.. _introduction:
+
 ============
 Introduction
 ============
@@ -125,7 +127,7 @@ Quick Start
 
 Installation::
 
-   composer req netresearch/typo3-temporal-cache
+   composer req netresearch/nr-temporal-cache
 
 Configuration:
 
