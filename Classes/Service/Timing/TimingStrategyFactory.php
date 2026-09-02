@@ -6,7 +6,7 @@ namespace Netresearch\TemporalCache\Service\Timing;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
-use RuntimeException;
+use Netresearch\TemporalCache\Service\SelectsNamedStrategy;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -17,6 +17,8 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class TimingStrategyFactory implements TimingStrategyInterface
 {
+    use SelectsNamedStrategy;
+
     private readonly TimingStrategyInterface $activeStrategy;
 
     /**
@@ -25,34 +27,15 @@ class TimingStrategyFactory implements TimingStrategyInterface
      */
     public function __construct(
         iterable $strategies,
-        private readonly ExtensionConfiguration $extensionConfiguration
+        ExtensionConfiguration $extensionConfiguration
     ) {
-        $this->activeStrategy = $this->selectStrategy($strategies);
-    }
-
-    /**
-     * Select active strategy based on extension configuration.
-     *
-     * @param iterable<array-key, TimingStrategyInterface> $strategies
-     * @return TimingStrategyInterface
-     */
-    private function selectStrategy(iterable $strategies): TimingStrategyInterface
-    {
-        $configuredStrategy = $this->extensionConfiguration->getTimingStrategy();
-        $firstStrategy = null;
-
-        // Find matching strategy by name (more reliable for testing with mocks)
-        foreach ($strategies as $strategy) {
-            $firstStrategy ??= $strategy;
-
-            if ($strategy->getName() === $configuredStrategy) {
-                return $strategy;
-            }
-        }
-
-        // Fallback to the first tagged strategy: highest tag priority, DynamicTimingStrategy
-        // carries priority 100 in Services.yaml to keep the backward compatible default.
-        return $firstStrategy ?? throw new RuntimeException('No timing strategies registered');
+        // The fallback is the first tagged service, i.e. the highest tag priority;
+        // DynamicTimingStrategy carries priority 100 to stay the default.
+        $this->activeStrategy = $this->selectNamedStrategy(
+            $strategies,
+            $extensionConfiguration->getTimingStrategy(),
+            'No timing strategies registered'
+        );
     }
 
     /**

@@ -6,7 +6,7 @@ namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
-use RuntimeException;
+use Netresearch\TemporalCache\Service\SelectsNamedStrategy;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -17,6 +17,8 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class ScopingStrategyFactory implements ScopingStrategyInterface
 {
+    use SelectsNamedStrategy;
+
     private readonly ScopingStrategyInterface $activeStrategy;
 
     /**
@@ -25,34 +27,15 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
      */
     public function __construct(
         iterable $strategies,
-        private readonly ExtensionConfiguration $extensionConfiguration
+        ExtensionConfiguration $extensionConfiguration
     ) {
-        $this->activeStrategy = $this->selectStrategy($strategies);
-    }
-
-    /**
-     * Select active strategy based on extension configuration.
-     *
-     * @param iterable<array-key, ScopingStrategyInterface> $strategies
-     * @return ScopingStrategyInterface
-     */
-    private function selectStrategy(iterable $strategies): ScopingStrategyInterface
-    {
-        $configuredStrategy = $this->extensionConfiguration->getScopingStrategy();
-        $firstStrategy = null;
-
-        // Find matching strategy by name (more reliable for testing with mocks)
-        foreach ($strategies as $strategy) {
-            $firstStrategy ??= $strategy;
-
-            if ($strategy->getName() === $configuredStrategy) {
-                return $strategy;
-            }
-        }
-
-        // Fallback to the first tagged strategy: highest tag priority, GlobalScopingStrategy
-        // carries priority 100 in Services.yaml to keep the backward compatible default.
-        return $firstStrategy ?? throw new RuntimeException('No scoping strategies registered');
+        // The fallback is the first tagged service, i.e. the highest tag priority;
+        // GlobalScopingStrategy carries priority 100 to stay the default.
+        $this->activeStrategy = $this->selectNamedStrategy(
+            $strategies,
+            $extensionConfiguration->getScopingStrategy(),
+            'No scoping strategies registered'
+        );
     }
 
     /**

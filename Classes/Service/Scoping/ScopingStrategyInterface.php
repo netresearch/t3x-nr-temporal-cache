@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use Netresearch\TemporalCache\Service\NamedStrategyInterface;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -12,7 +13,7 @@ use TYPO3\CMS\Core\Context\Context;
  *
  * Strategy Pattern: Allows switching between global, per-page, and per-content scoping.
  */
-interface ScopingStrategyInterface
+interface ScopingStrategyInterface extends NamedStrategyInterface
 {
     /**
      * Get cache tags to flush when temporal content transitions.

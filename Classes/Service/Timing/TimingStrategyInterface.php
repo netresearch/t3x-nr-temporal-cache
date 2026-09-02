@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Service\Timing;
 
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
+use Netresearch\TemporalCache\Service\NamedStrategyInterface;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -12,7 +13,7 @@ use TYPO3\CMS\Core\Context\Context;
  *
  * Strategy Pattern: Allows switching between dynamic (event-based), scheduler, and hybrid.
  */
-interface TimingStrategyInterface
+interface TimingStrategyInterface extends NamedStrategyInterface
 {
     /**
      * Should this strategy handle the given content type?
