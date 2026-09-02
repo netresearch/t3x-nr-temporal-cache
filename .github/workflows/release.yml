@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  # Retry a release that crashed after the tag was already pushed, without
+  # deleting and re-cutting the tag: `gh workflow run release.yml --ref vX.Y.Z`.
+  # Every publish step in the reusable is idempotent, and it derives the version
+  # from the ref name — so a tag ref resumes the release and a branch ref fails
+  # loudly at version resolution instead of publishing anything.
+  workflow_dispatch:
 
 permissions: {}
 

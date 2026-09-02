@@ -1,0 +1,26 @@
+# Codecov configuration for netresearch/nr-temporal-cache.
+#
+# `.github/workflows/ci.yml` sets `upload-coverage: true`, so the reusable
+# uploads a clover report from the unit cells (flag `unit`) and from the
+# functional cells (flag `functional`). The project status below is what makes
+# the 69% threshold documented in README.md and AGENTS.md an actual check on
+# every pull request.
+#
+# 69% mirrors `composer ci:test:php:coverage:check`
+# (Build/scripts/check-coverage.php). The two are not measured identically: the
+# script reads statement coverage from the unit suite alone, this status reads
+# line coverage over unit and functional combined, so Codecov normally reports
+# the higher number. The local script stays the stricter of the two.
+coverage:
+  status:
+    project:
+      default:
+        # A floor, not a delta — no `threshold:`, so a drop below 69% fails
+        # regardless of what the base commit measured.
+        target: 69%
+    # Codecov enables a `patch` status at target `auto` unless told otherwise,
+    # which would add a second, undocumented gate on the lines a PR touches.
+    # Report it, do not fail on it.
+    patch:
+      default:
+        informational: true

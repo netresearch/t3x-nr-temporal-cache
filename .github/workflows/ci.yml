@@ -26,8 +26,17 @@ jobs:
       typo3-versions: '["^12.4","^13.0","^14.0"]'
       matrix-exclude: '[{"php":"8.1","typo3":"^13.0"},{"php":"8.1","typo3":"^14.0"},{"php":"8.2","typo3":"^14.0"},{"php":"8.5","typo3":"^12.4"}]'
       run-functional-tests: true
-      # The Rector job is not matrixed and falls back to php-versions[0] (8.1),
-      # but netresearch/typo3-ci-workflows requires php ^8.2, so pin it.
+      # Both default to false, and while they are off the reusable runs the
+      # suites with --no-coverage and skips the Codecov upload entirely — so
+      # nothing evaluates the 69% threshold that README.md and AGENTS.md
+      # document. Turning them on produces the clover reports Codecov measures
+      # the target in `codecov.yml` against, plus JUnit reports for Test
+      # Analytics. CODECOV_TOKEN is passed under `secrets:` below.
+      upload-coverage: true
+      upload-test-results: true
+      # The Rector job is not matrixed and falls back to php-versions[0], which
+      # is 8.2 above. Pinned anyway so reordering that list cannot silently drop
+      # Rector below the php ^8.2 netresearch/typo3-ci-workflows requires.
       rector-php-version: '8.2'
       # That same package is unresolvable under typo3/cms-core ^12.4
       # (saschaegerer/phpstan-typo3 ^2||^3 needs cms-core >=13.4), so drop it

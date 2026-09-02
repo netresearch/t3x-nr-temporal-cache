@@ -1,5 +1,7 @@
 # TYPO3 Temporal Cache Management
 
+[![CI](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml/badge.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/netresearch/t3x-nr-temporal-cache/graph/badge.svg)](https://codecov.io/gh/netresearch/t3x-nr-temporal-cache)
 [![TYPO3 12](https://img.shields.io/badge/TYPO3-12-orange.svg)](https://get.typo3.org/version/12)
 [![TYPO3 13](https://img.shields.io/badge/TYPO3-13-orange.svg)](https://get.typo3.org/version/13)
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://get.typo3.org/version/14)
@@ -384,24 +386,29 @@ Once Phase 2/3 are in TYPO3 core, this extension will be deprecated.
 **400+ automated tests** (316 unit + 90 functional) covering all scenarios:
 
 ```bash
-# All tests (unit + functional)
-composer test
-
-# Unit tests only
-composer test:unit
+# Unit tests
+composer ci:test:php:unit
 
 # Functional + integration tests
-composer test:functional
+composer ci:test:php:functional
 
-# With coverage report
-composer test:coverage
+# Coverage report for the unit suite (HTML in .Build/coverage, clover in .Build/logs)
+composer ci:test:php:coverage
+
+# Check that report against the 69% threshold
+composer ci:test:php:coverage:check
+
+# Static analysis and code style
+composer ci:test:php:phpstan
+composer ci:test:php:cgl   # check only
+composer ci:cgl            # auto-fix
 ```
 
 ### Test Coverage
 - **Unit Tests**: 316 tests with stubbed/mocked dependencies
 - **Functional Tests**: 90 tests with real database integration
   (event listener, scheduler task, scoping/timing strategies, harmonization persistence, backend controller)
-- **Coverage gate**: CI enforces a minimum line-coverage threshold via `composer ci:test:php:coverage:check`
+- **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 69% project target in [`codecov.yml`](codecov.yml). `composer ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone.
 
 ## Contributing
 

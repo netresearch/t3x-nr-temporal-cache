@@ -19,8 +19,8 @@ TYPO3 extension addressing Forge #14277: automatic page cache invalidation for t
 
 - **Strict types**: `declare(strict_types=1)` in all PHP files
 - **Standards**: TYPO3 coding standards via PHP-CS-Fixer (`Build/.php-cs-fixer.php`), PHPStan `level: max` (`Build/phpstan.neon`)
-- **Architecture**: PSR-14 events, constructor DI via `Configuration/Services.yaml`, final classes
-- **Testing**: unit + functional suites; CI coverage gate at 69% (`ci:test:php:coverage:check`)
+- **Architecture**: PSR-14 events, constructor DI via `Configuration/Services.yaml`; `final` classes except where a unit test doubles them
+- **Testing**: unit + functional suites; CI uploads coverage to Codecov, which reports each PR against the 69% project target in `codecov.yml`. `ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone
 - **Commits**: Conventional Commits; signed (`git commit -S --signoff`) — the `require-signed-commits` ruleset rejects unsigned commits at merge time and the DCO check requires the `Signed-off-by` trailer
 
 ## Commands
@@ -34,8 +34,8 @@ composer ci:test:php:phpstan    # PHPStan level max
 composer ci:test:php:rector     # Rector dry-run
 composer ci:test:php:unit       # Unit tests
 composer ci:test:php:functional # Functional tests
-composer ci:test:php:coverage   # Coverage report (HTML + clover)
-composer ci:test:php:coverage:check  # Enforce 69% line coverage
+composer ci:test:php:coverage   # Unit-suite coverage report (HTML + clover)
+composer ci:test:php:coverage:check  # Check that report against 69% statement coverage
 composer docs:render            # Render Documentation/ via Docker
 ```
 
@@ -49,15 +49,16 @@ Configuration/    # Services.yaml, backend module, site sets (Default, Performan
 Documentation/    # ReST docs for docs.typo3.org - see Documentation/AGENTS.md
 Tests/            # Unit, Functional, Integration - see Tests/AGENTS.md
 Resources/        # Language files, backend templates, icons - see Resources/AGENTS.md
-Build/            # phpunit configs, phpstan.neon, php-cs-fixer, rector, runTests.sh
+Build/            # phpunit configs, phpstan.neon, php-cs-fixer, rector, fractor, runTests.sh
 docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 .ddev/            # Local development environment - see .ddev/AGENTS.md
+.github/          # Workflows, CODEOWNERS, issue templates, Dependabot - see .github/workflows/AGENTS.md
 ```
 
 ## Code Conventions
 
 - PSR-12 / TYPO3 CGL; type hints on all parameters, returns, properties
-- Final classes by default; readonly properties for immutable dependencies
+- `final` by default; a class the unit suite doubles directly stays non-final — `createStub()`/`createMock()` generate a subclass, and no bypass-finals bridge is in `require-dev`. `Classes/AGENTS.md` names the current exceptions and the check to run. Readonly properties for immutable dependencies
 - PSR-14 events for extensibility; Context API for workspace/language awareness
 - QueryBuilder with explicit restrictions only — see `Classes/AGENTS.md` for the canonical query patterns (workspace-aware, separate starttime/endtime queries)
 - Strategies registered via service tags `nr_temporal_cache.scoping_strategy` / `nr_temporal_cache.timing_strategy` in `Configuration/Services.yaml`
@@ -75,7 +76,7 @@ docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 - [ ] Unit + functional tests pass (`composer ci:test:php:unit`, `composer ci:test:php:functional`)
 - [ ] PHPStan clean (`composer ci:test:php:phpstan`)
 - [ ] Code style compliant (`composer ci:test:php:cgl`)
-- [ ] Coverage ≥69% (`composer ci:test:php:coverage:check`)
+- [ ] Unit coverage ≥69% (`composer ci:test:php:coverage` then `composer ci:test:php:coverage:check`); Codecov reports the same target for the combined suites
 - [ ] Documentation updated if behavior changed
 - [ ] No debug code (`var_dump`, `console.log`, ...)
 - [ ] Commit signed with `-S --signoff`, Conventional Commit format
