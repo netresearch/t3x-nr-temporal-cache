@@ -87,8 +87,13 @@ Instead of fixed lifetime, calculate when next temporal transition will occur:
    {
        $now = time();
 
-       // Earliest future starttime/endtime across all monitored tables
+       // Earliest future starttime/endtime across all monitored tables.
+       // null when nothing is scheduled — the real API returns ?int.
        $nextTransition = findNextTransition($now);
+
+       if ($nextTransition === null) {
+           return $defaultLifetime;
+       }
 
        // Cache until that moment
        return max(0, $nextTransition - $now);
@@ -106,6 +111,10 @@ TYPO3 v12+ provides ``ModifyCacheLifetimeForPageEvent`` (Feature-96879):
 
    namespace Netresearch\TemporalCache\EventListener;
 
+   use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+   use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
+   use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
+   use Psr\Log\LoggerInterface;
    use TYPO3\CMS\Core\Context\Context;
    use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 

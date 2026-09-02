@@ -46,11 +46,23 @@ extension's listener, and undo its lifetime for the page trees you want to exclu
 
    final class ConditionalTemporalCache
    {
+       /**
+        * @param int[] $excludedPageIds pages that keep the long lifetime
+        */
+       public function __construct(private readonly array $excludedPageIds = [])
+       {
+       }
+
        public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
        {
            if ($this->isExcluded($event->getPageId())) {
                $event->setCacheLifetime(86400);
            }
+       }
+
+       private function isExcluded(int $pageId): bool
+       {
+           return in_array($pageId, $this->excludedPageIds, true);
        }
    }
 
