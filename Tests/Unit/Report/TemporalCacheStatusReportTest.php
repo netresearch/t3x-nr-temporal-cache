@@ -348,34 +348,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
     /**     */
     public function testGetHarmonizationStatusCalculatesImpact(): void
     {
-        $this->extensionConfiguration
-            ->method('getScopingStrategy')
-            ->willReturn('per-page');
-
-        $this->extensionConfiguration
-            ->method('getTimingStrategy')
-            ->willReturn('dynamic');
-
-        $this->extensionConfiguration
-            ->method('isHarmonizationEnabled')
-            ->willReturn(true);
-
-        $this->extensionConfiguration
-            ->method('useRefindex')
-            ->willReturn(false);
-
-        $this->extensionConfiguration
-            ->method('getHarmonizationTolerance')
-            ->willReturn(600);
-
-        $this->extensionConfiguration
-            ->method('isAutoRoundEnabled')
-            ->willReturn(false);
-
-        $this->harmonizationService
-            ->method('getFormattedSlots')
-            ->willReturn(['00:00', '12:00']);
-
+        $this->mockHarmonizationEnabled();
         $this->mockDatabaseIndexes(true);
 
         $content = new TemporalContent(
