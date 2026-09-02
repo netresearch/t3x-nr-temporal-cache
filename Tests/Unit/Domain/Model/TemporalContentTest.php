@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Model;
 
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for TemporalContent value object
- *
- * @covers \Netresearch\TemporalCache\Domain\Model\TemporalContent
  */
+#[CoversClass(TemporalContent::class)]
 final class TemporalContentTest extends UnitTestCase
 {
     /**     */

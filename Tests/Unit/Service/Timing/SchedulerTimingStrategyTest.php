@@ -10,6 +10,8 @@ use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
@@ -18,12 +20,10 @@ use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- * @uses \Netresearch\TemporalCache\Domain\Model\TransitionEvent
- */
 #[AllowMockObjectsWithoutExpectations]
+#[CoversClass(SchedulerTimingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
+#[UsesClass(TransitionEvent::class)]
 final class SchedulerTimingStrategyTest extends UnitTestCase
 {
     protected bool $resetSingletonInstances = true;

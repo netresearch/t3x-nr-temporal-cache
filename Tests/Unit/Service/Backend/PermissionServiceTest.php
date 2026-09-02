@@ -6,13 +6,14 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
 use Netresearch\TemporalCache\Service\Backend\PermissionService;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * @covers \Netresearch\TemporalCache\Service\Backend\PermissionService
  */
+#[CoversClass(PermissionService::class)]
 final class PermissionServiceTest extends UnitTestCase
 {
     private TemporalMonitorRegistry $monitorRegistry;

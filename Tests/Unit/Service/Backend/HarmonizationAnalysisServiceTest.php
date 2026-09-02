@@ -8,13 +8,13 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Backend\HarmonizationAnalysisService
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- */
+#[CoversClass(HarmonizationAnalysisService::class)]
+#[UsesClass(TemporalContent::class)]
 final class HarmonizationAnalysisServiceTest extends UnitTestCase
 {
     private HarmonizationService&Stub $harmonizationService;

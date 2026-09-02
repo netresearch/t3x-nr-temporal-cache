@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Functional\Task;
 
 use Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional tests for TemporalCacheSchedulerTask
- *
- * @covers \Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask
  */
+#[CoversClass(TemporalCacheSchedulerTask::class)]
 final class TemporalCacheSchedulerTaskTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

@@ -7,16 +7,17 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for GlobalScopingStrategy
- *
- * @covers \Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
  */
+#[CoversClass(GlobalScopingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
 final class GlobalScopingStrategyTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
@@ -96,6 +97,7 @@ final class GlobalScopingStrategyTest extends UnitTestCase
     public function testGetNextTransitionRespectsWorkspaceContext(): void
     {
         $workspaceId = 1;
+        $passedWorkspaceId = null;
 
         $this->context
             ->method('getPropertyFromAspect')
@@ -106,18 +108,25 @@ final class GlobalScopingStrategyTest extends UnitTestCase
 
         $this->repository
             ->method('getNextTransition')
-            ->willReturn(null);
+            ->willReturnCallback(
+                static function (int $currentTimestamp, int $workspaceUid = 0, int $languageUid = 0) use (&$passedWorkspaceId): ?int {
+                    $passedWorkspaceId = $workspaceUid;
+
+                    return null;
+                }
+            );
 
         $this->subject->getNextTransition($this->context);
 
-        // Verify method was called - stubs don't support expects(), so we just verify no exception
-        self::assertTrue(true);
+        // Assert: the workspace from the context reaches the repository query
+        self::assertSame($workspaceId, $passedWorkspaceId);
     }
 
     /**     */
     public function testGetNextTransitionRespectsLanguageContext(): void
     {
         $languageId = 2;
+        $passedLanguageId = null;
 
         $this->context
             ->method('getPropertyFromAspect')
@@ -128,12 +137,18 @@ final class GlobalScopingStrategyTest extends UnitTestCase
 
         $this->repository
             ->method('getNextTransition')
-            ->willReturn(null);
+            ->willReturnCallback(
+                static function (int $currentTimestamp, int $workspaceUid = 0, int $languageUid = 0) use (&$passedLanguageId): ?int {
+                    $passedLanguageId = $languageUid;
+
+                    return null;
+                }
+            );
 
         $this->subject->getNextTransition($this->context);
 
-        // Verify method was called - stubs don't support expects(), so we just verify no exception
-        self::assertTrue(true);
+        // Assert: the language from the context reaches the repository query
+        self::assertSame($languageId, $passedLanguageId);
     }
 
     /**     */

@@ -11,16 +11,16 @@ use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterfa
 use Netresearch\TemporalCache\Service\RefindexService;
 use Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- */
 #[AllowMockObjectsWithoutExpectations]
+#[CoversClass(PerContentScopingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
 final class PerContentScopingStrategyTest extends UnitTestCase
 {
     private RefindexService&MockObject $refindexService;

@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Index;
 use Netresearch\TemporalCache\Command\VerifyCommand;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,9 +17,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Command\VerifyCommand
- */
+#[CoversClass(VerifyCommand::class)]
 final class VerifyCommandTest extends UnitTestCase
 {
     private ConnectionPool&Stub $connectionPool;

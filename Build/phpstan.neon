@@ -19,26 +19,33 @@ parameters:
         - ../Tests/Unit/Bootstrap.php
     scanDirectories:
         - ../Tests/Unit/Fixtures
-    reportUnmatchedIgnoredErrors: false
+    # PHPDoc is not evidence: without this, level max trusts an annotation over
+    # what the code can actually hold at runtime.
+    treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        # TYPO3 12 compatibility: $uriBuilder property is non-nullable in v12
-        # but may be uninitialized in test contexts
-        -
-            identifier: isset.property
-            message: '#Property TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController::\$uriBuilder .* in isset\(\) is not nullable#'
-        # TYPO3 13+ only: IconSize enum does not exist in TYPO3 12
+        # All three entries below cover ONE expression, the version-safe icon
+        # size in Classes/Controller/Backend/TemporalCacheController.php:
+        # class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL.
+        # One half of that ternary is always wrong for the TYPO3 version the
+        # matrix cell installed, and which half decides which entry fires — so
+        # each carries reportUnmatched: false. reportUnmatchedIgnoredErrors
+        # itself stays at its default (true), so an ignore that is stale rather
+        # than version-conditional is still reported. Drop the lot when v12
+        # support is dropped and the ternary goes.
+        # The IconSize enum does not exist on every supported version.
         -
             identifier: class.notFound
             message: '#class TYPO3\\CMS\\Core\\Imaging\\IconSize#'
-        # Icon::SIZE_SMALL is deprecated in v13+ but needed as v12 fallback
-        -
-            identifier: classConstant.deprecatedClass
-            message: '#Icon::SIZE_SMALL#'
-        # Icon::SIZE_SMALL is removed in v14 but needed as v12 fallback
+            reportUnmatched: false
+        # Icon::SIZE_SMALL is gone on v14 (verified: Imaging/Icon.php in
+        # cms-core 14.3 declares no SIZE_* constant) and present on v12.
         -
             identifier: classConstant.notFound
             message: '#Icon::SIZE_SMALL#'
-        # IconFactory::getIcon() $size parameter type mismatch across TYPO3 versions
+            reportUnmatched: false
+        # IconFactory::getIcon() takes an IconSize on the versions that have the
+        # enum, so the v12 fallback branch is the wrong argument type there.
         -
             identifier: argument.type
             message: '#method TYPO3\\CMS\\Core\\Imaging\\IconFactory::getIcon\(\) expects TYPO3\\CMS\\Core\\Imaging\\IconSize#'
+            reportUnmatched: false

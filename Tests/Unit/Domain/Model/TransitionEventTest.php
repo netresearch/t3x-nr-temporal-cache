@@ -7,14 +7,14 @@ namespace Netresearch\TemporalCache\Tests\Unit\Domain\Model;
 use InvalidArgumentException;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for TransitionEvent value object
- *
- * @covers \Netresearch\TemporalCache\Domain\Model\TransitionEvent
  */
+#[CoversClass(TransitionEvent::class)]
 final class TransitionEventTest extends UnitTestCase
 {
     private TemporalContent $temporalContent;

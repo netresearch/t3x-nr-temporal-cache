@@ -9,14 +9,14 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\RefindexService;
 use Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional integration tests for PerContentScopingStrategy with real database
- *
- * @covers \Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy
  */
+#[CoversClass(PerContentScopingStrategy::class)]
 final class PerContentScopingIntegrationTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

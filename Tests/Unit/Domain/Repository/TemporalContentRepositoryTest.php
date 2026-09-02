@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Repository;
 
 use Doctrine\DBAL\Result;
+use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -20,9 +24,9 @@ use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * @covers \Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
  */
+#[CoversClass(TemporalContentRepository::class)]
+#[UsesClass(TemporalContent::class)]
 final class TemporalContentRepositoryTest extends UnitTestCase
 {
     private ConnectionPool&MockObject $connectionPool;
@@ -34,6 +38,14 @@ final class TemporalContentRepositoryTest extends UnitTestCase
     private DeletedRestriction&Stub $deletedRestriction;
 
     private TemporalContentRepository $subject;
+
+    /**
+     * Every value the subject binds through QueryBuilder::createNamedParameter(),
+     * recorded by the stub in createMockQueryBuilder().
+     *
+     * @var list<array{value: mixed, type: mixed}>
+     */
+    private array $boundParameters = [];
 
     protected function setUp(): void
     {
@@ -222,6 +234,35 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertNotEmpty($result);
     }
 
+    /**     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetNextContentTransitionForPageBindsPageIdAndTimestampAsIntegerParameters(): void
+    {
+        $currentTime = \time();
+
+        $queryBuilder = $this->createMockQueryBuilder();
+        $result = $this->createStub(Result::class);
+        $result->method('fetchOne')->willReturn(false);
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+
+        $this->subject->getNextContentTransitionForPage(42, $currentTime, 0, 0);
+
+        // The page restriction and the reference timestamp must reach the query as bound
+        // integer parameters, not as inlined literals.
+        self::assertContains(
+            ['value' => 42, 'type' => Connection::PARAM_INT],
+            $this->boundParameters
+        );
+        self::assertContains(
+            ['value' => $currentTime, 'type' => Connection::PARAM_INT],
+            $this->boundParameters
+        );
+    }
+
     private function createMockQueryBuilder(): QueryBuilder&Stub
     {
         $queryBuilder = $this->createStub(QueryBuilder::class);
@@ -240,9 +281,15 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $queryBuilder->method('orderBy')->willReturnSelf();
         $queryBuilder->method('setMaxResults')->willReturnSelf();
 
-        // Use willReturnCallback with no type restrictions
+        // Mirrors QueryBuilder::createNamedParameter($value, $type, $placeHolder) and records
+        // every binding, so tests can assert on what actually reaches the query. The parameter
+        // types stay `mixed`: $type is an int on TYPO3 12 and a ParameterType enum from 13 on.
         $queryBuilder->method('createNamedParameter')->willReturnCallback(
-            fn (): string => ':param_' . \uniqid()
+            function (mixed $value, mixed $type = Connection::PARAM_STR, ?string $placeHolder = null): string {
+                $this->boundParameters[] = ['value' => $value, 'type' => $type];
+
+                return $placeHolder ?? ':param_' . \count($this->boundParameters);
+            }
         );
         $queryBuilder->method('quoteIdentifier')->willReturnArgument(0);
 

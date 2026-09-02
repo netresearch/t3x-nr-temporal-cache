@@ -7,14 +7,14 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- */
+#[CoversClass(PerPageScopingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
 final class PerPageScopingStrategyTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;

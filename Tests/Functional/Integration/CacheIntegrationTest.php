@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Integration;
 
+use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -14,9 +16,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Integration tests verifying complete workflow with TYPO3 cache system
- *
- * @covers \Netresearch\TemporalCache\EventListener\TemporalCacheLifetime
  */
+#[CoversClass(TemporalCacheLifetime::class)]
 final class CacheIntegrationTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

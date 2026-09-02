@@ -10,6 +10,8 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\HarmonizationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,11 +19,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Command\HarmonizeCommand
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- */
 #[AllowMockObjectsWithoutExpectations]
+#[CoversClass(HarmonizeCommand::class)]
+#[UsesClass(TemporalContent::class)]
 final class HarmonizeCommandTest extends UnitTestCase
 {
     private TemporalContentRepositoryInterface&Stub $repository;
