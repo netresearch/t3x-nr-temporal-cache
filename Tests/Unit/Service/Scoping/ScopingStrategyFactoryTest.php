@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
+use Generator;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory;
+use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * @covers \Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory
  */
+#[CoversClass(ScopingStrategyFactory::class)]
 final class ScopingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
@@ -110,5 +113,61 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         $result = $this->subject->getActiveStrategy();
 
         self::assertSame($this->globalStrategy, $result);
+    }
+
+    /**
+     * A strategy that only carries the service tag - not one of the three shipped
+     * classes - is selected. Yields from a generator, the shape !tagged_iterator
+     * injects: no array access, single traversal.
+     */
+    public function testSelectsStrategyDiscoveredThroughTaggedIterator(): void
+    {
+        $taggedStrategy = $this->createStub(ScopingStrategyInterface::class);
+        $taggedStrategy->method('getName')->willReturn('third-party');
+
+        $this->configuration
+            ->method('getScopingStrategy')
+            ->willReturn('third-party');
+
+        $this->subject = new ScopingStrategyFactory(
+            $this->yieldStrategies(
+                $this->globalStrategy,
+                $this->perPageStrategy,
+                $this->perContentStrategy,
+                $taggedStrategy
+            ),
+            $this->configuration
+        );
+
+        self::assertSame($taggedStrategy, $this->subject->getActiveStrategy());
+    }
+
+    /**
+     * The fallback is the first strategy yielded by the tagged iterator, not the last.
+     */
+    public function testFallsBackToFirstStrategyYieldedByTaggedIterator(): void
+    {
+        $this->configuration
+            ->method('getScopingStrategy')
+            ->willReturn('invalid');
+
+        $this->subject = new ScopingStrategyFactory(
+            $this->yieldStrategies(
+                $this->globalStrategy,
+                $this->perPageStrategy,
+                $this->perContentStrategy
+            ),
+            $this->configuration
+        );
+
+        self::assertSame($this->globalStrategy, $this->subject->getActiveStrategy());
+    }
+
+    /**
+     * @return Generator<int, ScopingStrategyInterface>
+     */
+    private function yieldStrategies(ScopingStrategyInterface ...$strategies): Generator
+    {
+        yield from $strategies;
     }
 }

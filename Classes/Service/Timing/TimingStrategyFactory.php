@@ -20,11 +20,11 @@ class TimingStrategyFactory implements TimingStrategyInterface
     private readonly TimingStrategyInterface $activeStrategy;
 
     /**
-     * @param array<TimingStrategyInterface> $strategies All available strategies
+     * @param iterable<array-key, TimingStrategyInterface> $strategies All services tagged 'nr_temporal_cache.timing_strategy'
      * @param ExtensionConfiguration $extensionConfiguration Extension configuration
      */
     public function __construct(
-        array $strategies,
+        iterable $strategies,
         private readonly ExtensionConfiguration $extensionConfiguration
     ) {
         $this->activeStrategy = $this->selectStrategy($strategies);
@@ -33,22 +33,26 @@ class TimingStrategyFactory implements TimingStrategyInterface
     /**
      * Select active strategy based on extension configuration.
      *
-     * @param array<TimingStrategyInterface> $strategies
+     * @param iterable<array-key, TimingStrategyInterface> $strategies
      * @return TimingStrategyInterface
      */
-    private function selectStrategy(array $strategies): TimingStrategyInterface
+    private function selectStrategy(iterable $strategies): TimingStrategyInterface
     {
         $configuredStrategy = $this->extensionConfiguration->getTimingStrategy();
+        $firstStrategy = null;
 
         // Find matching strategy by name (more reliable for testing with mocks)
         foreach ($strategies as $strategy) {
+            $firstStrategy ??= $strategy;
+
             if ($strategy->getName() === $configuredStrategy) {
                 return $strategy;
             }
         }
 
-        // Fallback to first strategy (should be DynamicTimingStrategy for backward compat)
-        return $strategies[0] ?? throw new RuntimeException('No timing strategies registered');
+        // Fallback to the first tagged strategy: highest tag priority, DynamicTimingStrategy
+        // carries priority 100 in Services.yaml to keep the backward compatible default.
+        return $firstStrategy ?? throw new RuntimeException('No timing strategies registered');
     }
 
     /**

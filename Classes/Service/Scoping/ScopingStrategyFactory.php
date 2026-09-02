@@ -20,11 +20,11 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
     private readonly ScopingStrategyInterface $activeStrategy;
 
     /**
-     * @param array<ScopingStrategyInterface> $strategies All available strategies
+     * @param iterable<array-key, ScopingStrategyInterface> $strategies All services tagged 'nr_temporal_cache.scoping_strategy'
      * @param ExtensionConfiguration $extensionConfiguration Extension configuration
      */
     public function __construct(
-        array $strategies,
+        iterable $strategies,
         private readonly ExtensionConfiguration $extensionConfiguration
     ) {
         $this->activeStrategy = $this->selectStrategy($strategies);
@@ -33,22 +33,26 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
     /**
      * Select active strategy based on extension configuration.
      *
-     * @param array<ScopingStrategyInterface> $strategies
+     * @param iterable<array-key, ScopingStrategyInterface> $strategies
      * @return ScopingStrategyInterface
      */
-    private function selectStrategy(array $strategies): ScopingStrategyInterface
+    private function selectStrategy(iterable $strategies): ScopingStrategyInterface
     {
         $configuredStrategy = $this->extensionConfiguration->getScopingStrategy();
+        $firstStrategy = null;
 
         // Find matching strategy by name (more reliable for testing with mocks)
         foreach ($strategies as $strategy) {
+            $firstStrategy ??= $strategy;
+
             if ($strategy->getName() === $configuredStrategy) {
                 return $strategy;
             }
         }
 
-        // Fallback to first strategy (should be GlobalScopingStrategy for backward compat)
-        return $strategies[0] ?? throw new RuntimeException('No scoping strategies registered');
+        // Fallback to the first tagged strategy: highest tag priority, GlobalScopingStrategy
+        // carries priority 100 in Services.yaml to keep the backward compatible default.
+        return $firstStrategy ?? throw new RuntimeException('No scoping strategies registered');
     }
 
     /**
