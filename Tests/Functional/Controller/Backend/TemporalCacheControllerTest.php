@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -28,9 +29,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * - Harmonize action: normal operation, dry-run mode, input validation, error handling
  * - JSON response formatting for AJAX endpoints
  * - Edge cases: empty content, invalid filters, pagination boundaries, missing configuration
- *
- * @covers \Netresearch\TemporalCache\Controller\Backend\TemporalCacheController
  */
+#[CoversClass(TemporalCacheController::class)]
 final class TemporalCacheControllerTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

@@ -7,8 +7,10 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -17,8 +19,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 /**
  * Unit tests for HarmonizationService
  *
- * @covers \Netresearch\TemporalCache\Service\HarmonizationService
  */
+#[CoversClass(HarmonizationService::class)]
 final class HarmonizationServiceTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
@@ -391,15 +393,21 @@ final class HarmonizationServiceTest extends UnitTestCase
         self::assertStringContainsString('Dry-run', $result['message']);
     }
 
-    /**     */
-    public function testHarmonizeContentPersistsAndReturnsSuccess(): void
-    {
+    /**
+     * The two cases differ only in how many rows Connection::update() reports.
+     */
+    #[DataProvider('harmonizePersistenceDataProvider')]
+    public function testHarmonizeContentReportsThePersistenceOutcome(
+        int $affectedRows,
+        bool $expectedSuccess,
+        string $expectedMessageFragment
+    ): void {
         $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
         $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
         $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
 
         $connection = $this->createStub(Connection::class);
-        $connection->method('update')->willReturn(1);
+        $connection->method('update')->willReturn($affectedRows);
         $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
 
         $content = $this->createContent(1609461000, null);
@@ -407,28 +415,19 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         $result = $subject->harmonizeContent($content, false);
 
-        self::assertTrue($result['success']);
-        self::assertStringContainsString('harmonized successfully', $result['message']);
+        self::assertSame($expectedSuccess, $result['success']);
+        self::assertStringContainsString($expectedMessageFragment, $result['message']);
     }
 
-    /**     */
-    public function testHarmonizeContentReturnsFailureWhenNoRowsAffected(): void
+    /**
+     * @return array<string, array{int, bool, string}>
+     */
+    public static function harmonizePersistenceDataProvider(): array
     {
-        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
-        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
-        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
-
-        $connection = $this->createStub(Connection::class);
-        $connection->method('update')->willReturn(0);
-        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
-
-        $content = $this->createContent(1609461000, null);
-        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
-
-        $result = $subject->harmonizeContent($content, false);
-
-        self::assertFalse($result['success']);
-        self::assertStringContainsString('could not be updated', $result['message']);
+        return [
+            'row updated' => [1, true, 'harmonized successfully'],
+            'no row affected' => [0, false, 'could not be updated'],
+        ];
     }
 
     /**     */
@@ -449,5 +448,89 @@ final class HarmonizationServiceTest extends UnitTestCase
 
         self::assertFalse($result['success']);
         self::assertStringContainsString('Failed to persist', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentFailureMessageDoesNotLeakExceptionText(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $exception = new RuntimeException('SQLSTATE[HY000] db down at 10.0.0.7 user typo3_prod');
+        $connection = $this->createStub(Connection::class);
+        $connection->method('update')->willThrowException($exception);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('error')
+            ->with(
+                self::stringContains('Failed to persist'),
+                self::callback(static fn (array $context): bool => $context['table'] === 'tt_content'
+                    && $context['uid'] === 1
+                    && $context['exception'] === $exception)
+            );
+
+        $content = $this->createContent(1609461000, null);
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool, $logger);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertFalse($result['success']);
+        // The message reaches the browser verbatim through the backend AJAX response.
+        self::assertStringNotContainsString('db down', $result['message']);
+        self::assertStringNotContainsString('SQLSTATE', $result['message']);
+        self::assertStringNotContainsString('typo3_prod', $result['message']);
+        self::assertSame('Failed to persist harmonized timestamps', $result['message']);
+    }
+
+    /**     */
+    public function testHarmonizeContentLogsPersistedMutation(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('update')->willReturn(1);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('info')
+            ->with(
+                self::stringContains('Harmonized'),
+                self::callback(static fn (array $context): bool => $context['table'] === 'tt_content'
+                    && $context['uid'] === 1
+                    && $context['changes'] === ['starttime' => ['old' => 1609461000, 'new' => 1609459200]])
+            );
+
+        $content = $this->createContent(1609461000, null); // 00:30 -> 00:00
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool, $logger);
+
+        $result = $subject->harmonizeContent($content, false);
+
+        self::assertTrue($result['success']);
+    }
+
+    /**     */
+    public function testHarmonizeContentDoesNotLogWhenNothingIsPersisted(): void
+    {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn(['00:00', '06:00', '12:00', '18:00']);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn(3600);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('info');
+        $logger->expects(self::never())->method('error');
+
+        $content = $this->createContent(1609461000, null); // 00:30 -> 00:00
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool, $logger);
+
+        $result = $subject->harmonizeContent($content, true); // dry-run
+
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('Dry-run', $result['message']);
     }
 }

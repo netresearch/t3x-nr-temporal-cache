@@ -440,6 +440,6 @@ Related Documentation
 =====================
 
 - :ref:`configuration`: Detailed configuration options
-- **Command-line tools**: CLI commands available (analyze, harmonize, list, verify) via ``vendor/bin/typo3 temporal:cache:*``
+- **Command-line tools**: CLI commands available (analyze, harmonize, list, verify) via ``vendor/bin/typo3 temporalcache:*``
 - :ref:`performance-considerations`: Performance tuning guide
-- :ref:`troubleshooting`: General troubleshooting guide
+- :ref:`configuration-troubleshooting`: General troubleshooting guide

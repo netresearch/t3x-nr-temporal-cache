@@ -6,7 +6,7 @@ namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
-use RuntimeException;
+use Netresearch\TemporalCache\Service\SelectsNamedStrategy;
 use TYPO3\CMS\Core\Context\Context;
 
 /**
@@ -17,38 +17,25 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class ScopingStrategyFactory implements ScopingStrategyInterface
 {
+    use SelectsNamedStrategy;
+
     private readonly ScopingStrategyInterface $activeStrategy;
 
     /**
-     * @param array<ScopingStrategyInterface> $strategies All available strategies
+     * @param iterable<array-key, ScopingStrategyInterface> $strategies All services tagged 'nr_temporal_cache.scoping_strategy'
      * @param ExtensionConfiguration $extensionConfiguration Extension configuration
      */
     public function __construct(
-        array $strategies,
-        private readonly ExtensionConfiguration $extensionConfiguration
+        iterable $strategies,
+        ExtensionConfiguration $extensionConfiguration
     ) {
-        $this->activeStrategy = $this->selectStrategy($strategies);
-    }
-
-    /**
-     * Select active strategy based on extension configuration.
-     *
-     * @param array<ScopingStrategyInterface> $strategies
-     * @return ScopingStrategyInterface
-     */
-    private function selectStrategy(array $strategies): ScopingStrategyInterface
-    {
-        $configuredStrategy = $this->extensionConfiguration->getScopingStrategy();
-
-        // Find matching strategy by name (more reliable for testing with mocks)
-        foreach ($strategies as $strategy) {
-            if ($strategy->getName() === $configuredStrategy) {
-                return $strategy;
-            }
-        }
-
-        // Fallback to first strategy (should be GlobalScopingStrategy for backward compat)
-        return $strategies[0] ?? throw new RuntimeException('No scoping strategies registered');
+        // The fallback is the first tagged service, i.e. the highest tag priority;
+        // GlobalScopingStrategy carries priority 100 to stay the default.
+        $this->activeStrategy = $this->selectNamedStrategy(
+            $strategies,
+            $extensionConfiguration->getScopingStrategy(),
+            'No scoping strategies registered'
+        );
     }
 
     /**

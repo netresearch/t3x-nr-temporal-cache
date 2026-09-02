@@ -11,19 +11,21 @@ Q: Why does my entire site cache expire when one page has a future starttime?
 
 A: This is a Phase 1 architectural constraint when using **global scoping strategy**.
 
-The ``ModifyCacheLifetimeForPageEvent`` does not provide information about which page is being
-cached, so the extension must use global queries.
+The default ``global`` scoping strategy queries all monitored tables site-wide, so a
+transition anywhere shortens the cache lifetime of every page.
 
-**Solution**: Switch to per-page or per-content scoping strategies:
+**Solution**: Switch to per-page or per-content scoping strategies. Both narrow the lookup
+to the page being rendered, using the page ID that ``ModifyCacheLifetimeForPageEvent``
+provides:
 
 .. code-block:: php
    :caption: ext_localconf.php
 
    // Per-page scoping (95%+ reduction)
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping'] = 'per-page';
+   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy'] = 'per-page';
 
    // Per-content scoping (99.7% reduction)
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping'] = 'per-content';
+   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy'] = 'per-content';
 
 Phase 2/3 (TYPO3 core integration) will enable native per-page scoping. See :ref:`phases`.
 
@@ -32,15 +34,48 @@ Q: Can I disable this for specific page trees?
 
 A: Not in v1.0.x. Configuration options are planned for v1.2.0.
 
-**Workaround**: Create custom event listener with page tree filtering:
+**Workaround**: Register your own listener for the same event, ordered after this
+extension's listener, and undo its lifetime for the page trees you want to exclude:
 
 .. code-block:: php
-   :caption: ext_localconf.php
+   :caption: EXT:my_extension/Classes/EventListener/ConditionalTemporalCache.php
 
-   use TYPO3\CMS\Core\Cache\Event\ModifyCacheLifetimeForPageEvent;
+   namespace MyVendor\MyExtension\EventListener;
 
-   $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSourcesAtEnd'][] =
-       \MyVendor\MyExtension\EventListener\ConditionalTemporalCache::class;
+   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
+
+   final class ConditionalTemporalCache
+   {
+       /**
+        * @param int[] $excludedPageIds pages that keep the long lifetime
+        */
+       public function __construct(private readonly array $excludedPageIds = [])
+       {
+       }
+
+       public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
+       {
+           if ($this->isExcluded($event->getPageId())) {
+               $event->setCacheLifetime(86400);
+           }
+       }
+
+       private function isExcluded(int $pageId): bool
+       {
+           return in_array($pageId, $this->excludedPageIds, true);
+       }
+   }
+
+.. code-block:: yaml
+   :caption: EXT:my_extension/Configuration/Services.yaml
+
+   services:
+     MyVendor\MyExtension\EventListener\ConditionalTemporalCache:
+       tags:
+         - name: event.listener
+           identifier: 'my-extension/conditional-temporal-cache'
+           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
+           after: 'temporal-cache/modify-cache-lifetime'
 
 **Future**: Native configuration support in v1.2.0+.
 

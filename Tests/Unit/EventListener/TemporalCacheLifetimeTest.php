@@ -9,6 +9,7 @@ use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
@@ -19,10 +20,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for TemporalCacheLifetime event listener
- *
- * @covers \Netresearch\TemporalCache\EventListener\TemporalCacheLifetime
  */
 #[AllowMockObjectsWithoutExpectations]
+#[CoversClass(TemporalCacheLifetime::class)]
 final class TemporalCacheLifetimeTest extends UnitTestCase
 {
     private TemporalCacheLifetime $subject;
@@ -169,11 +169,13 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->willThrowException(new RuntimeException('Test exception'));
 
         $event = $this->createEvent(86400);
+        $originalLifetime = $event->getCacheLifetime();
 
         // Act: Should not throw
         ($this->subject)($event);
 
-        self::assertTrue(true); // Reached here without exception
+        // Assert: The listener swallows the error and leaves the lifetime untouched
+        self::assertSame($originalLifetime, $event->getCacheLifetime());
     }
 
     public function testInvokeLogsDebugInfoWhenDebugEnabled(): void

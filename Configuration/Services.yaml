@@ -63,16 +63,18 @@ services:
   # ============================================================================
 
   # Global Scoping Strategy (Phase 1 backward compatible)
+  # Highest priority: the factory falls back to the first tagged strategy when the
+  # configured scoping strategy matches no getName().
   Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy:
     public: false
     tags:
-      - { name: 'nr_temporal_cache.scoping_strategy', identifier: 'global' }
+      - { name: 'nr_temporal_cache.scoping_strategy', priority: 100 }
 
   # Per-Page Scoping Strategy
   Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy:
     public: false
     tags:
-      - { name: 'nr_temporal_cache.scoping_strategy', identifier: 'per-page' }
+      - { name: 'nr_temporal_cache.scoping_strategy' }
 
   # Per-Content Scoping Strategy (optimized)
   Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy:
@@ -82,16 +84,15 @@ services:
       $temporalContentRepository: '@Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository'
       $configuration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
     tags:
-      - { name: 'nr_temporal_cache.scoping_strategy', identifier: 'per-content' }
+      - { name: 'nr_temporal_cache.scoping_strategy' }
 
   # Scoping Strategy Factory
+  # Receives every tagged scoping strategy, so a strategy from another extension is
+  # picked up by tagging it alone.
   Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory:
     public: true
     arguments:
-      $strategies:
-        - '@Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy'
-        - '@Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy'
-        - '@Netresearch\TemporalCache\Service\Scoping\PerContentScopingStrategy'
+      $strategies: !tagged_iterator 'nr_temporal_cache.scoping_strategy'
       $extensionConfiguration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
 
   # Alias for injecting active scoping strategy
@@ -104,13 +105,15 @@ services:
   # ============================================================================
 
   # Dynamic Timing Strategy (Phase 1 backward compatible)
+  # Highest priority: the factory falls back to the first tagged strategy when the
+  # configured timing strategy matches no getName().
   Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy:
     public: false
     arguments:
       $scopingStrategy: '@Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface'
       $configuration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
     tags:
-      - { name: 'nr_temporal_cache.timing_strategy', identifier: 'dynamic' }
+      - { name: 'nr_temporal_cache.timing_strategy', priority: 100 }
 
   # Scheduler Timing Strategy
   Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy:
@@ -121,7 +124,7 @@ services:
       $context: '@TYPO3\CMS\Core\Context\Context'
       $configuration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
     tags:
-      - { name: 'nr_temporal_cache.timing_strategy', identifier: 'scheduler' }
+      - { name: 'nr_temporal_cache.timing_strategy' }
 
   # Hybrid Timing Strategy
   Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy:
@@ -131,16 +134,15 @@ services:
       $schedulerStrategy: '@Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy'
       $configuration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
     tags:
-      - { name: 'nr_temporal_cache.timing_strategy', identifier: 'hybrid' }
+      - { name: 'nr_temporal_cache.timing_strategy' }
 
   # Timing Strategy Factory
+  # Receives every tagged timing strategy, so a strategy from another extension is
+  # picked up by tagging it alone.
   Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory:
     public: true
     arguments:
-      $strategies:
-        - '@Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy'
-        - '@Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy'
-        - '@Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy'
+      $strategies: !tagged_iterator 'nr_temporal_cache.timing_strategy'
       $extensionConfiguration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
 
   # Alias for injecting active timing strategy

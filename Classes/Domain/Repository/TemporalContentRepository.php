@@ -507,12 +507,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      */
     private function getEnableColumns(string $tableName): array
     {
-        $tca = $GLOBALS['TCA'] ?? [];
-        if (!\is_array($tca)) {
-            return [];
-        }
-
-        $tableTca = $tca[$tableName] ?? null;
+        $tableTca = $this->getTca()[$tableName] ?? null;
         if (!\is_array($tableTca)) {
             return [];
         }
@@ -538,6 +533,33 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         }
 
         return $columns;
+    }
+
+    /**
+     * Read the global TCA.
+     *
+     * The single point of access to $GLOBALS['TCA'] in this class, so the superglobal
+     * stays greppable and the schema read is isolated behind one method.
+     *
+     * Why the superglobal and not a schema service: TYPO3's Schema API
+     * (TcaSchemaFactory) only exists from TYPO3 13.2 on (Feature-104002). This
+     * extension supports ^12.4 || ^13.0 || ^14.0, so $GLOBALS['TCA'] is the one
+     * accessor available on every supported version.
+     *
+     * What would replace it: the typed read
+     * TcaSchemaFactory::get($tableName)->getCapability(TcaSchemaCapability::SoftDelete)
+     * and the same for ::RestrictionDisabledField — the two capabilities
+     * getEnableColumns() derives here (API as of TYPO3 14.3) — injected via DI, once
+     * the supported floor moves past 13.1.
+     *
+     * @return array<array-key, mixed> Full TCA keyed by table name, or an empty array
+     *                                 when TCA is unavailable (e.g. in isolated unit tests)
+     */
+    private function getTca(): array
+    {
+        $tca = $GLOBALS['TCA'] ?? [];
+
+        return \is_array($tca) ? $tca : [];
     }
 
     /**

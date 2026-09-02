@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
@@ -26,9 +27,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * - Business logic correctness, not presentation
  *
  * UI/rendering validation should be done in E2E/Acceptance tests.
- *
- * @covers \Netresearch\TemporalCache\Controller\Backend\TemporalCacheController
  */
+#[CoversClass(TemporalCacheController::class)]
 final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

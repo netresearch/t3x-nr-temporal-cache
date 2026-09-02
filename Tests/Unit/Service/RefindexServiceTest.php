@@ -6,6 +6,7 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
 use Doctrine\DBAL\Result;
 use Netresearch\TemporalCache\Service\RefindexService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -16,9 +17,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Unit tests for RefindexService
- *
- * @covers \Netresearch\TemporalCache\Service\RefindexService
  */
+#[CoversClass(RefindexService::class)]
 final class RefindexServiceTest extends UnitTestCase
 {
     private ConnectionPool&Stub $connectionPool;

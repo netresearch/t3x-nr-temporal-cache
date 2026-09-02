@@ -312,7 +312,7 @@ Reduces cache churn by rounding transition times to fixed time slots.
 
    **Values:**
 
-   - ``0``: No limit (any transition can be harmonized)
+   - ``0``: No shift allowed - harmonization is effectively disabled
    - ``3600`` (default): Max 1 hour shift
    - ``1800``: Max 30 minutes shift
    - ``7200``: Max 2 hours shift
@@ -336,7 +336,7 @@ Reduces cache churn by rounding transition times to fixed time slots.
       # Stricter: Max 30 minutes shift
       harmonization.tolerance = 1800
 
-      # No limit: Harmonize everything
+      # Never shift a transition (harmonization has no effect)
       harmonization.tolerance = 0
 
 .. confval:: harmonization.auto_round

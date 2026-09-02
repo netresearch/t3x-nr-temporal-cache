@@ -29,7 +29,7 @@ The extension addresses TYPO3 Forge #14277: pages containing time-controlled rec
 
 Wiring is declared in `Configuration/Services.yaml` (no phpat architecture test suite exists):
 
-- Strategies are excluded from autoregistration and tagged `nr_temporal_cache.scoping_strategy` / `nr_temporal_cache.timing_strategy` with an `identifier`; factories select by identifier from extension configuration.
+- Strategies are excluded from autoregistration and tagged `nr_temporal_cache.scoping_strategy` / `nr_temporal_cache.timing_strategy`; the factories consume those tags via `!tagged_iterator` and select the strategy whose `getName()` matches the extension configuration, falling back to the highest-priority tagged service.
 - The event listener is registered with tag `event.listener`, identifier `temporal-cache/modify-cache-lifetime`.
 - Services depend on the repository interface and `ExtensionConfiguration`, not on concrete strategy classes.
 

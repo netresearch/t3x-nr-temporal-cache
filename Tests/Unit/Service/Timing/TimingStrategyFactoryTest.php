@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 
+use Generator;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\SchedulerTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory;
+use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * @covers \Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory
  */
+#[CoversClass(TimingStrategyFactory::class)]
 final class TimingStrategyFactoryTest extends UnitTestCase
 {
     private ExtensionConfiguration&Stub $configuration;
@@ -110,5 +113,61 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         $result = $this->subject->getActiveStrategy();
 
         self::assertSame($this->dynamicStrategy, $result);
+    }
+
+    /**
+     * A strategy that only carries the service tag - not one of the three shipped
+     * classes - is selected. Yields from a generator, the shape !tagged_iterator
+     * injects: no array access, single traversal.
+     */
+    public function testSelectsStrategyDiscoveredThroughTaggedIterator(): void
+    {
+        $taggedStrategy = $this->createStub(TimingStrategyInterface::class);
+        $taggedStrategy->method('getName')->willReturn('third-party');
+
+        $this->configuration
+            ->method('getTimingStrategy')
+            ->willReturn('third-party');
+
+        $this->subject = new TimingStrategyFactory(
+            $this->yieldStrategies(
+                $this->dynamicStrategy,
+                $this->schedulerStrategy,
+                $this->hybridStrategy,
+                $taggedStrategy
+            ),
+            $this->configuration
+        );
+
+        self::assertSame($taggedStrategy, $this->subject->getActiveStrategy());
+    }
+
+    /**
+     * The fallback is the first strategy yielded by the tagged iterator, not the last.
+     */
+    public function testFallsBackToFirstStrategyYieldedByTaggedIterator(): void
+    {
+        $this->configuration
+            ->method('getTimingStrategy')
+            ->willReturn('invalid');
+
+        $this->subject = new TimingStrategyFactory(
+            $this->yieldStrategies(
+                $this->dynamicStrategy,
+                $this->schedulerStrategy,
+                $this->hybridStrategy
+            ),
+            $this->configuration
+        );
+
+        self::assertSame($this->dynamicStrategy, $this->subject->getActiveStrategy());
+    }
+
+    /**
+     * @return Generator<int, TimingStrategyInterface>
+     */
+    private function yieldStrategies(TimingStrategyInterface ...$strategies): Generator
+    {
+        yield from $strategies;
     }
 }

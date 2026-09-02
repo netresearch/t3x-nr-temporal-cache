@@ -7,6 +7,7 @@ namespace Netresearch\TemporalCache\Tests\Functional\Service;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
 use Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy;
 use Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -14,11 +15,10 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 /**
  * Proves that per-page scoping narrows the dynamic cache lifetime to the page being rendered:
  * content-element transitions are scoped per page, while page transitions stay site-wide.
- *
- * @covers \Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository
- * @covers \Netresearch\TemporalCache\Service\Scoping\PerPageScopingStrategy
- * @covers \Netresearch\TemporalCache\Service\Scoping\GlobalScopingStrategy
  */
+#[CoversClass(TemporalContentRepository::class)]
+#[CoversClass(PerPageScopingStrategy::class)]
+#[CoversClass(GlobalScopingStrategy::class)]
 final class PageAwareScopingTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

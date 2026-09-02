@@ -7,14 +7,14 @@ namespace Netresearch\TemporalCache\Tests\Functional\Service;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional integration tests for HarmonizationService
- *
- * @covers \Netresearch\TemporalCache\Service\HarmonizationService
  */
+#[CoversClass(HarmonizationService::class)]
 final class HarmonizationIntegrationTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

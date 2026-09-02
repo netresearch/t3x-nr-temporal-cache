@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Functional\EventListener;
 
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -15,9 +16,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * Functional tests for TemporalCacheLifetime event listener
  *
  * Tests actual integration with TYPO3 database and context system.
- *
- * @covers \Netresearch\TemporalCache\EventListener\TemporalCacheLifetime
  */
+#[CoversClass(TemporalCacheLifetime::class)]
 final class TemporalCacheLifetimeTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];

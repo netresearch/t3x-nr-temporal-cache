@@ -204,9 +204,7 @@ final class AnalyzeCommand extends Command
         $transitionsPerDay = [];
         foreach ($transitions as $transition) {
             $date = \date('Y-m-d', $transition->timestamp);
-            if (!isset($transitionsPerDay[$date])) {
-                $transitionsPerDay[$date] = 0;
-            }
+            $transitionsPerDay[$date] ??= 0;
 
             $transitionsPerDay[$date]++;
         }

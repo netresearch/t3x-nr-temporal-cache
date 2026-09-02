@@ -13,7 +13,7 @@ Overview
 
 The extension provides flexible configuration options accessible through:
 
-- **Extension Manager**: Admin Tools → Extensions → temporal_cache → Configure
+- **Extension Manager**: Admin Tools → Extensions → nr_temporal_cache → Configure
 - **Backend Module**: Tools → Temporal Cache → Wizard (with guided presets)
 
 All configuration is **optional**. The extension works out of the box with sensible defaults (global scoping with dynamic timing).
@@ -114,7 +114,7 @@ Extension Manager
 .. code-block:: text
 
    1. Admin Tools → Extensions
-   2. Find "temporal_cache"
+   2. Find "nr_temporal_cache"
    3. Click "Configure" icon
    4. Adjust settings
    5. Save

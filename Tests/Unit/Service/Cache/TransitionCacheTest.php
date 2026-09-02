@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Cache;
 
 use Netresearch\TemporalCache\Service\Cache\TransitionCache;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Cache\TransitionCache
- */
+#[CoversClass(TransitionCache::class)]
 final class TransitionCacheTest extends UnitTestCase
 {
     private TransitionCache $subject;

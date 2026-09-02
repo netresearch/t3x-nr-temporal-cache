@@ -7,7 +7,7 @@ Three-Phase Solution & Roadmap
 ================================
 
 .. important::
-   **Extension Status**: This extension is **stable and production-ready**.
+   **Extension Status**: This extension is **beta** (version 0.9.0). The only published tag is a pre-release.
 
    **Approach Status**: The temporal cache solution is **experimental**. This extension
    implements Phase 1 as a pragmatic workaround until TYPO3 core provides native temporal
@@ -253,7 +253,7 @@ Using this extension in production provides valuable insights for Phase 2/3 desi
 **Where to contribute**:
 
 - `TYPO3 Forge #14277 <https://forge.typo3.org/issues/14277>`__ - Core issue discussion
-- `Extension Repository <https://github.com/netresearch/typo3-temporal-cache>`__ - Bug reports and feature requests
+- `Extension Repository <https://github.com/netresearch/t3x-nr-temporal-cache>`__ - Bug reports and feature requests
 - TYPO3 Slack #typo3-cms - Community discussions
 
 RFC Participation

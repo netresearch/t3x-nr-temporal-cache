@@ -9,16 +9,16 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Timing\HybridTimingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- * @uses \Netresearch\TemporalCache\Domain\Model\TransitionEvent
- */
+#[CoversClass(HybridTimingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
+#[UsesClass(TransitionEvent::class)]
 final class HybridTimingStrategyTest extends UnitTestCase
 {
     private TimingStrategyInterface&Stub $dynamicStrategy;

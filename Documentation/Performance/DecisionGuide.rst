@@ -22,8 +22,8 @@ Small Sites (<1,000 pages)
    :caption: ext_localconf.php or config/system/additional.php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => 'global',
-       'timing' => 'dynamic',
+       'scoping' => ['strategy' => 'global'],
+       'timing' => ['strategy' => 'dynamic'],
        'harmonization' => ['enabled' => false],
    ];
 
@@ -51,11 +51,11 @@ Medium Sites (1,000-10,000 pages)
    :caption: ext_localconf.php or config/system/additional.php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => 'per-page',
-       'timing' => 'dynamic',
+       'scoping' => ['strategy' => 'per-page'],
+       'timing' => ['strategy' => 'dynamic'],
        'harmonization' => [
            'enabled' => true,
-           'slots' => [0, 21600, 43200, 64800], // 00:00, 06:00, 12:00, 18:00
+           'slots' => '00:00,06:00,12:00,18:00',
            'tolerance' => 300,
        ],
    ];
@@ -84,12 +84,11 @@ Large Sites (>10,000 pages)
    :caption: ext_localconf.php or config/system/additional.php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => 'per-content',
-       'timing' => 'scheduler',
-       'timing_scheduler_interval' => 60,
+       'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
+       'timing' => ['strategy' => 'scheduler', 'scheduler_interval' => 60],
        'harmonization' => [
            'enabled' => true,
-           'slots' => [0, 21600, 43200, 64800],
+           'slots' => '00:00,06:00,12:00,18:00',
            'tolerance' => 300,
        ],
    ];
@@ -120,15 +119,17 @@ High-Traffic Sites (>10M pageviews/month)
    :caption: ext_localconf.php or config/system/additional.php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => 'per-content',
-       'timing' => 'hybrid',
-       'timing_hybrid' => [
-           'pages' => 'dynamic',
-           'tt_content' => 'scheduler',
+       'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
+       'timing' => [
+           'strategy' => 'hybrid',
+           'hybrid' => [
+               'pages' => 'dynamic',
+               'content' => 'scheduler',
+           ],
        ],
        'harmonization' => [
            'enabled' => true,
-           'slots' => [0, 14400, 28800, 43200, 57600, 72000], // Every 4 hours
+           'slots' => '00:00,04:00,08:00,12:00,16:00,20:00', // Every 4 hours
            'tolerance' => 300,
        ],
    ];
@@ -161,8 +162,8 @@ Query overhead multiplies by number of languages with dynamic timing.
    :caption: ext_localconf.php or config/system/additional.php
 
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => 'per-content',
-       'timing' => 'scheduler',
+       'scoping' => ['strategy' => 'per-content'],
+       'timing' => ['strategy' => 'scheduler'],
        'harmonization' => ['enabled' => true],
    ];
 

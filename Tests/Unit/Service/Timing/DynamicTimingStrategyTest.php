@@ -9,16 +9,16 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\Timing\DynamicTimingStrategy
- * @uses \Netresearch\TemporalCache\Domain\Model\TemporalContent
- * @uses \Netresearch\TemporalCache\Domain\Model\TransitionEvent
- */
+#[CoversClass(DynamicTimingStrategy::class)]
+#[UsesClass(TemporalContent::class)]
+#[UsesClass(TransitionEvent::class)]
 final class DynamicTimingStrategyTest extends UnitTestCase
 {
     private ScopingStrategyInterface&Stub $scopingStrategy;
@@ -70,9 +70,17 @@ final class DynamicTimingStrategyTest extends UnitTestCase
             transitionType: 'start'
         );
 
-        // Should not throw exception
-        $this->subject->processTransition($event);
-        self::assertTrue(true);
+        // Dynamic timing relies on cache expiry alone, so processing a transition
+        // must not reach out to any collaborator.
+        $scopingStrategy = $this->createMock(ScopingStrategyInterface::class);
+        $scopingStrategy->expects(self::never())->method(self::anything());
+
+        $configuration = $this->createMock(ExtensionConfiguration::class);
+        $configuration->expects(self::never())->method(self::anything());
+
+        $subject = new DynamicTimingStrategy($scopingStrategy, $configuration);
+
+        $subject->processTransition($event);
     }
 
     /**     */

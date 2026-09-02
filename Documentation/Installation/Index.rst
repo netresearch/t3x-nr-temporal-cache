@@ -17,7 +17,7 @@ Requirements
 
 **Database:**
 
-- No schema changes required
+- Adds four indexes (starttime/endtime per table) via ext_tables.sql; run the database compare in the Install Tool after installing
 - Uses standard TYPO3 ``starttime/endtime`` fields
 
 Compatibility
@@ -32,21 +32,21 @@ Compatibility
      - Status
      - Notes
    * - 12.4+
-     - 8.1 - 8.3
+     - 8.1 - 8.4
      - ✅ Fully supported
-     - PSR-14 events available
+     - PSR-14 events available; 8.5 is excluded from this cell in CI
    * - 13.0+
-     - 8.2 - 8.3
+     - 8.2 - 8.5
      - ✅ Fully supported
-     - Latest TYPO3 LTS
+     - Previous TYPO3 LTS
+   * - 14.0+
+     - 8.3 - 8.5
+     - ✅ Fully supported
+     - Current TYPO3 LTS
    * - 11.5
      - 7.4 - 8.2
      - ⚠️ Not supported
      - Missing required events
-   * - 14.0 (future)
-     - 8.2+
-     - 🔄 Planned
-     - May be superseded by Phase 2
 
 Installation Methods
 ====================
@@ -56,7 +56,7 @@ Method 1: Composer (Recommended)
 
 Install via composer::
 
-   composer req netresearch/temporal-cache
+   composer req netresearch/nr-temporal-cache
 
 Activate extension::
 
@@ -78,7 +78,7 @@ Method 2: TER (Extension Repository)
 Method 3: Manual Installation
 ------------------------------
 
-1. Download from `GitHub <https://github.com/netresearch/t3x-temporal-cache/releases>`__
+1. Download from `GitHub <https://github.com/netresearch/t3x-nr-temporal-cache/releases>`__
 2. Extract to ``typo3conf/ext/nr_temporal_cache/`` (classic mode) or ``packages/nr_temporal_cache/`` (composer mode)
 3. Activate in Extension Manager
 4. Clear all caches
@@ -167,7 +167,7 @@ Configure via Extension Manager or PHP:
 **Extension Manager:**
 
 1. Admin Tools → Extensions
-2. Find "temporal_cache"
+2. Find "nr_temporal_cache"
 3. Click Configure
 4. Adjust "Default Cache Lifetime (seconds)"
 
@@ -319,15 +319,19 @@ If issues persist, check:
 Uninstallation
 ==============
 
-The extension makes no database changes, so uninstallation is clean:
+The extension adds no tables and no columns. It does add four indexes to the core tables
+``pages`` and ``tt_content`` (``idx_temporalcache_starttime`` and
+``idx_temporalcache_endtime``, see :file:`ext_tables.sql`); remove them in
+:guilabel:`Admin Tools → Maintenance → Analyze Database Structure` after uninstalling if you
+do not want to keep them.
 
 1. Deactivate extension::
 
-      vendor/bin/typo3 extension:deactivate temporal_cache
+      vendor/bin/typo3 extension:deactivate nr_temporal_cache
 
 2. Remove via composer::
 
-      composer remove netresearch/typo3-temporal-cache
+      composer remove netresearch/nr-temporal-cache
 
 3. Clear caches::
 
@@ -340,4 +344,4 @@ Next Steps
 
 - :ref:`architecture` - Understand how it works
 - :ref:`phases` - Learn about future improvements
-- `GitHub Issues <https://github.com/netresearch/typo3-temporal-cache/issues>`__ - Report problems
+- `GitHub Issues <https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ - Report problems

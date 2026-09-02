@@ -6,11 +6,10 @@ namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
 use InvalidArgumentException;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
+use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- * @covers \Netresearch\TemporalCache\Service\TemporalMonitorRegistry
- */
+#[CoversClass(TemporalMonitorRegistry::class)]
 final class TemporalMonitorRegistryTest extends UnitTestCase
 {
     private TemporalMonitorRegistry $subject;

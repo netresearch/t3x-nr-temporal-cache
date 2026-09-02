@@ -6,9 +6,6 @@
             <trans-unit id="status.title" resname="status.title">
                 <source>Temporal Cache</source>
             </trans-unit>
-            <trans-unit id="status.description" resname="status.description">
-                <source>Status report for Temporal Cache extension - cache invalidation for time-based content</source>
-            </trans-unit>
         </body>
     </file>
 </xliff>

@@ -13,7 +13,7 @@ PHPUnit test suites on `typo3/testing-framework`:
 
 ## Setup
 
-- PHPUnit configs live in `../Build/phpunit/`: `UnitTests.xml`, `FunctionalTests.xml`, `PerformanceTests.xml`
+- PHPUnit configs live in `../Build/phpunit/`: `UnitTests.xml`, `FunctionalTests.xml`
 - Functional tests need a database; CI runs them via the shared `netresearch/typo3-ci-workflows` reusable
 - Docker-based multi-version runs: `../Build/Scripts/runTests.sh`
 

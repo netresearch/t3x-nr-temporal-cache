@@ -7,6 +7,8 @@ namespace Netresearch\TemporalCache\Service;
 use DateTime;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -26,6 +28,16 @@ use TYPO3\CMS\Core\SingletonInterface;
  * - Slots: Time slots (HH:MM format, e.g., "00:00,06:00,12:00,18:00")
  * - Tolerance: Max seconds to round (e.g., 3600 = 1 hour)
  * - Auto-round: Automatically apply on save (backend integration)
+ *
+ * Persistence note (deliberate DataHandler bypass):
+ * harmonizeContent() writes through Connection::update() instead of DataHandler.
+ * Harmonization only rounds the starttime/endtime fields of records that already
+ * exist; routing each one through a DataHandler datamap cycle would add per-record
+ * permission checks, hooks and cache flushes to what is a bulk maintenance
+ * operation. HarmonizeCommand persists its own batch the same way.
+ * The trade-off is that these writes produce no sys_log and no sys_history entry,
+ * so every mutation is recorded through the injected logger (table, uid, old and
+ * new values) to keep it auditable.
  */
 class HarmonizationService implements SingletonInterface
 {
@@ -38,7 +50,8 @@ class HarmonizationService implements SingletonInterface
 
     public function __construct(
         private readonly ExtensionConfiguration $configuration,
-        private readonly ConnectionPool $connectionPool
+        private readonly ConnectionPool $connectionPool,
+        private readonly LoggerInterface $logger = new NullLogger()
     ) {
         $this->initializeSlots();
     }
@@ -443,9 +456,17 @@ class HarmonizationService implements SingletonInterface
                 ['uid' => $content->uid]
             );
         } catch (Throwable $e) {
+            // The message is surfaced verbatim in the backend AJAX response - keep it
+            // free of database internals and log the detail instead.
+            $this->logger->error('Failed to persist harmonized timestamps', [
+                'table' => $content->tableName,
+                'uid' => $content->uid,
+                'exception' => $e,
+            ]);
+
             return [
                 'success' => false,
-                'message' => 'Failed to persist harmonized timestamps: ' . $e->getMessage(),
+                'message' => 'Failed to persist harmonized timestamps',
                 'changes' => $changes,
             ];
         }
@@ -457,6 +478,14 @@ class HarmonizationService implements SingletonInterface
                 'changes' => $changes,
             ];
         }
+
+        // This write bypasses DataHandler (see class docblock), so it leaves no
+        // sys_log/sys_history trail - record it here instead.
+        $this->logger->info('Harmonized temporal timestamps', [
+            'table' => $content->tableName,
+            'uid' => $content->uid,
+            'changes' => $changes,
+        ]);
 
         return [
             'success' => true,
