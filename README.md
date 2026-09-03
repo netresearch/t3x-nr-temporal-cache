@@ -5,14 +5,14 @@
 [![TYPO3 12](https://img.shields.io/badge/TYPO3-12-orange.svg)](https://get.typo3.org/version/12)
 [![TYPO3 13](https://img.shields.io/badge/TYPO3-13-orange.svg)](https://get.typo3.org/version/13)
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://get.typo3.org/version/14)
-[![Version](https://img.shields.io/badge/version-0.9.0%20beta-blue.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/releases)
 [![License](https://img.shields.io/github/license/netresearch/t3x-nr-temporal-cache)](LICENSE)
 
 Automatic cache invalidation for time-based content, developed by [Netresearch DTT GmbH](https://www.netresearch.de/).
 
 **Addresses [TYPO3 Forge Issue #14277](https://forge.typo3.org/issues/14277)**: "Start/Stop time for pages is ignored in standard menu objects", reported in 2004 and still open.
 
-> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. [v0.9.0](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0) is the first stable release, published to TER and Packagist. Beta means the API may still change before 1.0.
+> **Status**: `ext_emconf.php` declares version 1.0.0, state `stable`. The API listed in [Documentation/Api](Documentation/Api/Index.rst) follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from this release onwards.
 
 ## The Problem (20+ Years Old)
 
@@ -125,14 +125,14 @@ Visual management interface at **Admin Tools → Temporal Cache**:
 ### Composer
 
 ```bash
-composer require netresearch/nr-temporal-cache:^0.9
+composer require netresearch/nr-temporal-cache:^1.0
 ```
 
-No stability flag is needed: `v0.9.0` carries no pre-release suffix, so Composer treats it as a stable version and the default `minimum-stability: stable` accepts it. The `beta` state in `ext_emconf.php` is TYPO3's own maturity label, which Composer does not read — it means the API may still change before 1.0, not that the package resolves differently.
+No stability flag is needed: `v1.0.0` carries no pre-release suffix, and `ext_emconf.php` declares state `stable`.
 
 ### TER (TYPO3 Extension Repository)
 
-The extension key `nr_temporal_cache` is registered in TER; version 0.9.0 is published there.
+The extension key `nr_temporal_cache` is registered in TER; version 1.0.0 is published there.
 
 ### Manual
 
@@ -352,7 +352,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 - ✅ Three timing strategies (dynamic, scheduler, hybrid)
 - ✅ Time harmonization for reduced cache churn
 - ✅ Backend module for visual management
-- **Status**: implemented as v0.9.0, state `beta`; published to TER and Packagist
+- **Status**: implemented as v1.0.0, state `stable`; published to TER and Packagist
 
 ### Phase 2: Absolute Expiration API (Proposed for TYPO3 Core)
 - Extend `CacheTag` so a tag can carry an absolute expiration timestamp

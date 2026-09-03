@@ -10,21 +10,40 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-04
+
+First stable release. The API listed in `Documentation/Api/` follows Semantic
+Versioning from here on: the two strategy service tags and their interfaces,
+`TemporalMonitorRegistry`'s registration methods, the two value objects, and the
+eleven configuration keys.
+
+### Added
+
+- `Documentation/Api/` defines what is covered by the version promise and what is
+  internal, together with the deprecation policy. `@api` and `@internal` in the
+  code say the same.
+
+### Fixed
+
+- Per-content scoping never resolved a reference. The lookup filtered
+  `sys_refindex` on a column that table does not have, so on MySQL the query
+  raised an error the strategy swallowed and on SQLite it matched nothing —
+  per-content behaved exactly like per-page.
+- The documented way to monitor additional tables did nothing. All three recipes
+  registered through a service definition that Symfony removes when it compiles
+  the container. Register from `ext_localconf.php` instead; the manual now shows
+  only that form.
+- Deleted records could reach a transition lookup, shortening cache lifetimes for
+  content an editor had removed.
+- The manual stated the opposite of the code in three places: hybrid timing's
+  content rule, the harmonization slot distance around midnight, and a claim that
+  no scheduler task type is registered.
+- LICENSE contained a placeholder instead of the GPL-2.0 text.
+
 ### Changed
 
-- The TER archive no longer carries files that are irrelevant to an installed
-  extension: agent instructions (`AGENTS.md`, `CLAUDE.md` at every depth), the
-  DDEV landing page and healthcheck stub, `renovate.json`, `codecov.yml` and
-  `crowdin.yml`. `tailor` packages the working directory and ignores
-  `.gitattributes`, so the `export-ignore` entries these files already carried
-  never applied to it; `Build/ExcludeFromPackaging.php` now supplies the list.
-
-### Removed
-
-- Analysis reports and translation summaries generated in November 2025, plus
-  `benchmark_results.txt` and `.serena/`. They described a test suite and a
-  `Tests/Performance` directory that no longer exist, and three of them embedded
-  a developer's local path. Nothing referenced them.
+- Extension state from `beta` to `stable`.
+- The backend module tests now run on TYPO3 13 and 14 instead of skipping.
 
 ## [0.9.0] - 2026-09-03
 
@@ -74,6 +93,7 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...main
+[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...main
+[1.0.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0-alpha1...v0.9.0
 [0.9.0-alpha1]: https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0-alpha1

@@ -12,6 +12,8 @@ use TYPO3\CMS\Core\Context\Context;
  * Interface for timing strategies that determine WHEN to check for transitions.
  *
  * Strategy Pattern: Allows switching between dynamic (event-based), scheduler, and hybrid.
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 interface TimingStrategyInterface extends NamedStrategyInterface
 {

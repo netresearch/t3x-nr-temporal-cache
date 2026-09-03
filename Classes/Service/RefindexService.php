@@ -22,6 +22,8 @@ use TYPO3\CMS\Core\SingletonInterface;
  *
  * References are resolved irrespective of language: sys_refindex has no language column,
  * and a reference to a content element holds for every language of the referencing page.
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 class RefindexService implements SingletonInterface
 {

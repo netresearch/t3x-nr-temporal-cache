@@ -226,10 +226,14 @@ Controls when the extension checks for temporal transitions.
    back to ``dynamic``.
    Only read when ``timing.strategy = hybrid``.
 
-   This rule applies to transition processing only.
-   The cache lifetime always follows ``timing.hybrid.pages``, so setting
-   this rule to ``dynamic`` means content transitions are neither processed by
-   the scheduler task nor reflected in a lifetime of their own.
+   This rule routes content transitions to the strategy it names — the
+   scheduler task when set to ``scheduler``, the dynamic strategy when set to
+   ``dynamic`` — and it also contributes to the page cache lifetime.
+   :php:`HybridTimingStrategy::getCacheLifetime()` asks the strategies both rules
+   resolve to and takes the earliest non-null answer, because a rendered page
+   depends on the page record and on the content on it alike.
+   Setting this rule to ``dynamic`` therefore keeps content transitions capping
+   the page cache lifetime even when ``timing.hybrid.pages = scheduler``.
 
    Example
    -------
@@ -292,11 +296,14 @@ share one cache flush.
    59, is dropped without an error; if that leaves no slot at all,
    harmonization returns every timestamp unchanged.
 
-   The slots repeat every day: a timestamp is compared against the slot times
-   of its own day, in the server timezone.
-   The comparison does not wrap around midnight, so 23:30 is 5 hours 30 minutes
-   from an 18:00 slot and not 30 minutes from the next day's 00:00 slot.
-   A slot at ``00:00`` therefore only attracts timestamps in the early hours.
+   The slots repeat every day and distances are measured on the circular day,
+   so the nearest slot may be the previous or the next day's occurrence: with
+   slots at 00:00 and 18:00, 23:30 is 30 minutes from the next day's 00:00, not
+   5 hours 30 minutes from today's 18:00.
+   A harmonized timestamp can therefore land on the adjacent calendar day.
+   Times of day are read in UTC — :php:`HarmonizationService` builds its
+   :php:`DateTime` from a Unix timestamp, which PHP always interprets as UTC
+   regardless of the server timezone.
 
    Examples
    --------

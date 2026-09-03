@@ -15,6 +15,8 @@ namespace Netresearch\TemporalCache\Service;
  * Purely additive: ScopingStrategyInterface and TimingStrategyInterface both
  * already declared getName(), so every existing implementation satisfies it
  * without change.
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 interface NamedStrategyInterface
 {

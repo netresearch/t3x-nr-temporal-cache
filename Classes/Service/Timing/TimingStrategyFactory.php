@@ -14,6 +14,8 @@ use TYPO3\CMS\Core\Context\Context;
  *
  * This factory acts as a proxy that delegates to the configured strategy.
  * It implements the TimingStrategyInterface so it can be injected directly.
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 class TimingStrategyFactory implements TimingStrategyInterface
 {

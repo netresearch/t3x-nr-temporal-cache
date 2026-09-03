@@ -36,10 +36,9 @@ Menus and content with starttime/endtime update automatically when time passes,
 without manual cache clearing.
 
 .. important::
-   **Extension Status**: Beta (version 0.9.0, state ``beta`` in
-   :file:`ext_emconf.php`). ``v0.9.0`` is the first stable release. Beta
-   means the API may still change before 1.0 — test before using in
-   production.
+   **Extension Status**: Stable (version 1.0.0, state ``stable`` in
+   :file:`ext_emconf.php`). The API covered by :ref:`api` follows Semantic
+   Versioning from this release onwards.
 
    **Approach**: TYPO3's cache API has no absolute expiration, so the extension
    approximates one by shortening relative lifetimes or by flushing tags from a
@@ -136,4 +135,5 @@ Documentation
    CommandLine/Index
    Administrator/ReportsModule
    Architecture/Index
+   Api/Index
    Phases/Index

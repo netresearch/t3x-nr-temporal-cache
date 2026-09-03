@@ -26,6 +26,8 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
  *
  * Required for scheduler and hybrid timing strategies.
  * Not needed for dynamic timing strategy (event-based).
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 final class TemporalCacheSchedulerTask extends AbstractTask
 {

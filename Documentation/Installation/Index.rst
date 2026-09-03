@@ -118,40 +118,31 @@ Optional: Monitor custom tables
 If you have custom extension tables with ``starttime/endtime`` fields, you can
 register them for temporal cache monitoring using the ``TemporalMonitorRegistry``.
 
-**Recommended:** Configure in ``Configuration/Services.yaml`` (modern dependency injection):
-
-.. code-block:: yaml
-
-   services:
-     # Register custom news table
-     my_ext_news_table_registration:
-       class: 'Closure'
-       factory: ['@Netresearch\TemporalCache\Service\TemporalMonitorRegistry', 'registerTable']
-       arguments:
-         - 'tx_news_domain_model_news'
-         - ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
-
-     # Register custom event table
-     my_ext_events_table_registration:
-       class: 'Closure'
-       factory: ['@Netresearch\TemporalCache\Service\TemporalMonitorRegistry', 'registerTable']
-       arguments:
-         - 'tx_events_domain_model_event'
-         - ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
-
-**Alternative:** For ext_localconf.php (when DI not available):
+Register in :file:`ext_localconf.php` of your own extension:
 
 .. code-block:: php
+   :caption: EXT:my_extension/ext_localconf.php
 
    <?php
-   use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
-   use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-   // Only use makeInstance() in ext_localconf.php where DI is not yet available
-   $registry = GeneralUtility::makeInstance(TemporalMonitorRegistry::class);
-   $registry->registerTable('tx_news_domain_model_news', [
+   defined('TYPO3') or die();
+
+   \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+       \Netresearch\TemporalCache\Service\TemporalMonitorRegistry::class
+   )->registerTable('tx_news_domain_model_news', [
        'uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'
    ]);
+
+The registry is a :php:`SingletonInterface`, so :php:`makeInstance()` returns the
+same instance the extension itself reads, and :file:`ext_localconf.php` runs
+early enough for every later transition lookup to see the table.
+
+.. warning::
+   Do not register through a :file:`Services.yaml` entry. A service definition
+   that nothing references is removed at container-compile time, so the
+   registration never runs and the table is silently not monitored — no error,
+   no monitoring. :php:`registerTable()` returns :php:`void` and cannot serve as
+   a service factory either.
 
 **Field requirements**
 

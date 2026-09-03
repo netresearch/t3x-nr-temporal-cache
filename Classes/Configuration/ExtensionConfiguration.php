@@ -11,6 +11,8 @@ use TYPO3\CMS\Core\SingletonInterface;
  * Central configuration management for temporal cache extension.
  *
  * Provides type-safe access to all extension configuration with sensible defaults.
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 class ExtensionConfiguration implements SingletonInterface
 {
