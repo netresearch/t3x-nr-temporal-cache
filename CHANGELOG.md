@@ -84,6 +84,5 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...main
 [0.9.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0-alpha1...v0.9.0
 [0.9.0-alpha1]: https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0-alpha1
