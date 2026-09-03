@@ -25,26 +25,37 @@ if (!is_file($ours)) {
     exit(1);
 }
 
-$candidates = $argv[1] ?? null
-    ? [$argv[1]]
-    : [
+// An explicit argument always wins, including "" and "0", which a truthiness
+// test would drop back into auto-discovery — the script would then compare
+// against a different file and report success for it.
+$explicitPath = array_key_exists(1, $argv) ? $argv[1] : null;
+
+if ($explicitPath !== null) {
+    if (!is_file($explicitPath)) {
+        fwrite(STDERR, "Not a file: {$explicitPath}\n");
+        exit(1);
+    }
+    $upstreamFile = $explicitPath;
+} else {
+    $candidates = [
         getenv('HOME') . '/.composer/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
         getenv('HOME') . '/.config/composer/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
         __DIR__ . '/../../.Build/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
     ];
 
-$upstreamFile = null;
-foreach ($candidates as $candidate) {
-    if (is_file($candidate)) {
-        $upstreamFile = $candidate;
-        break;
+    $upstreamFile = null;
+    foreach ($candidates as $candidate) {
+        if (is_file($candidate)) {
+            $upstreamFile = $candidate;
+            break;
+        }
     }
-}
 
-if ($upstreamFile === null) {
-    echo "tailor not installed — nothing to compare. Install with:\n";
-    echo "  composer global require typo3/tailor:^1\n";
-    exit(0);
+    if ($upstreamFile === null) {
+        echo "tailor not installed — nothing to compare. Install with:\n";
+        echo "  composer global require typo3/tailor:^1\n";
+        exit(0);
+    }
 }
 
 $upstream = require $upstreamFile;
