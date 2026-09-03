@@ -176,7 +176,7 @@ vendor/bin/typo3 temporalcache:verify [options]
    - Reports configuration status
 
 3. **Harmonization Configuration** (if enabled)
-   - Validates time slot format (HH:MM)
+   - Validates time slot format (HH:MM or H:MM)
    - Validates tolerance range (0-86400 seconds)
    - Checks auto-round setting
 

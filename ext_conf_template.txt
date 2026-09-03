@@ -16,7 +16,7 @@ timing.hybrid.content = scheduler
 # cat=harmonization/enable/10; type=boolean; label=Enable Time Harmonization: Round temporal transitions to fixed time slots to reduce cache churn
 harmonization.enabled = 0
 
-# cat=harmonization/enable/20; type=string; label=Time Slots: Comma-separated time slots in HH:MM format (e.g., 00:00,06:00,12:00,18:00)
+# cat=harmonization/enable/20; type=string; label=Time Slots: Comma-separated times of day, HH:MM or H:MM (e.g., 00:00,06:00,12:00,18:00)
 harmonization.slots = 00:00,06:00,12:00,18:00
 
 # cat=harmonization/enable/30; type=int+; label=Tolerance (seconds): Maximum shift harmonization may apply. A transition further from its nearest slot is left untouched; 0 disables harmonization entirely

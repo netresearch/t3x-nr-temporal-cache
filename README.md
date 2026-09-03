@@ -12,7 +12,7 @@ Automatic cache invalidation for time-based content, developed by [Netresearch D
 
 **Addresses [TYPO3 Forge Issue #14277](https://forge.typo3.org/issues/14277)**: "Start/Stop time for pages is ignored in standard menu objects", reported in 2004 and still open.
 
-> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. The only published tag is the pre-release [v0.9.0-alpha1](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0-alpha1). There is no stable release, no Packagist package and no TER version.
+> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. [v0.9.0](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0) is the first stable release, published to TER and Packagist. Beta means the API may still change before 1.0.
 
 ## The Problem (20+ Years Old)
 
@@ -51,7 +51,7 @@ Dynamic timing caps the page cache lifetime at the next transition; scheduler an
 - ✅ **Plugin Output** - Any cached plugin with temporal records
 - ✅ **Custom Records** - Tables registered through `TemporalMonitorRegistry`; `pages` and `tt_content` are monitored by default
 
-## Phase 1 Features
+## Features
 
 ### Three Scoping Strategies
 
@@ -124,16 +124,15 @@ Visual management interface at **Admin Tools → Temporal Cache**:
 
 ### Composer
 
-The package is not on Packagist. Register the repository, then require it — both available versions (`v0.9.0-alpha1` and `dev-main`) are pre-stable, so the constraint needs a stability flag:
-
 ```bash
-composer config repositories.nr-temporal-cache vcs https://github.com/netresearch/t3x-nr-temporal-cache.git
-composer require netresearch/nr-temporal-cache:^0.9@alpha
+composer require netresearch/nr-temporal-cache:^0.9
 ```
+
+No stability flag is needed: `v0.9.0` carries no pre-release suffix, so Composer treats it as a stable version and the default `minimum-stability: stable` accepts it. The `beta` state in `ext_emconf.php` is TYPO3's own maturity label, which Composer does not read — it means the API may still change before 1.0, not that the package resolves differently.
 
 ### TER (TYPO3 Extension Repository)
 
-The extension key `nr_temporal_cache` exists in TER, but no version is published there yet.
+The extension key `nr_temporal_cache` is registered in TER; version 0.9.0 is published there.
 
 ### Manual
 
@@ -333,7 +332,7 @@ The rendered manual lives in `Documentation/` (build it with `composer docs:rend
 - **[Command-line interface](Documentation/CommandLine/Index.rst)** - CLI command reference
 - **[Reports Module](Documentation/Administrator/ReportsModule.rst)** - TYPO3 Reports integration
 - **[Architecture](Documentation/Architecture/Index.rst)** - Technical details
-- **[Phases](Documentation/Phases/Index.rst)** - Three-phase approach
+- **[Phases](Documentation/Phases/Index.rst)** - Approach, limits and a core solution
 
 ## Compatibility
 
@@ -345,7 +344,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 | `^13.0`          | `^8.1`       | 8.2, 8.3, 8.4, 8.5        |
 | `^14.0`          | `^8.1`       | 8.3, 8.4, 8.5             |
 
-## The Three-Phase Roadmap
+## What a core solution would need
 
 ### Phase 1: Extension with Strategies (Current)
 - ✅ Dynamic cache lifetime via PSR-14 event
@@ -353,7 +352,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 - ✅ Three timing strategies (dynamic, scheduler, hybrid)
 - ✅ Time harmonization for reduced cache churn
 - ✅ Backend module for visual management
-- **Status**: implemented as v0.9.0, state `beta`; published only as the pre-release `v0.9.0-alpha1`
+- **Status**: implemented as v0.9.0, state `beta`; published to TER and Packagist
 
 ### Phase 2: Absolute Expiration API (Proposed for TYPO3 Core)
 - Extend `CacheTag` so a tag can carry an absolute expiration timestamp
@@ -364,7 +363,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 - Automatic detection of starttime/endtime dependencies
 - Uses the Phase 2 API transparently
 
-The intent is to deprecate this extension once TYPO3 core covers Phase 2 and 3. See [Phases](Documentation/Phases/Index.rst).
+None of this describes committed work in TYPO3 core: there is no accepted RFC, no target version and no timeline. The intent is to deprecate this extension if core ever covers it. See [Phases](Documentation/Phases/Index.rst).
 
 ## Testing
 

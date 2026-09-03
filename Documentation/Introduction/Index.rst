@@ -92,7 +92,7 @@ Status
 
 .. important::
     ``ext_emconf.php`` declares version **0.9.0** and state **beta**.
-    The only tag published so far is the pre-release ``v0.9.0-alpha1``.
+    ``v0.9.0`` is the first stable release.
 
 The approach itself is a workaround.
 TYPO3's cache API has no absolute expiration timestamp, so the extension can only

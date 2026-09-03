@@ -112,7 +112,7 @@ Defaults as implemented in
    * - ``harmonization.slots``
      - string
      - ``00:00,06:00,12:00,18:00``
-     - comma-separated ``HH:MM``
+     - comma-separated ``HH:MM`` or ``H:MM``
    * - ``harmonization.tolerance``
      - integer
      - ``3600``

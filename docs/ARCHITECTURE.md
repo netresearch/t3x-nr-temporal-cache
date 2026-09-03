@@ -43,4 +43,4 @@ Wiring is declared in `Configuration/Services.yaml` (no phpat architecture test 
 ## Key Decisions
 
 - Rendered documentation (chapters `Documentation/Architecture/`, `Documentation/Performance/`, `Documentation/Phases/`) is the authoritative narrative; this file is only the code map.
-- The composer description flags the extension as a Phase 1 experimental approach: global scoping expires ALL page caches on every transition — read `Documentation/Performance/` before changing default strategies.
+- The composer description names the default: global scoping expires ALL page caches on every transition — read `Documentation/Performance/` before deploying with the defaults.
