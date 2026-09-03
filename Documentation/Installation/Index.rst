@@ -265,9 +265,13 @@ Content does not update
 
       vendor/bin/typo3 extension:list
 
-2. Confirm the timing strategy: ``scheduler`` and ``hybrid`` depend on the
-   scheduler task, so confirm it is created and running — see
-   :ref:`scheduler-setup`
+2. Confirm the timing strategy.
+   ``scheduler`` always depends on the scheduler task, and ``hybrid`` does when
+   at least one of ``timing.hybrid.pages`` and ``timing.hybrid.content`` is set
+   to ``scheduler``.
+   In those cases confirm the task exists and cron is running it — see
+   :ref:`scheduler-setup`.
+   A ``hybrid`` configuration with both rules on ``dynamic`` needs no task.
 
 3. Clear all caches::
 
