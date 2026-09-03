@@ -8,6 +8,8 @@ namespace Netresearch\TemporalCache\Domain\Model;
  * Value object representing temporal content (pages or content elements with starttime/endtime).
  *
  * Immutable domain model following DDD principles.
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 final class TemporalContent
 {

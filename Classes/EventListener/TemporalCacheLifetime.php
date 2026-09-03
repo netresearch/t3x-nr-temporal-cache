@@ -25,6 +25,8 @@ use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
  * Maintains backward compatibility with Phase 1 (default = global scoping + dynamic timing).
  *
  * @see https://forge.typo3.org/issues/14277
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 final class TemporalCacheLifetime
 {

@@ -34,6 +34,8 @@ use TYPO3\CMS\Core\SingletonInterface;
  *     $this->monitorRegistry->registerTable('tx_news_domain_model_news', [...]);
  * }
  * ```
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 final class TemporalMonitorRegistry implements SingletonInterface
 {

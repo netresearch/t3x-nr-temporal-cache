@@ -27,6 +27,8 @@ use TYPO3\CMS\Core\SingletonInterface;
  * - Provide statistics for backend module
  * - Support workspace and language overlays
  * - Support custom table monitoring via TemporalMonitorRegistry
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 final class TemporalContentRepository implements TemporalContentRepositoryInterface, SingletonInterface
 {

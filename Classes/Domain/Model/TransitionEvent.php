@@ -11,6 +11,8 @@ use InvalidArgumentException;
  *
  * Used by scheduler strategy to process transitions that have occurred.
  * Includes workspace and language context for proper cache invalidation.
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 final class TransitionEvent
 {

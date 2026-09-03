@@ -136,4 +136,5 @@ Documentation
    CommandLine/Index
    Administrator/ReportsModule
    Architecture/Index
+   Api/Index
    Phases/Index

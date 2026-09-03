@@ -12,6 +12,8 @@ use TYPO3\CMS\Core\Context\Context;
  * Interface for scoping strategies that determine which caches to invalidate.
  *
  * Strategy Pattern: Allows switching between global, per-page, and per-content scoping.
+ *
+ * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
 interface ScopingStrategyInterface extends NamedStrategyInterface
 {

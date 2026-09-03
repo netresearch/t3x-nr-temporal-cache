@@ -44,6 +44,8 @@ use TYPO3\CMS\Core\SingletonInterface;
  * The trade-off is that these writes produce no sys_log and no sys_history entry,
  * so every mutation is recorded through the injected logger (table, uid, old and
  * new values) to keep it auditable.
+ *
+ * @internal Not covered by the public API — see Documentation/Api/Index.rst.
  */
 class HarmonizationService implements SingletonInterface
 {

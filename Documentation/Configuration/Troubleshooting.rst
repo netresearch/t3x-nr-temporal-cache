@@ -165,12 +165,14 @@ Harmonization not working
       11:30 → nearest slot 12:00, 30 min away  → harmonized to 12:00
       10:30 → nearest slot 12:00, 90 min away  → left at 10:30
 
-   ``harmonization.tolerance = 0`` harmonizes nothing at all.
-   The label in :file:`ext_conf_template.txt` calls it "no limit", which is
-   backwards.
+   ``harmonization.tolerance = 0`` harmonizes nothing at all: no timestamp is
+   ever within a distance of zero of a slot unless it already sits on one.
+   :bash:`temporalcache:verify` reports it as ``ROUNDING OFF`` rather than as an
+   error, because switching rounding off is a valid choice.
 
-#. The distance is measured within the day.
-   23:30 is far from a ``00:00`` slot, not close to the next day's.
+#. The distance is measured on the circular day.
+   23:30 is 30 minutes from a ``00:00`` slot, because the nearest occurrence of
+   that slot is the next day's.
 
 #. Harmonization is invoked, not automatic.
    Nothing rewrites timestamps when an editor saves a record.
@@ -186,12 +188,12 @@ Harmonization not working
 Scheduler task
 ==============
 
-This version registers no scheduler task type, so the task cannot be created in
-:guilabel:`System → Scheduler`.
-:ref:`scheduler-setup` describes what that means for the ``scheduler`` and
-``hybrid`` timing strategies.
+:file:`ext_localconf.php` registers the task type, so :guilabel:`Scheduler →
+Create new task` offers **Temporal Cache: Process transitions**.
+Registering the type is not the same as scheduling it — see
+:ref:`scheduler-setup`.
 
-If a task type has been registered on your installation, verify that the
+If transitions are not processed, verify that the task exists and that the
 Scheduler itself runs:
 
 .. code-block:: bash
