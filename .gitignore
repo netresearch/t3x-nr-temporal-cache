@@ -38,3 +38,6 @@ v13/
 
 # TYPO3 runtime cache produced by local test runs
 /var/
+
+# Serena MCP server: developer-machine state, not project configuration
+/.serena/

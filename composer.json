@@ -94,6 +94,7 @@
         "ci:test:php:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
         "ci:test:php:coverage": "phpunit -c Build/phpunit/UnitTests.xml --coverage-html=.Build/coverage --coverage-clover=.Build/logs/clover.xml",
         "ci:test:php:coverage:check": "php Build/scripts/check-coverage.php .Build/logs/clover.xml 69",
+        "ci:test:tailor-excludes": "php Build/Scripts/verify-tailor-excludes.php",
         "docs:render": "docker run --rm --pull always -v \"$(pwd):/project\" ghcr.io/typo3-documentation/render-guides:latest --config=Documentation/guides.xml",
         "docs:serve": "php -S localhost:8090 -t Documentation-GENERATED-temp/",
         "docs:clean": "rm -rf Documentation-GENERATED-temp/"

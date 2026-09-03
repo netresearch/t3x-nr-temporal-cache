@@ -1,10 +1,13 @@
 name: Harness Verification
 
-# Verifies agent-harness consistency (AGENTS.md line budget, dead references,
-# documented commands vs composer.json/Makefile, docs/ structure) via
-# Build/Scripts/verify-harness.sh. Thin caller of the shared script-check
-# reusable, so the checkout pin and harden-runner are maintained centrally.
-# Exit 2 means warnings only and passes; exit 1 (errors) fails the check.
+# Two repository consistency checks, both thin callers of the shared
+# script-check reusable so the checkout pin and harden-runner stay central:
+#
+#   harness-verify   agent-harness consistency (AGENTS.md line budget, dead
+#                    references, documented commands vs composer.json/Makefile,
+#                    docs/ structure) via Build/Scripts/verify-harness.sh.
+#                    Exit 2 means warnings only and passes; exit 1 fails.
+#   tailor-excludes  TER packaging list vs the pinned tailor defaults.
 
 on:
   push:
@@ -21,3 +24,14 @@ jobs:
       contents: read
     with:
       check-cmd: bash Build/Scripts/verify-harness.sh || [ $? -eq 2 ]
+
+  # Build/ExcludeFromPackaging.php restates tailor's own exclude list, because
+  # tailor replaces rather than merges it. This fails when the two drift, so the
+  # TER artifact cannot silently regain files. It compares against the committed
+  # Build/TailorDefaults-1.7.0.php snapshot and needs no tailor installation.
+  tailor-excludes:
+    uses: netresearch/.github/.github/workflows/script-check.yml@main
+    permissions:
+      contents: read
+    with:
+      check-cmd: php Build/Scripts/verify-tailor-excludes.php

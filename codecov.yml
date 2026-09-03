@@ -11,6 +11,24 @@
 # script reads statement coverage from the unit suite alone, this status reads
 # line coverage over unit and functional combined, so Codecov normally reports
 # the higher number. The local script stays the stricter of the two.
+# Hold the notification until enough uploads have merged. Each full CI run
+# produces 22 coverage sessions: 11 matrix cells (5 PHP x 3 TYPO3 minus 4
+# excludes) uploaded twice, once under the `unit` flag and once under
+# `functional`. Codecov posts a status as soon as the first upload lands, so
+# without this it reported a partial figure — 30.46% against a real 86.13% —
+# and failed the project status on every pull request until the rest arrived.
+#
+# 12, not 22: 12 is the smallest count that guarantees at least one session
+# from each flag (worst case 11 + 1), and the two flags measure disjoint halves
+# of the suite. 22 is the ceiling and the ceiling is not always reached — the
+# reusable's upload step has no `if: always()`, so a failing matrix cell never
+# uploads, and a value at the ceiling would silence the coverage gate on
+# exactly the commit where a test broke. A too-high value means the status is
+# never sent at all rather than reported pending.
+codecov:
+  notify:
+    after_n_builds: 12
+
 coverage:
   status:
     project:

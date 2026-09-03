@@ -8,7 +8,7 @@ The t3x-nr-temporal-cache extension now includes a complete Makefile following t
 
 ### 1. Project Makefile
 
-**Location**: `/home/sme/t3x-nr-temporal-cache/Makefile`
+**Location**: `Makefile` in the repository root
 
 **Features**:
 - 30 make targets for common operations
@@ -98,7 +98,7 @@ make backend-v13   # Open TYPO3 v13 backend
 ### 1. Verify Makefile Works
 
 ```bash
-cd /home/sme/t3x-nr-temporal-cache
+cd /path/to/t3x-nr-temporal-cache
 make help
 ```
 
