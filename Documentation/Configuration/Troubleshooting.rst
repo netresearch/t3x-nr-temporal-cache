@@ -153,7 +153,8 @@ Harmonization not working
    backend module hides the column.
 
 #. The slots parse.
-   Entries must be ``HH:MM`` with hours 0-23 and minutes 0-59; anything else is
+   Entries must be ``HH:MM`` or ``H:MM`` with hours 0-23 and minutes 0-59;
+   anything else is
    dropped silently, and with no valid slot left nothing is harmonized.
    :bash:`temporalcache:verify` reports the parsed slots when harmonization is
    enabled.

@@ -306,9 +306,11 @@ share one cache flush.
    :Default: ``00:00,06:00,12:00,18:00``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['harmonization']['slots']
 
-   Comma-separated list of times of day in ``HH:MM`` format, 24-hour clock.
+   Comma-separated list of times of day on a 24-hour clock.
+   Both ``HH:MM`` and a single-digit hour (``H:MM``) are accepted, so ``8:00``
+   and ``08:00`` are equivalent.
    Surrounding whitespace is trimmed and the list is sorted internally.
-   An entry that is not ``HH:MM``, or whose hours exceed 23 or minutes exceed
+   An entry that matches neither form, or whose hours exceed 23 or minutes exceed
    59, is dropped without an error; if that leaves no slot at all,
    harmonization returns every timestamp unchanged.
 
