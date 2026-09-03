@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
+use DateTimeImmutable;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
@@ -199,11 +200,13 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     /**     */
     public function testBuildTimelineGroupsTransitionsByDay(): void
     {
-        // Anchored at 09:00 UTC rather than time(): with a floating "now", running the
-        // suite shortly before midnight puts +1h and +2h on either side of the day
-        // boundary and the grouping this asserts silently changes shape.
-        $currentTime = (new \DateTimeImmutable('2026-06-15 09:00:00', new \DateTimeZone('UTC')))
-            ->getTimestamp();
+        // Anchored at local midday rather than time(): buildTimeline() groups by calendar
+        // day in the ambient timezone, so a floating "now" puts +1h and +2h on either
+        // side of a day boundary whenever the suite runs near midnight, and a fixed UTC
+        // instant does the same in a timezone far from UTC (verified: in Pacific/Apia
+        // 09:00 UTC + 1h and + 2h already straddle midnight). Midday local is the only
+        // anchor with six hours of slack on both sides in every timezone.
+        $currentTime = (new DateTimeImmutable('2026-06-15 12:00:00'))->getTimestamp();
 
         $content = $this->createContent(starttime: $currentTime + 3600);
 
