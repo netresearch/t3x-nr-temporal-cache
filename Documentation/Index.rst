@@ -37,8 +37,9 @@ without manual cache clearing.
 
 .. important::
    **Extension Status**: Beta (version 0.9.0, state ``beta`` in
-   :file:`ext_emconf.php`). There is no stable release yet; the only published
-   tag is the pre-release ``v0.9.0-alpha1``. Test before using in production.
+   :file:`ext_emconf.php`). ``v0.9.0`` is the first published release. Beta
+   means the API may still change before 1.0 — test before using in
+   production.
 
    **Approach**: This is an **experimental solution** implementing Phase 1
    of a three-phase approach. The extension provides a pragmatic workaround

@@ -12,7 +12,7 @@ Automatic cache invalidation for time-based content, developed by [Netresearch D
 
 **Addresses [TYPO3 Forge Issue #14277](https://forge.typo3.org/issues/14277)**: "Start/Stop time for pages is ignored in standard menu objects", reported in 2004 and still open.
 
-> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. The only published tag is the pre-release [v0.9.0-alpha1](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0-alpha1). There is no stable release, no Packagist package and no TER version.
+> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. [v0.9.0](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0) is the first release published to TER and Packagist. Beta means the API may still change before 1.0.
 
 ## The Problem (20+ Years Old)
 
@@ -124,16 +124,15 @@ Visual management interface at **Admin Tools → Temporal Cache**:
 
 ### Composer
 
-The package is not on Packagist. Register the repository, then require it — both available versions (`v0.9.0-alpha1` and `dev-main`) are pre-stable, so the constraint needs a stability flag:
-
 ```bash
-composer config repositories.nr-temporal-cache vcs https://github.com/netresearch/t3x-nr-temporal-cache.git
-composer require netresearch/nr-temporal-cache:^0.9@alpha
+composer require netresearch/nr-temporal-cache:^0.9
 ```
+
+`0.9.0` is a beta release, so a project with `minimum-stability` below `beta` needs `composer require netresearch/nr-temporal-cache:^0.9@beta`.
 
 ### TER (TYPO3 Extension Repository)
 
-The extension key `nr_temporal_cache` exists in TER, but no version is published there yet.
+The extension key `nr_temporal_cache` is registered in TER; version 0.9.0 is published there.
 
 ### Manual
 
@@ -353,7 +352,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 - ✅ Three timing strategies (dynamic, scheduler, hybrid)
 - ✅ Time harmonization for reduced cache churn
 - ✅ Backend module for visual management
-- **Status**: implemented as v0.9.0, state `beta`; published only as the pre-release `v0.9.0-alpha1`
+- **Status**: implemented as v0.9.0, state `beta`; published to TER and Packagist
 
 ### Phase 2: Absolute Expiration API (Proposed for TYPO3 Core)
 - Extend `CacheTag` so a tag can carry an absolute expiration timestamp
