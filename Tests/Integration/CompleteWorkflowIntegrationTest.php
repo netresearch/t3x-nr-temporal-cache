@@ -55,7 +55,6 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
                 ],
                 'timing' => [
                     'strategy' => 'dynamic',
-                    'scheduler_interval' => 60,
                     'hybrid' => [
                         'pages' => 'dynamic',
                         'content' => 'scheduler',

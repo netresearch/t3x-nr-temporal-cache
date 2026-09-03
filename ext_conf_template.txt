@@ -7,13 +7,10 @@ scoping.use_refindex = 1
 # cat=timing/enable/10; type=options[dynamic,scheduler,hybrid]; label=Timing Strategy: When to check for temporal transitions
 timing.strategy = dynamic
 
-# cat=timing/enable/20; type=int+; label=Scheduler Interval (seconds): Check interval for scheduler-based strategy (minimum 60 seconds)
-timing.scheduler_interval = 60
-
-# cat=timing/enable/30; type=options[dynamic,scheduler]; label=Hybrid Strategy - Pages: Timing strategy for page transitions (affects menus)
+# cat=timing/enable/30; type=options[dynamic,scheduler]; label=Hybrid Strategy - Pages: Rule for records in the pages table. With hybrid timing the page cache lifetime is the earliest across this and the content rule
 timing.hybrid.pages = dynamic
 
-# cat=timing/enable/40; type=options[dynamic,scheduler]; label=Hybrid Strategy - Content: Timing strategy for content element transitions
+# cat=timing/enable/40; type=options[dynamic,scheduler]; label=Hybrid Strategy - Content: Rule for content records. Also contributes to the page cache lifetime, not only to scheduled processing
 timing.hybrid.content = scheduler
 
 # cat=harmonization/enable/10; type=boolean; label=Enable Time Harmonization: Round temporal transitions to fixed time slots to reduce cache churn
@@ -22,10 +19,10 @@ harmonization.enabled = 0
 # cat=harmonization/enable/20; type=string; label=Time Slots: Comma-separated time slots in HH:MM format (e.g., 00:00,06:00,12:00,18:00)
 harmonization.slots = 00:00,06:00,12:00,18:00
 
-# cat=harmonization/enable/30; type=int+; label=Tolerance (seconds): Maximum allowed time shift for harmonization (0 = no limit)
+# cat=harmonization/enable/30; type=int+; label=Tolerance (seconds): Maximum shift harmonization may apply. A transition further from its nearest slot is left untouched; 0 disables harmonization entirely
 harmonization.tolerance = 3600
 
-# cat=harmonization/enable/40; type=boolean; label=Auto-Round New Content: Automatically suggest harmonized times in backend forms
+# cat=harmonization/enable/40; type=boolean; label=Auto-Round Reporting Flag: Records the intended auto-round policy for the status report and the analyze/verify commands. Has no save-time effect - harmonization is applied on demand from the backend module or the harmonize command
 harmonization.auto_round = 0
 
 # cat=advanced/enable/10; type=int+; label=Default Cache Lifetime (seconds): Maximum cache lifetime when no temporal content exists

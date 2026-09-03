@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Context\Context;
  *
  * Trade-offs:
  * - Requires scheduler configuration
- * - Small delay possible (up to scheduler interval)
+ * - Small delay possible (up to the task's frequency)
  * - Content might appear/disappear slightly late
  *
  * Use cases:
@@ -39,7 +39,10 @@ use TYPO3\CMS\Core\Context\Context;
  * - Sites where 1-minute delay is acceptable
  *
  * Configuration:
- * - scheduler_interval: How often task runs (default 60 seconds)
+ * - Cadence: the frequency of TemporalCacheSchedulerTask, set per task in the
+ *   Scheduler backend module. The extension configuration has no say in it -
+ *   TYPO3 stores the frequency on the task record, and its registration API
+ *   offers no slot for a default.
  * - Works with all scoping strategies
  */
 class SchedulerTimingStrategy implements TimingStrategyInterface

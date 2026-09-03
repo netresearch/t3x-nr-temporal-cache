@@ -11,6 +11,14 @@
                 <source>Manage temporal content and cache configuration</source>
             </trans-unit>
 
+            <!-- Scheduler task -->
+            <trans-unit id="task.processTransitions.title" resname="task.processTransitions.title">
+                <source>Temporal Cache: Process Transitions</source>
+            </trans-unit>
+            <trans-unit id="task.processTransitions.description" resname="task.processTransitions.description">
+                <source>Processes all temporal content transitions that occurred since the last run and invalidates the affected caches. Required by the scheduler timing strategy, and by hybrid timing when at least one of its rules is set to scheduler.</source>
+            </trans-unit>
+
             <!-- Menu -->
             <trans-unit id="menu.dashboard" resname="menu.dashboard">
                 <source>Dashboard</source>

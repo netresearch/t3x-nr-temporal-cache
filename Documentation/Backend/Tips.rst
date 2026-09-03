@@ -18,7 +18,7 @@ They are created by the schema migrator, not by the extension itself.
 .. code-block:: bash
     :caption: Create the indexes after installing or updating the extension
 
-    vendor/bin/typo3 database:updateschema
+    vendor/bin/typo3 extension:setup
 
 .. code-block:: bash
     :caption: Confirm that they exist

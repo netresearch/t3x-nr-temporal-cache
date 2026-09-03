@@ -33,6 +33,26 @@ final class TemporalCacheSchedulerTask extends AbstractTask
 
     private const REGISTRY_KEY_LAST_RUN = 'scheduler_last_run';
 
+    /**
+     * Runtime dependencies that must never become part of the serialized task
+     * object: the five injected services, plus the inherited $scheduler and
+     * $logger, which TYPO3 12.4 and 13 drop themselves before storing a task
+     * (SchedulerTaskRepository::update() calls $task->unsetScheduler()).
+     * $scheduler no longer exists on TYPO3 14; names that are not properties of
+     * the current version are simply ignored.
+     *
+     * @var list<string>
+     */
+    private const TRANSIENT_PROPERTIES = [
+        'repository',
+        'timingStrategy',
+        'extensionConfiguration',
+        'context',
+        'registry',
+        'scheduler',
+        'logger',
+    ];
+
     private ?TemporalContentRepository $repository = null;
 
     private ?TimingStrategyInterface $timingStrategy = null;
@@ -70,6 +90,54 @@ final class TemporalCacheSchedulerTask extends AbstractTask
     public function injectRegistry(Registry $registry): void
     {
         $this->registry = $registry;
+    }
+
+    /**
+     * Keep the injected services out of the serialized task object.
+     *
+     * TYPO3 12.4 and 13 store a scheduler task as serialize($task) in
+     * tx_scheduler_task.serialized_task_object. Serializing the injected services
+     * throws ("Serialization of 'Closure' is not allowed"), which makes the task
+     * impossible to save at all. TYPO3 14 rebuilds the task from the container
+     * and never takes this path.
+     *
+     * @return list<string> Names of the properties to serialize
+     */
+    public function __sleep(): array
+    {
+        return \array_values(
+            \array_diff(\array_keys(\get_object_vars($this)), self::TRANSIENT_PROPERTIES)
+        );
+    }
+
+    /**
+     * Restore the services that __sleep() left out.
+     */
+    public function __wakeup(): void
+    {
+        $this->resolveMissingDependencies();
+    }
+
+    /**
+     * Resolve the injected services from the container.
+     *
+     * Unserializing bypasses dependency injection, so the task is re-created
+     * through the container - it is registered as a non-shared public service -
+     * and the services are taken over from that instance.
+     */
+    private function resolveMissingDependencies(): void
+    {
+        if ($this->validateDependencies()) {
+            return;
+        }
+
+        $injectedTask = GeneralUtility::makeInstance(self::class);
+
+        $this->repository ??= $injectedTask->repository;
+        $this->timingStrategy ??= $injectedTask->timingStrategy;
+        $this->extensionConfiguration ??= $injectedTask->extensionConfiguration;
+        $this->context ??= $injectedTask->context;
+        $this->registry ??= $injectedTask->registry;
     }
 
     /**

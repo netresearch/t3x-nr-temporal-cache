@@ -42,8 +42,8 @@ Cache not updating
 
    Only ``dynamic`` expires the cache by itself.
    ``scheduler`` relies entirely on the scheduler task, and ``hybrid`` does for
-   whichever content type is routed to it — and this version registers no task
-   type, so those transitions are never processed.
+   whichever content type is routed to it, so check that the task exists in the
+   Scheduler module and that cron is running it.
    See :ref:`scheduler-setup`.
 
 #. **Do the indexes exist?**
@@ -68,11 +68,6 @@ Cache not updating
 
    :guilabel:`Admin Tools → Maintenance → Analyze Database Structure` does the
    same from the backend.
-
-   .. note::
-      :bash:`temporalcache:verify` suggests :bash:`database:updateschema` when
-      an index is missing.
-      That command is not part of TYPO3 core; use one of the two above.
 
 #. **Is the record actually visible?**
 
@@ -217,7 +212,6 @@ A misspelled ``per-contnet`` therefore behaves exactly like the default.
 :bash:`temporalcache:verify` flags both values as ``INVALID``.
 
 **Out-of-range values are clamped, not rejected.**
-``timing.scheduler_interval`` below 60 is raised to 60 by the getter, and
 ``advanced.default_max_lifetime`` of 0 or less is skipped in favour of 86400.
 
 **Two configuration sources.**

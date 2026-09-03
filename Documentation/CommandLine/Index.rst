@@ -177,7 +177,7 @@ Database index verification
     ``tt_content``.
     An index over more columns satisfies the check as long as the temporal field is the leading column.
     The indexes ship with the extension in :file:`ext_tables.sql`; apply them with
-    ``vendor/bin/typo3 database:updateschema``.
+    ``vendor/bin/typo3 extension:setup``.
 
 Extension configuration verification
     The scoping strategy must be ``global``, ``per-page`` or ``per-content``.

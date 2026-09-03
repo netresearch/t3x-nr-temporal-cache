@@ -134,7 +134,7 @@ vendor/bin/typo3 temporalcache:analyze
 
 - Check database connection in Install Tool
 - Verify user has schema privileges
-- Run: `vendor/bin/typo3 database:updateschema`
+- Run: `vendor/bin/typo3 extension:setup`
 
 ## Integration with Monitoring
 

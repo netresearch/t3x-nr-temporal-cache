@@ -35,7 +35,7 @@ Chapters
         Scoping, timing and harmonization settings, and how the three interact.
 
         **Covers**: ``scoping.strategy``, ``scoping.use_refindex``,
-        ``timing.strategy``, ``timing.scheduler_interval``,
+        ``timing.strategy``,
         ``timing.hybrid.pages``, ``timing.hybrid.content``,
         ``harmonization.enabled``, ``harmonization.slots``,
         ``harmonization.tolerance``, ``harmonization.auto_round``
@@ -97,10 +97,6 @@ Defaults as implemented in
      - string
      - ``dynamic``
      - ``dynamic``, ``scheduler``, ``hybrid``
-   * - ``timing.scheduler_interval``
-     - integer
-     - ``60``
-     - seconds, raised to 60 when lower
    * - ``timing.hybrid.pages``
      - string
      - ``dynamic``

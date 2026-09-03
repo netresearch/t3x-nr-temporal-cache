@@ -58,15 +58,6 @@ class ExtensionConfiguration implements SingletonInterface
         return $strategy;
     }
 
-    public function getSchedulerInterval(): int
-    {
-        $timing = $this->config['timing'] ?? [];
-        \assert(\is_array($timing));
-        $interval = $timing['scheduler_interval'] ?? 60;
-        \assert(\is_int($interval) || \is_string($interval));
-        return \max(60, (int)$interval);
-    }
-
     /**
      * Keyed by TemporalContent::getContentType(), which HybridTimingStrategy uses to
      * look the rule up. That is why the page key is 'page' and not 'pages'.

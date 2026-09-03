@@ -304,7 +304,9 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
         $message .= '<strong>Configuration:</strong>' . \chr(10);
         $message .= '• Time Slots: ' . \implode(', ', $slots) . \chr(10);
         $message .= '• Tolerance: ' . $tolerance . ' seconds (' . \round($tolerance / 60) . ' minutes)' . \chr(10);
-        $message .= '• Auto-round on Save: ' . ($autoRound ? 'Yes' : 'No') . \chr(10) . \chr(10);
+        // "on Save" would assert a FormEngine integration that does not exist:
+        // the flag is recorded and reported, and harmonization is applied on demand.
+        $message .= '• Auto-round (reporting only): ' . ($autoRound ? 'Yes' : 'No') . \chr(10) . \chr(10);
 
         // Calculate potential impact
         try {

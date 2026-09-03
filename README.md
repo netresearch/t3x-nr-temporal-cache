@@ -155,7 +155,7 @@ From `composer.json` and `ext_emconf.php`:
 1. **Apply the database schema.** The extension ships its indexes in `ext_tables.sql` — `idx_temporalcache_starttime` and `idx_temporalcache_endtime` on `pages` and `tt_content` — so they are created by the schema migrator, not by hand:
 
 ```bash
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 ```
 
    Admin Tools → Maintenance → Analyze Database Structure does the same. `vendor/bin/typo3 temporalcache:verify` reports whether the indexes are in place.
@@ -247,26 +247,23 @@ The twelve settings from `ext_conf_template.txt`, with their defaults:
 **Timing Strategy** (`timing.strategy`, default `dynamic`)
 - `dynamic`, `scheduler`, `hybrid`
 
-**Scheduler Interval** (`timing.scheduler_interval`, default `60`)
-- Declared value only; no code reads it. The cadence is the frequency configured on the scheduler task
-
 **Hybrid Strategy - Pages** (`timing.hybrid.pages`, default `dynamic`)
-- Timing for page transitions (affects menus)
+- Rule for records in the `pages` table
 
 **Hybrid Strategy - Content** (`timing.hybrid.content`, default `scheduler`)
-- Timing for content element transitions
+- Rule for content records. With `hybrid` timing the page cache lifetime is the earliest across both rules
 
 **Enable Harmonization** (`harmonization.enabled`, default `0`)
 - Round transitions to fixed time slots
 
 **Time Slots** (`harmonization.slots`, default `00:00,06:00,12:00,18:00`)
-- Comma-separated slots in HH:MM format
+- Comma-separated slots on a 24-hour clock; `HH:MM` and `H:MM` are both accepted
 
 **Tolerance** (`harmonization.tolerance`, default `3600`)
-- Maximum shift in seconds; a timestamp further than this from the nearest slot is left unchanged
+- Maximum shift harmonization may apply, in seconds. A transition further from its nearest slot is left untouched; `0` disables harmonization entirely
 
-**Auto-Round New Content** (`harmonization.auto_round`, default `0`)
-- Reported by `temporalcache:verify`, `temporalcache:analyze` and the Reports status; this version ships no backend form integration for it
+**Auto-Round Reporting Flag** (`harmonization.auto_round`, default `0`)
+- Records the intended policy for the status report and the `analyze` / `verify` commands. It has no save-time effect — harmonization is applied on demand from the backend module or `temporalcache:harmonize`
 
 **Default Max Lifetime** (`advanced.default_max_lifetime`, default `86400`)
 - Cache lifetime when no transition is pending, and the cap when TypoScript `config.cache_period` is not set

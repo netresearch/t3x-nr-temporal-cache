@@ -144,6 +144,72 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(0, $this->runSubject());
     }
 
+    /**
+     * A tolerance of 0 switches rounding off rather than being a broken value:
+     * harmonizeTimestamp() leaves any timestamp whose distance to its slot
+     * exceeds the tolerance, so nothing is ever moved. verify must not fail the
+     * whole run over it, which it did while the check read `$tolerance > 0`.
+     */
+    public function testExecuteWithZeroToleranceSucceedsBecauseItOnlyDisablesRounding(): void
+    {
+        $this->setupInputDefaults();
+        $this->setupOutputDefaults();
+
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
+
+        $this->mockBaseConfiguration('per-page');
+
+        $this->configuration
+            ->method('isHarmonizationEnabled')
+            ->willReturn(true);
+
+        $this->configuration
+            ->method('getHarmonizationSlots')
+            ->willReturn(['00:00', '12:00']);
+
+        $this->configuration
+            ->method('getHarmonizationTolerance')
+            ->willReturn(0);
+
+        $this->configuration
+            ->method('isAutoRoundEnabled')
+            ->willReturn(false);
+
+        self::assertSame(0, $this->runSubject());
+    }
+
+    /**
+     * The upper bound still holds: more than a day of shift is not a
+     * configuration anyone means, so it stays a hard failure.
+     */
+    public function testExecuteWithToleranceAboveOneDayReturnsFailure(): void
+    {
+        $this->setupInputDefaults();
+        $this->setupOutputDefaults();
+
+        $schemaManager = $this->mockSchemaManager();
+        $this->mockTableIndexes($schemaManager);
+        $this->mockTableColumns($schemaManager);
+
+        $this->mockBaseConfiguration('per-page');
+
+        $this->configuration
+            ->method('isHarmonizationEnabled')
+            ->willReturn(true);
+
+        $this->configuration
+            ->method('getHarmonizationSlots')
+            ->willReturn(['00:00', '12:00']);
+
+        $this->configuration
+            ->method('getHarmonizationTolerance')
+            ->willReturn(86401);
+
+        self::assertSame(1, $this->runSubject());
+    }
+
     /**     */
     public function testExecuteWithInvalidHarmonizationSlotsReturnsFailure(): void
     {

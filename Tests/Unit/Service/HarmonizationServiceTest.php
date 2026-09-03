@@ -140,6 +140,83 @@ final class HarmonizationServiceTest extends UnitTestCase
         ];
     }
 
+    /**
+     * Slot distance is circular over the 86400-second day.
+     *
+     * 23:30 is 30 minutes away from the next day's 00:00 slot, not 5.5 hours away
+     * from the same day's 18:00 slot, and the harmonized timestamp then belongs to
+     * the following calendar day.
+     *
+     * @param array<string> $slots
+     */
+    #[DataProvider('midnightWrapDataProvider')]
+    public function testHarmonizeTimestampMeasuresSlotDistanceAcrossMidnight(
+        int $inputTimestamp,
+        array $slots,
+        int $tolerance,
+        int $expectedTimestamp
+    ): void {
+        $this->configuration->method('isHarmonizationEnabled')->willReturn(true);
+        $this->configuration->method('getHarmonizationSlots')->willReturn($slots);
+        $this->configuration->method('getHarmonizationTolerance')->willReturn($tolerance);
+
+        $subject = new HarmonizationService($this->configuration, $this->connectionPool);
+
+        self::assertSame($expectedTimestamp, $subject->harmonizeTimestamp($inputTimestamp));
+    }
+
+    /**
+     * @return array<string, array{int, array<string>, int, int}>
+     */
+    public static function midnightWrapDataProvider(): array
+    {
+        $day1 = 1609459200; // 2021-01-01 00:00:00 UTC
+        $day2 = 1609545600; // 2021-01-02 00:00:00 UTC
+
+        return [
+            // 23:30 is 30 minutes before the next day's 00:00 slot. Measured on the
+            // same day only, the nearest slot is 18:00 at 5.5 hours, which exceeds
+            // the tolerance and leaves the timestamp untouched.
+            'wraps forward into the next day' => [
+                $day1 + 84600, // 23:30
+                ['00:00', '18:00'],
+                3600,
+                $day2,
+            ],
+            // Same input with a tolerance wide enough to admit the same-day 18:00
+            // slot: rounding must still go forward 30 minutes, not backwards 5.5 hours.
+            'never rounds backwards past a nearer next-day slot' => [
+                $day1 + 84600, // 23:30
+                ['00:00', '18:00'],
+                21600,
+                $day2,
+            ],
+            // The mirror case: the nearest slot lies on the previous day.
+            'wraps backwards into the previous day' => [
+                $day2 + 600, // 00:10
+                ['23:00'],
+                7200,
+                $day1 + 82800, // 2021-01-01 23:00
+            ],
+            // Exactly 12 hours from the only slot in both directions. The tie-break
+            // prefers rounding forward, which at the wrap point is the next day.
+            'exact twelve-hour tie rounds forward across midnight' => [
+                $day1 + 64800, // 18:00
+                ['06:00'],
+                43200,
+                $day2 + 21600, // 2021-01-02 06:00
+            ],
+            // The tolerance is applied to the wrapped distance, so a slot that is
+            // near across midnight is still rejected when it is further than allowed.
+            'wrapped distance is still bounded by the tolerance' => [
+                $day1 + 84600, // 23:30, 30 minutes from the next day's 00:00
+                ['00:00', '18:00'],
+                900,
+                $day1 + 84600,
+            ],
+        ];
+    }
+
     /**     */
     public function testGetSlotsInRangeReturnsAllSlotsInRange(): void
     {

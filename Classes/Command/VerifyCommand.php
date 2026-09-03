@@ -89,7 +89,7 @@ final class VerifyCommand extends Command
 
                 <info>After fixing issues:</info>
                   Run database compare to create missing indexes:
-                  <comment>vendor/bin/typo3 database:updateschema</comment>
+                  <comment>vendor/bin/typo3 extension:setup</comment>
                 HELP
         );
     }
@@ -179,7 +179,7 @@ final class VerifyCommand extends Command
         if (!$allIndexesExist) {
             $io->warning(
                 'Missing indexes detected! This will severely impact performance.' . PHP_EOL .
-                'Run "vendor/bin/typo3 database:updateschema" to create missing indexes.'
+                'Run "vendor/bin/typo3 extension:setup" to create missing indexes.'
             );
         }
 
@@ -320,24 +320,33 @@ final class VerifyCommand extends Command
             }
         }
 
-        // Check tolerance
+        // Check tolerance. 0 is a deliberate setting, not an error: harmonizeTimestamp()
+        // returns the timestamp unchanged whenever its distance to the nearest slot
+        // exceeds the tolerance, so a tolerance of 0 moves nothing and switches rounding
+        // off. Reporting that INVALID contradicted the manual and failed the whole
+        // command over a working configuration.
         $tolerance = $this->configuration->getHarmonizationTolerance();
-        $toleranceValid = $tolerance > 0 && $tolerance <= 86400; // Max 1 day
+        $toleranceValid = $tolerance >= 0 && $tolerance <= 86400; // Max 1 day
         $results[] = [
             'Tolerance',
             $tolerance . ' seconds (' . (int)($tolerance / 60) . ' minutes)',
-            $toleranceValid ? '<fg=green>OK</>' : '<fg=red>INVALID</>',
+            match (true) {
+                !$toleranceValid => '<fg=red>INVALID</>',
+                $tolerance === 0 => '<fg=yellow>ROUNDING OFF</>',
+                default => '<fg=green>OK</>',
+            },
         ];
         if (!$toleranceValid) {
             $allValid = false;
         }
 
-        // Check auto-round
+        // Reported, not verified: the flag has no save-time effect, so a green OK
+        // would tell an administrator a feature is working that does not exist.
         $autoRound = $this->configuration->isAutoRoundEnabled();
         $results[] = [
             'Auto-round',
             $autoRound ? 'Enabled' : 'Disabled',
-            '<fg=green>OK</>',
+            '<fg=yellow>REPORTING ONLY</>',
         ];
 
         // Display results
