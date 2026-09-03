@@ -10,6 +10,22 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+### Changed
+
+- The TER archive no longer carries files that are irrelevant to an installed
+  extension: agent instructions (`AGENTS.md`, `CLAUDE.md` at every depth), the
+  DDEV landing page and healthcheck stub, `renovate.json`, `codecov.yml` and
+  `crowdin.yml`. `tailor` packages the working directory and ignores
+  `.gitattributes`, so the `export-ignore` entries these files already carried
+  never applied to it; `Build/ExcludeFromPackaging.php` now supplies the list.
+
+### Removed
+
+- Analysis reports and translation summaries generated in November 2025, plus
+  `benchmark_results.txt` and `.serena/`. They described a test suite and a
+  `Tests/Performance` directory that no longer exist, and three of them embedded
+  a developer's local path. Nothing referenced them.
+
 ## [0.9.0] - 2026-09-03
 
 ### Added
