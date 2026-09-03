@@ -199,7 +199,11 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     /**     */
     public function testBuildTimelineGroupsTransitionsByDay(): void
     {
-        $currentTime = \time();
+        // Anchored at 09:00 UTC rather than time(): with a floating "now", running the
+        // suite shortly before midnight puts +1h and +2h on either side of the day
+        // boundary and the grouping this asserts silently changes shape.
+        $currentTime = (new \DateTimeImmutable('2026-06-15 09:00:00', new \DateTimeZone('UTC')))
+            ->getTimestamp();
 
         $content = $this->createContent(starttime: $currentTime + 3600);
 
