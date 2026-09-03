@@ -401,7 +401,7 @@ Check Services.yaml syntax and service references.
 ### Database Errors
 
 ```bash
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 vendor/bin/typo3 temporalcache:verify
 ```
 

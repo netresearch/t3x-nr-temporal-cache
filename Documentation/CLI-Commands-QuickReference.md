@@ -227,7 +227,7 @@ vendor/bin/typo3 temporalcache:verify
 
 ```bash
 # Update schema
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 
 # Verify indexes
 vendor/bin/typo3 temporalcache:verify

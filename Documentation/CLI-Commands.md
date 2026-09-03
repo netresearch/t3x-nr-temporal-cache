@@ -217,7 +217,7 @@ Database Index Verification
 +------------+-------------------+--------+
 
 [WARNING] Missing indexes detected! This will severely impact performance.
-          Run "vendor/bin/typo3 database:updateschema" to create missing indexes.
+          Run "vendor/bin/typo3 extension:setup" to create missing indexes.
 
 Extension Configuration Verification
 -------------------------------------
@@ -246,7 +246,7 @@ Harmonization Configuration Verification
 
 **Missing Indexes:**
 ```bash
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 ```
 
 **Invalid Configuration:**

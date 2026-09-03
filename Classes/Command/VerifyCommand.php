@@ -89,7 +89,7 @@ final class VerifyCommand extends Command
 
                 <info>After fixing issues:</info>
                   Run database compare to create missing indexes:
-                  <comment>vendor/bin/typo3 database:updateschema</comment>
+                  <comment>vendor/bin/typo3 extension:setup</comment>
                 HELP
         );
     }
@@ -179,7 +179,7 @@ final class VerifyCommand extends Command
         if (!$allIndexesExist) {
             $io->warning(
                 'Missing indexes detected! This will severely impact performance.' . PHP_EOL .
-                'Run "vendor/bin/typo3 database:updateschema" to create missing indexes.'
+                'Run "vendor/bin/typo3 extension:setup" to create missing indexes.'
             );
         }
 
