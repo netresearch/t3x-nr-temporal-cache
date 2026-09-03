@@ -472,27 +472,27 @@ Monitoring additional tables
 
 Additional tables are registered with
 ``Netresearch\TemporalCache\Service\TemporalMonitorRegistry``.
-The registry is an autowired singleton and ``registerTable()`` is an instance method, so
-obtain it through constructor injection — there is no static registration API:
+The registry is a singleton and ``registerTable()`` is an instance method. Register from
+:file:`ext_localconf.php`, which runs before any transition lookup:
 
 .. code-block:: php
-    :caption: EXT:my_extension/Classes/Service/NewsTemporalRegistration.php
+    :caption: EXT:my_extension/ext_localconf.php
 
-    namespace MyVendor\MyExtension\Service;
+    <?php
 
-    use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
+    defined('TYPO3') or die();
 
-    final class NewsTemporalRegistration
-    {
-        public function __construct(
-            private readonly TemporalMonitorRegistry $monitorRegistry
-        ) {
-            $this->monitorRegistry->registerTable(
-                'tx_news_domain_model_news',
-                ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
-            );
-        }
-    }
+    \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+        \Netresearch\TemporalCache\Service\TemporalMonitorRegistry::class
+    )->registerTable(
+        'tx_news_domain_model_news',
+        ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
+    );
+
+A registration performed in the constructor of a service of your own does not work
+reliably: unless something the request instantiates references that service, Symfony
+removes the definition when it compiles the container, and the registration never runs.
+The failure is silent — the table is simply not monitored.
 
 The second argument is optional.
 Omitting it applies the default field list, which is the one shown above.

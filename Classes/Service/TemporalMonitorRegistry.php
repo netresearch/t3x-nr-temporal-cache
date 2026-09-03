@@ -13,27 +13,19 @@ use TYPO3\CMS\Core\SingletonInterface;
  * Allows extensions to register their own tables with starttime/endtime fields
  * so the temporal cache extension can monitor them for transitions.
  *
- * Example usage in Configuration/Services.yaml:
- *
- * ```yaml
- * services:
- *   my_extension_table_registration:
- *     class: Netresearch\TemporalCache\Service\TemporalMonitorRegistry
- *     factory: ['@Netresearch\TemporalCache\Service\TemporalMonitorRegistry', 'registerTable']
- *     arguments:
- *       - 'tx_news_domain_model_news'
- *       - ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted']
- * ```
- *
- * Or inject the service where needed:
+ * Register from the consuming extension's ext_localconf.php:
  *
  * ```php
- * public function __construct(
- *     private readonly TemporalMonitorRegistry $monitorRegistry
- * ) {
- *     $this->monitorRegistry->registerTable('tx_news_domain_model_news', [...]);
- * }
+ * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+ *     \Netresearch\TemporalCache\Service\TemporalMonitorRegistry::class
+ * )->registerTable('tx_news_domain_model_news', [
+ *     'uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid',
+ * ]);
  * ```
+ *
+ * Not through a Services.yaml definition: an unreferenced service is removed when the
+ * container is compiled, so the registration never runs and the table is silently not
+ * monitored. registerTable() returns void and cannot act as a service factory either.
  *
  * @api This class is part of the public API — see Documentation/Api/Index.rst.
  */
