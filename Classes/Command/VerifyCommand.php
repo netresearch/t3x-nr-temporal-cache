@@ -332,12 +332,13 @@ final class VerifyCommand extends Command
             $allValid = false;
         }
 
-        // Check auto-round
+        // Reported, not verified: the flag has no save-time effect, so a green OK
+        // would tell an administrator a feature is working that does not exist.
         $autoRound = $this->configuration->isAutoRoundEnabled();
         $results[] = [
             'Auto-round',
             $autoRound ? 'Enabled' : 'Disabled',
-            '<fg=green>OK</>',
+            '<fg=yellow>REPORTING ONLY</>',
         ];
 
         // Display results

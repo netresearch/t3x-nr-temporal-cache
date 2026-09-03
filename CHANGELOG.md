@@ -10,6 +10,49 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+### Fixed
+
+- `timing.strategy = scheduler` did nothing at all. No scheduler task type was
+  registered, so `TemporalCacheSchedulerTask` could not be created in the
+  Scheduler module — and because that task is the only caller of
+  `processTransition()`, the per-page and per-content flush tags were
+  unreachable too. `SchedulerTimingStrategy` deliberately returns no cache
+  lifetime, expecting the task to flush, so selecting scheduler timing left the
+  page cache both uncapped and never flushed.
+- The scheduler task could not be saved on TYPO3 12.4 and 13 even once
+  registered: those versions store a task as `serialize($task)`, and the
+  injected services made that throw `Serialization of 'Closure' is not allowed`.
+  The task now omits its services from serialization and resolves them again on
+  wake-up. TYPO3 14 rebuilds the task from the container and never took this
+  path.
+- Harmonization measured slot distance within a single day, so a transition near
+  midnight was compared against the wrong slot. With slots at 00:00 and 18:00 a
+  23:30 timestamp was treated as 5.5 hours from 18:00 rather than 30 minutes
+  from the next day's 00:00 — it was either left untouched or shifted backwards
+  by up to 12 hours. Distance is now circular over the day.
+
+### Changed
+
+- With `timing.strategy = hybrid`, the page cache lifetime now honours
+  `timing.hybrid.content` as well as `timing.hybrid.pages`, taking the earliest
+  of the two. Previously only the pages rule was consulted, so a site with
+  `pages = scheduler` and `content = dynamic` got an unbounded page cache.
+  **On upgrade such a site will start receiving expiring caches** — that is the
+  defect being fixed, but it changes cache behaviour.
+- `harmonization.tolerance` is documented correctly: `0` disables harmonization
+  rather than removing a limit, which is what the previous label claimed.
+- `harmonization.auto_round` is labelled as the reporting flag it is. It never
+  had a save-time effect; the status report and `verify` no longer present it as
+  an active feature.
+
+### Removed
+
+- Setting `timing.scheduler_interval` and the public method
+  `ExtensionConfiguration::getSchedulerInterval()`. Nothing read the value — the
+  cadence is whatever frequency the task is given in the Scheduler module. This
+  drops a method from a `public: true` service, which is acceptable before 1.0
+  but is an API change.
+
 ### Added
 
 - TYPO3 v14 and PHP 8.5 support, declared in `composer.json` and `ext_emconf.php`.

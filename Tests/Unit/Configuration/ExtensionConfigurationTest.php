@@ -167,39 +167,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    #[DataProvider('schedulerIntervalDataProvider')]
-    public function testGetSchedulerIntervalReturnsConfiguredValue(int $interval, int $expected): void
-    {
-        $this->typo3ExtensionConfiguration
-            ->method('get')
-            ->willReturn(['timing' => ['scheduler_interval' => $interval]]);
-
-        $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-
-        self::assertSame($expected, $subject->getSchedulerInterval());
-    }
-
-    public static function schedulerIntervalDataProvider(): array
-    {
-        return [
-            'minimum enforced' => [30, 60],
-            'valid value' => [120, 120],
-            'large value' => [3600, 3600],
-        ];
-    }
-
-    /**     */
-    public function testGetSchedulerIntervalReturnsDefault(): void
-    {
-        $this->typo3ExtensionConfiguration
-            ->method('get')
-            ->willReturn([]);
-
-        $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-
-        self::assertSame(60, $subject->getSchedulerInterval());
-    }
-
     /**     */
     public function testGetTimingRulesReturnsConfiguredValues(): void
     {

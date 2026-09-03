@@ -24,10 +24,16 @@ use TYPO3\CMS\Core\SingletonInterface;
  * - Without harmonization: transitions at 00:05, 00:15, 00:45 → 3 cache flushes
  * - With harmonization: all round to 00:00 → 1 cache flush
  *
- * Configuration:
+ * Configuration this service reads:
  * - Slots: Time slots (HH:MM format, e.g., "00:00,06:00,12:00,18:00")
  * - Tolerance: Max seconds to round (e.g., 3600 = 1 hour)
- * - Auto-round: Automatically apply on save (backend integration)
+ *
+ * Harmonization runs on demand only: through harmonizeContent() from the backend
+ * module, and through HarmonizeCommand on the command line. Nothing rounds a
+ * record while it is being saved - the extension registers no DataHandler hook and
+ * no FormEngine integration, and this service never reads harmonization.auto_round.
+ * That setting is a reporting flag: the status report and the analyze/verify
+ * commands display its value, and nothing else consumes it.
  *
  * Persistence note (deliberate DataHandler bypass):
  * harmonizeContent() writes through Connection::update() instead of DataHandler.
@@ -41,6 +47,13 @@ use TYPO3\CMS\Core\SingletonInterface;
  */
 class HarmonizationService implements SingletonInterface
 {
+    private const SECONDS_PER_DAY = 86400;
+
+    /**
+     * The point at which a slot is equally far away in both directions.
+     */
+    private const HALF_DAY = 43200;
+
     /**
      * Parsed time slots in seconds since midnight.
      *
@@ -105,9 +118,15 @@ class HarmonizationService implements SingletonInterface
      *
      * Algorithm:
      * 1. Extract time of day (seconds since midnight)
-     * 2. Find nearest slot within tolerance
-     * 3. If found, adjust timestamp to that slot
-     * 4. If no slot within tolerance, return original timestamp
+     * 2. Find the nearest slot on the circular day
+     * 3. If it lies within the tolerance, shift the timestamp onto it
+     * 4. Otherwise return the original timestamp
+     *
+     * Distances wrap around midnight, so the nearest slot can be the previous or
+     * the next day's occurrence: with slots at 00:00 and 18:00, 23:30 harmonizes
+     * forward by 30 minutes onto the next day's 00:00 rather than backwards by
+     * 5.5 hours onto today's 18:00. The returned timestamp therefore need not fall
+     * on the calendar day of the input.
      *
      * @param int $timestamp Unix timestamp to harmonize
      * @return int Harmonized timestamp (or original if no slot within tolerance)
@@ -122,58 +141,78 @@ class HarmonizationService implements SingletonInterface
             return $timestamp;
         }
 
-        // Extract time of day (seconds since midnight in local timezone)
+        // Extract time of day (seconds since midnight). DateTime('@...') is always
+        // UTC, so a day is exactly SECONDS_PER_DAY long here and the wrap-around
+        // arithmetic below is not disturbed by daylight saving transitions.
         $dateTime = new DateTime('@' . $timestamp);
         $timeOfDay = ((int)$dateTime->format('H') * 3600) +
                      ((int)$dateTime->format('i') * 60) +
                      ((int)$dateTime->format('s'));
 
-        // Find nearest slot
-        $nearestSlot = $this->findNearestSlot($timeOfDay);
+        // Signed shift onto the nearest slot, which may lie on the adjacent day.
+        $offset = $this->findNearestSlotOffset($timeOfDay);
 
-        if ($nearestSlot === null) {
+        if ($offset === null) {
             return $timestamp;
         }
 
-        // Calculate distance to nearest slot
-        $distance = \abs($timeOfDay - $nearestSlot);
-
         // Check if within tolerance
         $tolerance = $this->configuration->getHarmonizationTolerance();
-        if ($distance > $tolerance) {
+        if (\abs($offset) > $tolerance) {
             return $timestamp;
         }
 
         // Adjust timestamp to the slot
-        $adjustment = $nearestSlot - $timeOfDay;
-        return $timestamp + $adjustment;
+        return $timestamp + $offset;
     }
 
     /**
-     * Find the nearest time slot to the given time of day.
+     * Find the signed shift that moves a time of day onto the nearest slot.
+     *
+     * Distances are measured on the circular day, so a slot may be reached by
+     * crossing midnight. The result lies in the range (-HALF_DAY, HALF_DAY]:
+     * negative shifts the timestamp backwards, positive forwards. Where two slots
+     * are equally distant the forward one wins, which at the exact half-day wrap
+     * point means the next day's occurrence rather than today's.
      *
      * @param int $timeOfDay Seconds since midnight
-     * @return int|null Nearest slot in seconds, or null if no slots configured
+     * @return int|null Signed shift in seconds, or null if no slots configured
      */
-    private function findNearestSlot(int $timeOfDay): ?int
+    private function findNearestSlotOffset(int $timeOfDay): ?int
     {
         if ($this->slots === []) {
             return null;
         }
 
-        $nearestSlot = $this->slots[0];
-        $minDistance = \abs($timeOfDay - $nearestSlot);
+        $nearestOffset = null;
 
         foreach ($this->slots as $slot) {
-            $distance = \abs($timeOfDay - $slot);
+            $offset = $slot - $timeOfDay;
+
+            if ($offset > self::HALF_DAY) {
+                // More than half a day ahead - yesterday's occurrence is nearer.
+                $offset -= self::SECONDS_PER_DAY;
+            } elseif ($offset <= -self::HALF_DAY) {
+                // More than half a day behind - tomorrow's occurrence is nearer.
+                // At exactly half a day both directions tie, and forward wins.
+                $offset += self::SECONDS_PER_DAY;
+            }
+
+            if ($nearestOffset === null) {
+                $nearestOffset = $offset;
+                continue;
+            }
+
+            $distance = \abs($offset);
+            $nearestDistance = \abs($nearestOffset);
+
             // Prefer forward-rounding when distances are equal (for scheduling clarity)
-            if ($distance < $minDistance || ($distance === $minDistance && $slot > $timeOfDay)) {
-                $minDistance = $distance;
-                $nearestSlot = $slot;
+            if ($distance < $nearestDistance || ($distance === $nearestDistance && $offset > 0)) {
+                $nearestOffset = $offset;
             }
         }
 
-        return $nearestSlot;
+        return $nearestOffset;
     }
 
     /**

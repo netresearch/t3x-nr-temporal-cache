@@ -21,6 +21,11 @@ use TYPO3\CMS\Core\Context\Context;
  * - Content transitions are frequent (scheduler efficiency needed)
  * - This combination optimizes for both precision and performance
  *
+ * The split is per rule, not per call: processTransition() picks the one strategy
+ * that owns the transition's content type, while getCacheLifetime() consults both
+ * rules and takes the earliest lifetime, because a rendered page depends on the
+ * page record and on the content on it alike.
+ *
  * Configuration:
  * hybrid:
  *   pages: 'dynamic'      # Pages use dynamic strategy
@@ -82,26 +87,48 @@ class HybridTimingStrategy implements TimingStrategyInterface
     /**
      * {@inheritdoc}
      *
-     * Delegate to appropriate strategy based on current page context.
+     * Ask every strategy the rules resolve to and return the earliest lifetime.
      *
-     * This method is called during page generation to determine cache lifetime.
-     * We need to determine if the current page has temporal content and which
-     * strategy should handle it.
+     * A rendered page depends on the page record and on the content elements
+     * placed on it, so both rules have a say in how long its cache may live.
+     * Consulting only the page rule lets a `content = dynamic` configuration
+     * hand out a cache that outlives the next content transition.
      *
      * Algorithm:
-     * 1. Assume we're generating a page (most common case)
-     * 2. Look up configured strategy for 'page' type
-     * 3. Delegate getCacheLifetime() to that strategy
+     * 1. Resolve the strategy for each rule ('page' and 'content')
+     * 2. Ask each distinct strategy for its lifetime
+     * 3. Return the smallest non-null answer, or null if all are null
      *
-     * Note: This is called during page generation, so we can't efficiently
-     * determine if specific content elements on the page use different strategies.
-     * We use the 'pages' rule as the default for cache lifetime calculation.
+     * The minimum is the safe direction: a cache that expires before the next
+     * transition is merely regenerated once too often, while one that expires
+     * after it serves stale content. A rule set to 'scheduler' contributes null
+     * (that strategy flushes in the background), so a hybrid configuration with
+     * both rules on 'scheduler' still leaves the page cache untouched.
+     *
+     * Note what the rules do and do not select: they decide WHICH strategies are
+     * consulted, not WHICH transitions count. The transitions themselves come
+     * from the scoping strategy, which reports the next transition across pages
+     * and content together without a type filter. Splitting the lifetime by
+     * content type would need that filter in the scoping/repository layer.
      */
     public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
-        // Use the strategy configured for pages (most common case)
-        $strategy = $this->getStrategyForContentType('page');
-        return $strategy->getCacheLifetime($context, $pageId);
+        $pageStrategy = $this->getStrategyForContentType('page');
+        $contentStrategy = $this->getStrategyForContentType('content');
+
+        $lifetime = $pageStrategy->getCacheLifetime($context, $pageId);
+
+        // Both rules commonly resolve to one strategy - query it once, so the
+        // transition lookups it runs during page generation are not doubled.
+        if ($contentStrategy !== $pageStrategy) {
+            $contentLifetime = $contentStrategy->getCacheLifetime($context, $pageId);
+
+            if ($contentLifetime !== null && ($lifetime === null || $contentLifetime < $lifetime)) {
+                $lifetime = $contentLifetime;
+            }
+        }
+
+        return $lifetime;
     }
 
     /**
