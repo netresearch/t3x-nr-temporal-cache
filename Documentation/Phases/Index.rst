@@ -2,316 +2,172 @@
 
 .. _phases:
 
-================================
-Three-Phase Solution & Roadmap
-================================
+=====================================
+Approach, limits and a core solution
+=====================================
 
 .. important::
-   **Extension Status**: This extension is **beta** (version 0.9.0). The only published tag is a pre-release.
+    ``ext_emconf.php`` declares version **0.9.0** and state **beta**.
+    The only tag published so far is the pre-release ``v0.9.0-alpha1``.
 
-   **Approach Status**: The temporal cache solution is **experimental**. This extension
-   implements Phase 1 as a pragmatic workaround until TYPO3 core provides native temporal
-   cache support (Phase 2/3).
+.. _phases-overview:
 
 Overview
 ========
 
-The temporal content problem (TYPO3 Forge #14277) requires a three-phase solution approach.
-This extension implements **Phase 1**, while Phases 2 and 3 require TYPO3 core changes.
+This chapter explains why the extension works the way it does, what the approach cannot do,
+and what a solution inside TYPO3 core would have to provide to make the extension
+unnecessary.
 
-The Three Phases
-================
+Nothing here describes committed work in TYPO3 core.
+There is no accepted RFC, no target version and no timeline for a core solution; treat the
+section on it as a description of the missing capability, not as a roadmap.
 
-Phase 1: Extension-Based Dynamic Cache Lifetime (Current)
-----------------------------------------------------------
+.. _phases-current:
 
-**Status**: ✅ Implemented by this extension
+What the extension does today
+=============================
 
-**Approach**:
+TYPO3's cache API accepts a *relative* lifetime — "keep this for N seconds".
+It has no *absolute* expiration — "keep this until timestamp T".
+Temporal visibility is an absolute-expiration problem, so the extension approximates one in
+two ways.
 
-Intercept cache generation and dynamically calculate cache lifetime based on next temporal
-transition (starttime/endtime).
-
-**Implementation**:
-
-.. code-block:: php
-
-   // EventListener via ModifyCacheLifetimeForPageEvent
-   public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
-   {
-       $nextTransition = $this->getNextTemporalTransition();
-       if ($nextTransition !== null) {
-           $lifetime = max(0, $nextTransition - time());
-           $event->setCacheLifetime($lifetime);
-       }
-   }
-
-**Advantages**:
-
-✅ Works today with TYPO3 v12/v13
-✅ Automatic temporal cache invalidation
-✅ Zero configuration required
-✅ Stable extension code
-
-**Limitations**:
-
-⚠️ Requires database queries on every cache generation (~5-10ms)
-⚠️ Site-wide cache synchronization (global scope limitation)
-⚠️ Cannot detect cross-page temporal dependencies
-⚠️ Experimental approach - workaround until core solution
-
-**Best For**:
-
-- Small to medium sites (<10,000 pages)
-- Low to moderate temporal transition frequency (<50/day)
-- Sites prioritizing correct temporal behavior over maximum performance
-
-Phase 2: Core API with Absolute Expiration
--------------------------------------------
-
-**Status**: 🔄 Planned for TYPO3 v15/v16 (2025-2026)
-
-**Approach**:
-
-Extend TYPO3 ``CacheTag`` API to support absolute expiration timestamps alongside relative TTL.
-
-**Proposed API**:
+Shorten the lifetime (``timing.strategy = dynamic``)
+   The listener on ``ModifyCacheLifetimeForPageEvent`` computes ``nextTransition - time()``
+   and sets that as the entry's lifetime.
 
 .. code-block:: php
+    :caption: Classes/EventListener/TemporalCacheLifetime.php (condensed)
 
-   // Future TYPO3 core API
-   $cache->set(
-       $key,
-       $content,
-       $tags,
-       $ttl,
-       $absoluteExpire: 1730124600  // Unix timestamp
-   );
+    public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
+    {
+        $lifetime = $this->timingStrategy->getCacheLifetime($this->context, $event->getPageId());
 
-   // Or via enhanced CacheTag
-   $cacheTag = new CacheTag(
-       'pageId_123',
-       relativeExpire: 3600,        // Relative TTL
-       absoluteExpire: 1730124600   // Absolute timestamp
-   );
+        if ($lifetime !== null) {
+            $maxLifetime = $this->determineMaxLifetime($event->getRenderingInstructions());
+            $event->setCacheLifetime(\min($lifetime, $maxLifetime));
+        }
+    }
 
-**Benefits**:
+Flush tags from a scheduled task (``timing.strategy = scheduler``)
+   The listener leaves the lifetime alone.
+   ``TemporalCacheSchedulerTask`` asks for every transition since its last run and flushes
+   the cache tags the scoping strategy names for each of them.
 
-✅ Per-page cache expiration (no global synchronization needed)
-✅ No database queries during cache generation
-✅ Native TYPO3 core support with proper APIs
-✅ Framework-level solution applicable to all cache types
+``hybrid`` combines the two, choosing per record type.
+See :ref:`architecture-timing` for the exact behavior of each strategy.
 
-**Timeline**:
+.. _phases-properties:
 
-RFC discussion planned for TYPO3 v15 development cycle (2025). Implementation would follow
-in v15 or v16 depending on core team priorities and community feedback.
+Properties of this approach
+---------------------------
 
-Phase 3: Automatic Temporal Dependency Detection
--------------------------------------------------
+Works with the released TYPO3 versions
+   ``^12.4 || ^13.0 || ^14.0``, no core patch required.
 
-**Status**: 🔮 Future vision (post-v16)
+Nothing to configure for it to work
+   The defaults (global scoping, dynamic timing) are active on installation.
 
-**Approach**:
+Runs queries on every page cache write
+   With ``dynamic`` timing, each write costs two ``MIN()`` queries per monitored table —
+   four with the default ``pages``/``tt_content`` pair.
+   ``scheduler`` timing moves that cost out of page generation entirely.
 
-TYPO3 core automatically detects temporal dependencies during content rendering and configures
-cache expiration without explicit developer intervention.
+Cannot express per-entry absolute expiration
+   The only lever is the relative lifetime of the entry currently being written, so an
+   upcoming transition anywhere in the scope shortens the lifetime of the entry, whether or
+   not that entry actually shows the affected record.
+   This is why global scoping expires all page caches at every transition.
 
-**Concept**:
+Cannot follow arbitrary dependencies
+   With ``dynamic`` timing, ``per-page`` scoping does not see content embedded from another
+   page through ``CONTENT``/``RECORDS``, and ``per-content`` scoping narrows only the flush
+   tags, not the lifetime.
 
-.. code-block:: php
+.. _phases-core-solution:
 
-   // Theoretical automatic detection
-   // Framework tracks field access during rendering
-
-   $page = $repo->findByUid($pageId);
-
-   // Framework detects: "starttime field accessed"
-   if ($page->getStarttime() > time()) {
-       // Automatically registers temporal dependency
-   }
-
-   // Cache expiration configured automatically
-   // Zero configuration, zero performance overhead
-
-**Benefits**:
-
-✅ Transparent temporal handling - works automatically
-✅ Optimal cache scoping without configuration
-✅ No performance trade-offs
-✅ Developer-friendly - "it just works"
-
-**Challenges**:
-
-⚠️ Requires deep framework changes in rendering pipeline
-⚠️ Complexity in tracking field access across Fluid/TypoScript
-⚠️ Backward compatibility concerns
-⚠️ Significant engineering effort
-
-**Timeline**:
-
-Long-term vision. Depends on Phase 2 success and community feedback. Likely post-TYPO3 v16.
-
-Migration Path
-==============
-
-Phase 1 → Phase 2 Transition
------------------------------
-
-When TYPO3 core implements Phase 2 (absolute expiration API):
-
-**For Extension Users**:
-
-1. Extension detects Phase 2 capability in TYPO3 core
-2. Extension automatically switches to new API
-3. Backward compatibility maintained for older TYPO3 versions
-4. Eventually, extension becomes obsolete and can be uninstalled
-
-**Timeline**: Extension will be maintained until Phase 2 is available in all supported TYPO3 LTS versions.
-
-**Migration Checklist**:
-
-.. code-block:: text
-
-   □ TYPO3 core with Phase 2 support released
-   □ Extension updated to use new core API
-   □ Test temporal behavior in staging
-   □ Monitor cache performance (should improve)
-   □ Eventually uninstall extension when Phase 2 is stable
-
-Phase 2 → Phase 3 Transition
------------------------------
-
-When TYPO3 core implements Phase 3 (automatic detection):
-
-**For Developers**:
-
-- Remove explicit temporal cache configuration
-- TYPO3 handles temporal dependencies transparently
-- Extension and Phase 2 APIs deprecated
-
-**Timeline**: Several years after Phase 2, depending on adoption and stability.
-
-Why Phase 1 Is Necessary Today
+What a core solution would need
 ===============================
 
-The Problem Cannot Wait
-------------------------
+Two capabilities are missing from TYPO3, and both would have to come from core.
 
-TYPO3 Forge #14277 has been open since **2005** (20+ years). The problem affects:
+.. _phases-core-absolute-expiration:
 
-- News systems with scheduled publication
-- Campaign landing pages with time-based visibility
-- Event calendars with automatic archiving
-- Menu systems reflecting temporal page states
+Absolute expiration in the cache API
+------------------------------------
 
-Current workarounds are inadequate:
+A cache entry would have to be able to carry an absolute expiry timestamp alongside its
+relative lifetime, so the frontend could say "this entry is valid until 2026-10-28 14:30"
+without a background job and without shortening anything else.
 
-❌ **Manual cache clearing** - Error-prone, requires editorial vigilance
-❌ **Aggressive cache warming** - Wasteful, doesn't prevent staleness
-❌ **Disabled caching** - Destroys performance (100x slower)
-❌ **Custom solutions** - Reinventing the wheel, maintenance burden
+With that, the extension's work would reduce to attaching the transition timestamp of the
+records that were actually rendered — per entry, with no site-wide lookup and no scheduler.
 
-Phase 2/3 Timeline Too Long
+.. _phases-core-dependency-tracking:
+
+Temporal dependency tracking
 ----------------------------
 
-Realistic timeline for core solution:
+The deeper gap is that nothing records *which* temporal records contributed to a cache
+entry.
+If the rendering pipeline tracked that — the way cache tags already track record identity —
+the expiry timestamp could be derived automatically and correctly, including for content
+embedded across pages, which is exactly the case this extension cannot cover.
 
-- Phase 2 RFC: 2025
-- Phase 2 implementation: 2025-2026
-- Phase 2 in LTS: 2026-2027
-- Phase 3 research: 2027+
+That is a change to the rendering pipeline, not to the cache API alone.
 
-**Sites need temporal cache solutions NOW**, not in 2-5+ years.
+.. _phases-migration:
 
-Phase 1 as Pragmatic Bridge
-----------------------------
+If core gains these capabilities
+================================
 
-This extension provides:
+Nothing in this extension currently detects core capabilities or switches APIs
+automatically; that would have to be built when there is an API to build against.
 
-✅ Immediate solution for temporal content issues
-✅ Stable, tested code in production environments
-✅ Experimental approach validated at scale
-✅ Migration path when core solution arrives
-✅ Real-world feedback for Phase 2/3 design
+What would happen in practice:
 
-Community Feedback Loop
-========================
+#. The extension would gain support for the new API on the TYPO3 versions that have it,
+   keeping the current implementation for the versions that do not.
+#. Once every supported TYPO3 version carried the core solution, the extension would have
+   nothing left to do and could be removed from a project.
 
-Your Experience Matters
-------------------------
+Until then, the settings described in :ref:`configuration` are the only lever.
 
-Using this extension in production provides valuable insights for Phase 2/3 design:
+.. _phases-when-to-use:
 
-**Please share your experience**:
+When this approach fits
+=======================
 
-- Performance characteristics at scale
-- Edge cases and unexpected behaviors
-- Configuration needs and pain points
-- Integration challenges with other extensions
+It fits when
+   Temporal content exists and stale menus or stale content elements are a real editorial
+   problem; and the cache behavior of the chosen configuration has been measured on the
+   site in question.
 
-**Where to contribute**:
+It does not fit when
+   No record uses ``starttime``/``endtime`` — the extension then only adds queries; or the
+   site cannot absorb the cache churn of the configuration it needs and no scoping/timing
+   combination brings it down far enough.
 
-- `TYPO3 Forge #14277 <https://forge.typo3.org/issues/14277>`__ - Core issue discussion
-- `Extension Repository <https://github.com/netresearch/t3x-nr-temporal-cache>`__ - Bug reports and feature requests
-- TYPO3 Slack #typo3-cms - Community discussions
+Both cases are judgment calls about a specific site.
+:ref:`decision-guide` walks through which configuration matches which shape of site, and
+:ref:`performance-alternatives` covers approaches that do not involve this extension.
 
-RFC Participation
------------------
+.. _phases-feedback:
 
-When Phase 2 RFC is published:
+Feedback
+========
 
-1. Review proposed API design
-2. Share production experience with Phase 1
-3. Participate in API design discussions
-4. Help shape the future of TYPO3 temporal caching
+The interesting feedback for this problem is the concrete behavior of a real site: which
+scoping and timing combination was chosen, and what happened to the cache hit ratio.
 
-Your real-world experience with this extension directly influences Phase 2/3 design decisions.
+- `Forge #14277 <https://forge.typo3.org/issues/14277>`__ — the core issue
+- `Issue tracker <https://github.com/netresearch/t3x-nr-temporal-cache/issues>`__ — bugs and
+  feature requests for this extension
 
-Experimental But Stable
-========================
+.. _phases-next-steps:
 
-Clarifying "Experimental"
--------------------------
-
-**The extension code is STABLE**:
-
-- ✅ Tested in production environments
-- ✅ Follows TYPO3 best practices
-- ✅ Comprehensive test coverage
-- ✅ Semantic versioning and backward compatibility
-- ✅ Professional maintenance and support
-
-**The approach is EXPERIMENTAL**:
-
-- ⚠️ Site-wide cache synchronization is a workaround, not ideal solution
-- ⚠️ Performance characteristics require careful evaluation
-- ⚠️ Will be superseded by Phase 2/3 core solutions
-- ⚠️ Proof-of-concept for informing future TYPO3 development
-
-**Analogy**: Like using a well-built bridge to cross a river while a tunnel is being planned.
-The bridge is stable and safe, but it's not the permanent solution.
-
-When to Use Phase 1
---------------------
-
-**Recommended**:
-
-✅ Small to medium sites needing temporal cache today
-✅ Sites willing to evaluate performance in staging
-✅ Organizations contributing to TYPO3 community feedback
-✅ Projects that can migrate to Phase 2 when available
-
-**Not Recommended**:
-
-❌ Large enterprise sites (>50,000 pages) without thorough testing
-❌ High-traffic sites (>1M req/day) without robust infrastructure
-❌ Projects unable to tolerate temporary performance implications
-❌ Teams unwilling to monitor and optimize cache behavior
-
-See :ref:`performance-considerations` for detailed decision framework.
-
-Next Steps
+Next steps
 ==========
 
 .. card-grid::
@@ -320,32 +176,32 @@ Next Steps
     :gap: 4
     :card-height: 100
 
-    ..  card:: 📘 Understand Current Implementation
+    ..  card:: 📘 How it is implemented
 
-        Learn how Phase 1 addresses the temporal cache problem with dynamic
-        cache lifetime strategies.
+        The listener, the two strategy families, the queries they run and how they are
+        wired together.
 
         ..  card-footer:: :ref:`Read Architecture <architecture>`
             :button-style: btn btn-primary stretched-link
 
-    ..  card:: ⚡ Evaluate Performance Impact
+    ..  card:: ⚡ What the defaults cost
 
-        Critical reading before production deployment. Understand performance
-        implications and optimization strategies.
+        What each scoping and timing combination does to the cache, and how to narrow the
+        default.
 
         ..  card-footer:: :ref:`Performance Considerations <performance-considerations>`
             :button-style: btn btn-warning stretched-link
 
-    ..  card:: 🔧 Install Extension
+    ..  card:: 🔧 Install the extension
 
-        Get started with Phase 1 solution in your TYPO3 installation.
+        Requirements, installation and verification.
 
         ..  card-footer:: :ref:`Installation Guide <installation>`
             :button-style: btn btn-secondary stretched-link
 
-    ..  card:: 🎯 Track Core Development
+    ..  card:: 🎯 Follow the core issue
 
-        Monitor progress on Phase 2/3 and participate in RFC discussions.
+        The Forge issue this extension addresses.
 
-        ..  card-footer:: `Follow Forge #14277 <https://forge.typo3.org/issues/14277>`__
+        ..  card-footer:: `Forge #14277 <https://forge.typo3.org/issues/14277>`__
             :button-style: btn btn-info stretched-link

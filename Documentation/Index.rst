@@ -131,7 +131,7 @@ Documentation
    Installation/Index
    Configuration/Index
    Backend/Index
+   CommandLine/Index
    Administrator/ReportsModule
    Architecture/Index
    Phases/Index
-   Sitemap

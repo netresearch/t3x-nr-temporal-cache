@@ -2,17 +2,18 @@
 
 .. _reports-module:
 
-=========================
-TYPO3 Reports Module
-=========================
-
-System Status Report
+====================
+TYPO3 Reports module
 ====================
 
-The Temporal Cache extension integrates with TYPO3's built-in Reports module,
-providing comprehensive system health and configuration monitoring.
+.. _reports-module-status:
 
-Accessing the Report
+System status report
+====================
+
+The Temporal Cache extension contributes five status entries to TYPO3's built-in Reports module.
+
+Accessing the report
 --------------------
 
 #. Log in to the TYPO3 backend as an administrator
@@ -23,10 +24,13 @@ The report displays in the standard TYPO3 Reports interface with color-coded
 status indicators:
 
 - **Green (OK)**: Everything working properly, no action required
-- **Yellow (WARNING)**: Minor issues or optimization recommendations
+- **Blue (INFO)**: Informational, no action required
+- **Yellow (WARNING)**: Non-critical issues or optimization recommendations
 - **Red (ERROR)**: Critical issues requiring immediate attention
 
-Report Sections
+.. _reports-module-sections:
+
+Report sections
 ===============
 
 Extension Configuration
@@ -38,13 +42,12 @@ Extension Configuration
 - Current timing strategy (dynamic, scheduler, hybrid)
 - Harmonization status (enabled/disabled)
 - Reference index usage
-- Configuration recommendations
+- Recommendations when global scoping or dynamic timing is active
 
 **Status levels:**
 
-- **OK**: Configuration is valid and optimized
-- **WARNING**: Configuration is valid but could be optimized
-- **ERROR**: Invalid configuration detected
+- **OK**: Both strategy values are valid; any recommendations appear in the message text
+- **ERROR**: The scoping or timing strategy holds a value the extension does not know
 
 **Actions:**
 
@@ -60,14 +63,13 @@ Database Indexes
 
 **What it shows:**
 
-- Verification of required database indexes on starttime/endtime fields
-- Index status for both pages and tt_content tables
-- Performance impact assessment
+- Whether an index led by ``starttime`` and an index led by ``endtime`` exist on ``pages`` and ``tt_content``
+- The names of the missing indexes, if any
 
 **Status levels:**
 
 - **OK**: All required indexes are present
-- **ERROR**: Missing indexes detected (severe performance impact)
+- **ERROR**: Missing indexes detected, or the index list could not be read
 
 **Actions:**
 
@@ -78,10 +80,11 @@ If indexes are missing:
 #. Apply the schema updates to create missing indexes
 #. Return to the Reports module to verify indexes are now present
 
+The indexes ship with the extension in :file:`ext_tables.sql`; the schema update creates them.
+
 **Performance impact:**
 
-Missing indexes cause full table scans on every temporal content lookup,
-which can slow down frontend page rendering by 10-100× depending on database size.
+Without them, every temporal content lookup is a full table scan instead of an index lookup.
 
 Temporal Content Statistics
 ---------------------------
@@ -90,8 +93,7 @@ Temporal Content Statistics
 
 - Total number of pages and content elements with temporal fields
 - Distribution of starttime, endtime, and combined usage
-- Next upcoming transition time
-- Time until next cache invalidation
+- Next upcoming transition time and the time remaining until it
 
 **Status levels:**
 
@@ -108,28 +110,30 @@ Temporal Content Statistics
 - **With End Date Only**: Content that becomes hidden at a specific time
 - **With Both Dates**: Content visible within a specific time window
 
-Harmonization Status
---------------------
+Harmonization
+-------------
 
 **What it shows:**
 
 When harmonization is **disabled**:
 
 - Information about harmonization benefits
-- Recommendation to enable if you have high transition volume
+- Recommendation to enable it if you have more than 10 transitions per day
 
 When harmonization is **enabled**:
 
 - Current time slot configuration
-- Tolerance settings
+- Tolerance setting
 - Auto-round on save status
-- Actual cache reduction achieved (percentage)
+- The reduction harmonization would achieve on the current content, as a percentage
 
 **Status levels:**
 
-- **OK**: Harmonization is properly configured and providing benefits
-- **INFO**: Harmonization is disabled (informational)
-- **WARNING**: Harmonization is enabled but providing minimal benefit
+- **INFO**: Harmonization is disabled
+- **OK**: Harmonization is enabled
+
+The measured reduction changes the message, not the severity: above 30 percent it is called significant, above
+10 percent moderate, and below that the message suggests adjusting slots or tolerance.
 
 **Understanding cache reduction:**
 
@@ -150,31 +154,29 @@ For example:
 
 **When to enable:**
 
-- You have more than 10 transitions per day
-- Cache reduction shows potential benefit >10%
+- You have more than 10 transitions per day — the threshold the report itself recommends at
 - You want to reduce cache invalidation frequency
 
 **When to disable:**
 
-- You have very few temporal items (<5 transitions per day)
+- You have few temporal items and few transitions
 - Exact timing of content visibility is critical
-- Cache reduction benefit is minimal (<5%)
+- The reduction reported for your content is low; the report calls it low below 10 percent
 
 Upcoming Transitions
 --------------------
 
 **What it shows:**
 
-- Total transitions scheduled in next 7 days
-- Daily breakdown of transition events
-- Average transitions per day
-- High volume warnings
+- Total transitions scheduled in the next 7 days
+- Number of days carrying transitions, and a breakdown of the first five of them
+- A high-volume note when the 7-day average exceeds 20 transitions per day
 
 **Status levels:**
 
-- **OK**: Normal transition volume
-- **WARNING**: High transition volume detected (>20 per day average)
-- **INFO**: No upcoming transitions
+- **OK**: Normal transition volume, and also when no transition is scheduled at all
+- **WARNING**: More than 20 transitions per day on average across the next 7 days
+- **ERROR**: The transitions could not be read
 
 **Understanding transition impact:**
 
@@ -192,7 +194,9 @@ If you see a high transition volume warning (>20 per day):
 #. Evaluate if scheduler-based timing would be more efficient
 #. Review if per-content scoping can reduce invalidation scope
 
-Common Scenarios
+.. _reports-module-scenarios:
+
+Common scenarios
 ================
 
 Scenario 1: Extension Just Installed
@@ -201,10 +205,10 @@ Scenario 1: Extension Just Installed
 **Expected status:**
 
 - Extension Configuration: OK (default settings)
-- Database Indexes: ERROR (indexes not created yet)
+- Database Indexes: ERROR (before the database schema update is applied)
 - Temporal Content: WARNING (no content found)
 - Harmonization: INFO (disabled by default)
-- Upcoming Transitions: INFO (none scheduled)
+- Upcoming Transitions: OK (none scheduled)
 
 **Actions:**
 
@@ -250,7 +254,7 @@ Scenario 4: No Temporal Content Found
 **Status:**
 
 - Temporal Content: WARNING
-- Upcoming Transitions: INFO
+- Upcoming Transitions: OK
 
 **Possible causes:**
 
@@ -264,15 +268,18 @@ Scenario 4: No Temporal Content Found
 #. Check if you're viewing the correct workspace (report shows live workspace by default)
 #. If no temporal content exists, consider if the extension is needed
 
-Automation and Monitoring
-==========================
+.. _reports-module-automation:
 
-CLI Command Alternative
+Automation and monitoring
+=========================
+
+CLI command alternative
 -----------------------
 
 For automation and monitoring systems, use the CLI verify command:
 
 .. code-block:: bash
+   :caption: Verification on the command line
 
    # Quick verification (exit code 0 = OK, 1 = issues)
    vendor/bin/typo3 temporalcache:verify
@@ -280,11 +287,15 @@ For automation and monitoring systems, use the CLI verify command:
    # Verbose output for logs
    vendor/bin/typo3 temporalcache:verify --verbose
 
-The CLI command performs the same checks as the Reports module and is suitable
-for integration with monitoring tools, CI/CD pipelines, or scheduled health checks.
+The two overlap but are not identical.
+Both check the database indexes and the strategy values.
+Only ``temporalcache:verify`` validates the harmonization slot format, the tolerance range and the presence of
+the required table columns.
+Only the Reports module shows content statistics, the next transition and the upcoming transition volume.
+See :ref:`cli-verify` for the full list of checks.
 
-Integration with Monitoring Systems
-------------------------------------
+Integration with monitoring systems
+-----------------------------------
 
 The verify command can be integrated with monitoring tools:
 
@@ -312,6 +323,8 @@ The verify command can be integrated with monitoring tools:
 
    # Check daily and email on failure
    0 8 * * * cd /var/www/html/typo3 && vendor/bin/typo3 temporalcache:verify || mail -s "TYPO3 Temporal Cache Issues" admin@example.com < /dev/null
+
+.. _reports-module-troubleshooting:
 
 Troubleshooting
 ===============
@@ -363,11 +376,13 @@ Statistics Show Zero Items
 
 **Solutions:**
 
-#. Use the CLI list command to verify content: ``vendor/bin/typo3 temporalcache:list``
+#. Use :ref:`temporalcache:list <cli-list>` to verify content: ``vendor/bin/typo3 temporalcache:list``
 #. Check workspace settings in the backend
 #. Verify starttime/endtime fields have actual timestamps (not 0)
 
-Best Practices
+.. _reports-module-best-practices:
+
+Best practices
 ==============
 
 Regular Monitoring
@@ -406,25 +421,27 @@ After database updates or migrations:
 #. Run verify command to ensure schema is complete
 #. Check for any database-related errors in Reports module
 
-Performance Optimization
+.. _reports-module-optimization:
+
+Performance optimization
 ========================
 
 Based on Reports Module Data
 ----------------------------
 
-**High transition volume (>20/day):**
+**High transition volume — the report warns above 20 per day:**
 
 - Enable harmonization
 - Consider scheduler-based timing strategy
 - Use per-content scoping instead of global
 
-**Low transition volume (<5/day):**
+**Low transition volume:**
 
 - Harmonization may not provide significant benefit
 - Dynamic timing strategy is efficient
 - Global scoping is acceptable for small sites
 
-**Large number of temporal items (>1000):**
+**Many temporal items — the report suggests moving away from dynamic timing above 100:**
 
 - Use per-content scoping for minimal cache invalidation
 - Enable reference index usage
@@ -436,10 +453,13 @@ Based on Reports Module Data
 - Enable harmonization with appropriate time slots
 - Monitor cache reduction percentage
 
-Related Documentation
+.. _reports-module-related:
+
+Related documentation
 =====================
 
 - :ref:`configuration`: Detailed configuration options
-- **Command-line tools**: CLI commands available (analyze, harmonize, list, verify) via ``vendor/bin/typo3 temporalcache:*``
+- :ref:`command-line`: The ``temporalcache:analyze``, ``temporalcache:harmonize``, ``temporalcache:list`` and ``temporalcache:verify`` commands
+- :ref:`backend-module`: The same data in a backend module
 - :ref:`performance-considerations`: Performance tuning guide
 - :ref:`configuration-troubleshooting`: General troubleshooting guide

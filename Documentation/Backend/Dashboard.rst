@@ -2,263 +2,108 @@
 
 .. _backend-dashboard:
 
-=============
-Dashboard Tab
-=============
+=========
+Dashboard
+=========
 
-The Dashboard provides a comprehensive overview of temporal cache status and performance.
+The dashboard is the entry view of the module.
+It shows how much temporal content exists, which configuration is active, and which transitions are due in the
+coming days.
 
-Interface Overview
-==================
+All figures are read live when the view is opened; there is no stored history.
+The counters cover the live workspace across all languages, the timeline covers the default language.
 
-The Dashboard displays:
+.. _backend-dashboard-cards:
 
-1. **Header Section**
-
-   - Current date and time
-   - Active configuration summary
-   - Quick action buttons (Flush Cache, Refresh Stats)
-
-2. **Statistics Cards** (4 cards in a row)
-
-   - **Total Temporal Content**: Count of pages and content elements with starttime/endtime
-   - **Active Transitions**: Content currently visible based on temporal settings
-   - **Pending Transitions**: Upcoming starttime/endtime events
-   - **Expired Content**: Content that has passed its endtime
-
-3. **Timeline Visualization**
-
-   - Horizontal timeline showing next 24 hours
-   - Markers for each upcoming transition
-   - Color-coded by type (starttime in green, endtime in red)
-   - Hover shows details (page/content title, exact time)
-
-4. **Performance Metrics**
-
-   - Cache invalidation rate (per day/hour)
-   - Estimated cache hit ratio
-   - Average database query time
-   - Impact of current configuration
-
-5. **Configuration Summary**
-
-   - Active scoping strategy
-   - Active timing strategy
-   - Harmonization status
-   - Quick links to change configuration
-
-Statistics Cards
+Statistics cards
 ================
 
+Four cards across the top of the view.
+
 Total Temporal Content
-----------------------
+    Number of pages and content elements that carry a start time or an end time, with the split into
+    :guilabel:`Pages` and :guilabel:`Content` below the figure.
 
-Shows count of database records with temporal fields:
+Active Content
+    Records that are visible at the moment the view is opened — the start time has passed or is unset, and the
+    end time lies in the future or is unset.
 
-.. code-block:: text
+Scheduled Content
+    Records whose start time lies in the future.
 
-   Pages:          45 with starttime/endtime
-   Content:        123 content elements with temporal fields
-   Total:          168 temporal items
+Transitions
+    Number of transition events in the next 30 days.
+    A record with both a start time and an end time in that window contributes two events.
 
-**What it means**:
+.. _backend-dashboard-configuration:
 
-- More items = More potential cache invalidations
-- Use to assess impact of temporal content
-
-Active Transitions
-------------------
-
-Currently visible content based on temporal rules:
-
-.. code-block:: text
-
-   Active:         89 items currently visible
-   Hidden:         79 items currently hidden
-
-**What it means**:
-
-- Content visible between starttime and endtime
-- Excludes items with future starttime or past endtime
-
-Pending Transitions
--------------------
-
-Upcoming temporal events:
-
-.. code-block:: text
-
-   Next Hour:      3 transitions
-   Next 24 Hours:  12 transitions
-   Next 7 Days:    45 transitions
-
-**What it means**:
-
-- Each transition triggers cache invalidation (scope depends on strategy)
-- Use with harmonization to reduce transitions
-
-Expired Content
----------------
-
-Content that has passed its endtime:
-
-.. code-block:: text
-
-   Expired:        23 items past endtime
-   Still visible:  2 (cache not updated)
-
-**What it means**:
-
-- Items past their endtime
-- "Still visible" indicates cached pages not yet regenerated
-
-Timeline Visualization
-======================
-
-Visual representation of upcoming temporal transitions.
-
-How to Read
------------
-
-- **Time Axis**: Horizontal timeline spanning next 24 hours
-- **Green Markers**: Content becoming visible (starttime)
-- **Red Markers**: Content expiring (endtime)
-- **Marker Size**: Relative to number of items in transition
-- **Hover Details**: Shows page/content title, exact timestamp
-
-Example Interpretation
-----------------------
-
-.. code-block:: text
-
-   09:00  |●     Green marker: 3 pages start (homepage, news, events)
-   12:00  |●●    Green marker: 5 content elements start
-   14:00  |○     Red marker: 2 pages expire
-   18:00  |●●●   Green marker: 8 scheduled articles start
-
-**Actions**:
-
-- Click marker → View affected items
-- Plan cache warming around major transitions
-- Identify harmonization opportunities (many close markers)
-
-Performance Metrics
-===================
-
-Cache Invalidation Rate
------------------------
-
-Frequency of cache invalidations:
-
-.. code-block:: text
-
-   Per Hour:    2.5 invalidations/hour (avg over 24h)
-   Per Day:     60 invalidations/day
-   Per Week:    420 invalidations/week
-
-**Interpretation**:
-
-- Low (<10/day): Minimal impact
-- Medium (10-50/day): Moderate impact, consider harmonization
-- High (>50/day): Significant impact, optimize configuration
-
-**Actions**:
-
-- High rate → Enable harmonization
-- Constant rate → Check for misconfiguration
-
-Estimated Cache Hit Ratio
---------------------------
-
-Projected cache effectiveness:
-
-.. code-block:: text
-
-   Current:     65% (65 hits / 100 requests)
-   Baseline:    90% (without extension)
-   Impact:      -25% cache hit ratio
-
-**Interpretation**:
-
-- >80%: Good
-- 60-80%: Acceptable with monitoring
-- <60%: Performance concern, review configuration
-
-**Actions**:
-
-- Low ratio → Implement per-page/per-content scoping
-- Monitor actual vs estimated
-
-Database Query Performance
---------------------------
-
-Query execution times:
-
-.. code-block:: text
-
-   Pages Query:     2.3ms avg
-   Content Query:   3.1ms avg
-   Total:           5.4ms per cache generation
-
-**Interpretation**:
-
-- <5ms: Excellent (properly indexed)
-- 5-20ms: Good
-- >20ms: Indexes missing or queries inefficient
-
-**Actions**:
-
-- Slow queries → Verify database indexes
-- See :ref:`installation` for index setup
-
-Configuration Impact
---------------------
-
-Assessment of current settings:
-
-.. code-block:: text
-
-   Strategy:        Global Scoping + Dynamic Timing
-   Impact:          MEDIUM - Site-wide cache synchronization
-   Recommendation:  Consider per-page scoping for this site size
-
-**Levels**:
-
-- **LOW**: Minimal performance impact
-- **MEDIUM**: Noticeable but manageable
-- **HIGH**: Significant impact, mitigation recommended
-
-Configuration Summary
+Current configuration
 =====================
 
-Quick view of active settings:
+Shows the active scoping strategy, the active timing strategy and whether harmonization is enabled.
+The values come from the extension configuration; change them under
+:guilabel:`Admin Tools > Settings > Extension Configuration`, see :ref:`configuration`.
 
-**Scoping Strategy**:
+When harmonization is enabled and records exist whose start time would move, an additional hint appears with a
+:guilabel:`View Harmonizable Content` link that opens the :ref:`content view <backend-content>` with the
+harmonizable filter applied.
 
-- Global (all pages)
-- Per-Page (affected page only)
-- Per-Content (pages containing temporal content)
+.. _backend-dashboard-timeline:
 
-**Timing Strategy**:
+Upcoming transitions timeline
+=============================
 
-- Dynamic (checks on every cache generation)
-- Scheduler (background processing)
-- Hybrid (mixed per table)
+Lists the transitions of the next seven days, grouped per day.
+Each day carries a badge with its number of transitions, and each entry shows:
 
-**Harmonization**:
+- the time of day
+- the title of the page or content element
+- a :guilabel:`Start` or :guilabel:`End` badge, colored green for start and red for end
+- the source record as ``table:uid``
 
-- Enabled/Disabled
-- Time slots if enabled
+Days without transitions are omitted.
+When no transition falls into the next seven days, the card shows a note instead of the list.
 
-**Quick Actions**:
+.. note::
+    The :guilabel:`Transitions` card counts 30 days, the timeline below it covers 7 days.
+    The two figures are expected to differ.
 
-- Change Configuration → Opens :ref:`backend-wizard`
-- View Details → Opens :ref:`configuration`
+.. _backend-dashboard-kpi:
 
-Next Steps
+Key performance indicators
+==========================
+
+Average Transitions per Day
+    The number of days within the next 30 days that carry at least one transition.
+
+Harmonization Potential
+    Only shown when harmonization is enabled.
+    The number of records whose start time harmonization would move to a different slot.
+
+.. _backend-dashboard-actions:
+
+Quick actions
+=============
+
+:guilabel:`View All Temporal Content`
+    Opens the :ref:`content view <backend-content>` without a filter.
+
+:guilabel:`Configuration Wizard`
+    Opens the :ref:`configuration wizard <backend-wizard>`.
+
+:guilabel:`Harmonize Content`
+    Only shown when harmonization is enabled and candidates exist.
+    Opens the content view with the harmonizable filter applied.
+
+The doc header additionally offers a reload button, a bookmark button, and a
+:guilabel:`View Content` button.
+
+.. _backend-dashboard-next-steps:
+
+Next steps
 ==========
 
-- :ref:`backend-content` - Manage temporal content
-- :ref:`backend-wizard` - Configure strategies
-- :ref:`performance-considerations` - Understand implications
-- :ref:`backend-tips` - Optimization recommendations
+- :ref:`backend-content` — inspect and harmonize individual records
+- :ref:`backend-wizard` — review the available strategy combinations
+- :ref:`command-line` — the same data on the command line
+- :ref:`performance-considerations` — what the strategies cost

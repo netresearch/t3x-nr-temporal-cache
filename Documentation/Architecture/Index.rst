@@ -6,569 +6,588 @@
 Architecture
 ============
 
-Root Cause Analysis
-===================
+.. _architecture-problem:
 
-TYPO3's Cache Invalidation Paradigms
--------------------------------------
+The gap this extension fills
+============================
 
-TYPO3's cache system supports two invalidation strategies:
+TYPO3's page cache is invalidated by two mechanisms.
 
-**Event-Driven Invalidation:**
-   Invalidate when data changes (page edited, deleted, moved).
+Event-driven invalidation
+   A cache entry is dropped when the data behind it changes, for example when an editor
+   saves a page.
 
-   Example: Page is edited → Cache tagged with ``pageId_123`` is flushed.
+Tag-based invalidation
+   ``flushByTag()`` drops every entry carrying a given tag.
 
-**Tag-Based Invalidation:**
-   Invalidate entries matching specific tags.
-
-   Example: ``$cache->flushByTag('news_category_5')`` clears all news in category 5.
-
-**Missing: Temporal Invalidation:**
-   Invalidate at absolute timestamp (when time passes, not when data changes).
-
-   Example: Cache should expire at ``2025-10-28 14:30:00`` when page's ``endtime`` arrives.
-
-The Architectural Gap
----------------------
+Neither reacts to the passage of time.
+A page or content element with ``starttime`` or ``endtime`` changes its visibility at a
+fixed moment without anybody editing a record, so no invalidation is triggered.
+The cache entry keeps the visibility snapshot taken at render time until its relative
+lifetime runs out.
 
 .. code-block:: text
 
-   Current TYPO3 Cache API:
-   ├─ Relative TTL: new CacheTag('tag', 3600)  ← Expires in 3600 seconds
-   └─ Event-based: flushByTag('pageId_123')    ← Manual invalidation
+   Render at 09:00           Cache entry written with a relative lifetime
+   ├─ element A: hidden      (starttime 10:00 has not been reached)
+   └─ element B: visible
 
-   Missing Capability:
-   └─ Absolute expiration: new CacheTag('tag', absoluteExpire: 1730124600)
-                                                 ↑ Unix timestamp
+   10:00                     Nothing edits a record, so nothing invalidates
+                             the entry. Element A stays hidden until the
+                             lifetime expires.
 
-Why This Matters
------------------
+The extension closes that gap by shortening the page cache lifetime so it ends at the
+next temporal transition instead of at an arbitrary later moment.
 
-Content rendering pipeline:
+.. _architecture-listener:
 
-.. code-block:: php
+Entry point: the cache lifetime event
+=====================================
 
-   // Simplified TYPO3 rendering flow
-
-   function renderPage($pageId) {
-       // 1. Fetch ALL content elements
-       $elements = getContentElements($pageId);
-
-       // 2. Filter by starttime/endtime (snapshot at current time!)
-       $visible = array_filter($elements, function($el) {
-           return isVisible($el, time());  // ← Uses CURRENT time
-       });
-
-       // 3. Render filtered elements
-       $output = renderElements($visible);
-
-       // 4. CACHE the result with relative TTL
-       $cache->set($key, $output, $tags, 3600);  // ← Fixed 3600s lifetime
-
-       return $output;
-   }
-
-**Problem:** Visibility filtering happens at render time, then result is cached with
-fixed lifetime. Cache doesn't know to expire when temporal conditions change.
-
-How Phase 1 Solves This
-========================
-
-Dynamic Cache Lifetime Strategy
---------------------------------
-
-Instead of fixed lifetime, calculate when next temporal transition will occur:
+TYPO3 dispatches ``TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent`` while a page
+cache entry is being written.
+``Netresearch\TemporalCache\EventListener\TemporalCacheLifetime`` is registered for exactly
+that event class in :file:`Configuration/Services.yaml`, and it is the extension's only
+frontend hook.
 
 .. code-block:: php
-   :caption: Illustrative pseudo-code - the real API is shown further down
+    :caption: Classes/EventListener/TemporalCacheLifetime.php (error handling and debug logging omitted)
 
-   function calculateCacheLifetime(): int
-   {
-       $now = time();
+    final class TemporalCacheLifetime
+    {
+        public function __construct(
+            private readonly ExtensionConfiguration $extensionConfiguration,
+            private readonly ScopingStrategyInterface $scopingStrategy,
+            private readonly TimingStrategyInterface $timingStrategy,
+            private readonly Context $context,
+            private readonly LoggerInterface $logger
+        ) {
+        }
 
-       // Earliest future starttime/endtime across all monitored tables.
-       // null when nothing is scheduled — the real API returns ?int.
-       $nextTransition = findNextTransition($now);
+        public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
+        {
+            $lifetime = $this->timingStrategy->getCacheLifetime($this->context, $event->getPageId());
 
-       if ($nextTransition === null) {
-           return $defaultLifetime;
-       }
+            if ($lifetime !== null) {
+                $maxLifetime = $this->determineMaxLifetime($event->getRenderingInstructions());
+                $event->setCacheLifetime(\min($lifetime, $maxLifetime));
+            }
+        }
+    }
 
-       // Cache until that moment
-       return max(0, $nextTransition - $now);
-   }
+The listener runs no queries of its own.
+It asks the active timing strategy for a lifetime and caps the answer.
+A ``null`` lifetime — what the scheduler timing strategy always returns — leaves TYPO3's
+own lifetime untouched.
 
-**Result:** Cache expires exactly when temporal state changes.
+The whole ``__invoke()`` body is wrapped in a ``try``/``catch (Throwable)``.
+A failing strategy is logged as an error and the page renders with TYPO3's lifetime; it
+never breaks page rendering.
 
-Implementation: PSR-14 Event
------------------------------
+.. _architecture-max-lifetime:
 
-TYPO3 v12+ provides ``ModifyCacheLifetimeForPageEvent`` (Feature-96879):
-
-.. code-block:: php
-   :caption: Classes/EventListener/TemporalCacheLifetime.php (condensed - error handling and debug logging omitted)
-
-   namespace Netresearch\TemporalCache\EventListener;
-
-   use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
-   use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
-   use Netresearch\TemporalCache\Service\Timing\TimingStrategyInterface;
-   use Psr\Log\LoggerInterface;
-   use TYPO3\CMS\Core\Context\Context;
-   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
-
-   final class TemporalCacheLifetime
-   {
-       public function __construct(
-           private readonly ExtensionConfiguration $extensionConfiguration,
-           private readonly ScopingStrategyInterface $scopingStrategy,
-           private readonly TimingStrategyInterface $timingStrategy,
-           private readonly Context $context,
-           private readonly LoggerInterface $logger
-       ) {
-       }
-
-       public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
-       {
-           $lifetime = $this->timingStrategy->getCacheLifetime($this->context, $event->getPageId());
-
-           if ($lifetime !== null) {
-               $maxLifetime = $this->determineMaxLifetime($event->getRenderingInstructions());
-               $event->setCacheLifetime(min($lifetime, $maxLifetime));
-           }
-       }
-   }
-
-The listener itself contains no queries. It delegates to the configured timing strategy,
-which in turn asks the configured scoping strategy for the next transition. A ``null``
-lifetime (scheduler timing) leaves TYPO3's own lifetime untouched.
-
-**Registration:** ``Configuration/Services.yaml``
-
-.. code-block:: yaml
-
-   services:
-     Netresearch\TemporalCache\EventListener\TemporalCacheLifetime:
-       tags:
-         - name: event.listener
-           identifier: 'temporal-cache/modify-cache-lifetime'
-           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
-
-Temporal Transition Detection
+Cap on the calculated lifetime
 ------------------------------
 
-All transition lookups live in ``Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository``
-(contract: ``TemporalContentRepositoryInterface``). It exposes three entry points:
+``determineMaxLifetime()`` resolves the upper bound in this order:
+
+#. ``cache_period`` from the rendering instructions, if it is set and greater than zero
+   (TypoScript ``config.cache_period``)
+#. ``advanced.default_max_lifetime`` from the extension configuration, if greater than zero
+#. ``86400``
+
+The listener also caps the value the timing strategy already capped, because
+``DynamicTimingStrategy`` limits its own result to ``advanced.default_max_lifetime``
+independently.
+
+.. _architecture-registration:
+
+Registration
+------------
+
+.. code-block:: yaml
+    :caption: Configuration/Services.yaml (arguments omitted)
+
+    services:
+      Netresearch\TemporalCache\EventListener\TemporalCacheLifetime:
+        public: true
+        tags:
+          - name: event.listener
+            identifier: 'temporal-cache/modify-cache-lifetime'
+            event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
+            method: '__invoke'
+
+.. _architecture-strategy-selection:
+
+Strategy selection and wiring
+=============================
+
+Two independent strategy families decide what happens:
+
+Scoping strategy (``ScopingStrategyInterface``)
+   Answers *which* records a transition lookup covers and *which* cache tags a transition
+   flushes.
+   Implementations: ``GlobalScopingStrategy``, ``PerPageScopingStrategy``,
+   ``PerContentScopingStrategy``.
+
+Timing strategy (``TimingStrategyInterface``)
+   Answers *when* the invalidation happens — through a shortened cache lifetime, through a
+   background scheduler run, or a mix of the two.
+   Implementations: ``DynamicTimingStrategy``, ``SchedulerTimingStrategy``,
+   ``HybridTimingStrategy``.
+
+Both interfaces extend ``Netresearch\TemporalCache\Service\NamedStrategyInterface``, which
+declares the single method ``getName(): string``.
+
+.. _architecture-strategy-factories:
+
+How a strategy is activated
+---------------------------
+
+Every strategy is registered as a service carrying one of two tags:
+
+- ``nr_temporal_cache.scoping_strategy``
+- ``nr_temporal_cache.timing_strategy``
+
+``ScopingStrategyFactory`` and ``TimingStrategyFactory`` receive all services carrying
+their family's tag through Symfony's ``!tagged_iterator``:
+
+.. code-block:: yaml
+    :caption: Configuration/Services.yaml
+
+    Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory:
+      public: true
+      arguments:
+        $strategies: !tagged_iterator 'nr_temporal_cache.scoping_strategy'
+        $extensionConfiguration: '@Netresearch\TemporalCache\Configuration\ExtensionConfiguration'
+
+    Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface:
+      alias: Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory
+      public: false
+
+Both factories share the selection logic in the trait
+``Netresearch\TemporalCache\Service\SelectsNamedStrategy``:
 
 .. code-block:: php
-   :caption: Classes/Domain/Repository/TemporalContentRepositoryInterface.php
+    :caption: Classes/Service/SelectsNamedStrategy.php
 
-   // Earliest transition across every monitored table (site-wide)
-   public function getNextTransition(
-       int $currentTimestamp,
-       int $workspaceUid = 0,
-       int $languageUid = 0
-   ): ?int;
+    private function selectNamedStrategy(
+        iterable $strategies,
+        string $configuredName,
+        string $emptyMessage
+    ): NamedStrategyInterface {
+        $firstStrategy = null;
 
-   // Earliest transition in the pages table only - page transitions change menus everywhere
-   public function getNextPageTransition(
-       int $currentTimestamp,
-       int $workspaceUid = 0,
-       int $languageUid = 0
-   ): ?int;
+        foreach ($strategies as $strategy) {
+            $firstStrategy ??= $strategy;
 
-   // Earliest content-element transition on one page (content tables, restricted by pid)
-   public function getNextContentTransitionForPage(
-       int $pageId,
-       int $currentTimestamp,
-       int $workspaceUid = 0,
-       int $languageUid = 0
-   ): ?int;
+            if ($strategy->getName() === $configuredName) {
+                return $strategy;
+            }
+        }
 
-Each of them runs one indexed ``MIN()`` query per table and per field
-(``starttime``, ``endtime``) and returns the smallest result. The default restrictions are
-removed deliberately - TYPO3's ``StartTimeRestriction``/``EndTimeRestriction`` would hide
-exactly the future records the lookup needs - and the deleted/hidden, workspace and
-language filters are re-added explicitly.
+        return $firstStrategy ?? throw new RuntimeException($emptyMessage);
+    }
 
-The scoping strategy decides which of the three is used. Per-page scoping combines the
-two narrow lookups:
+The configured name is ``scoping.strategy`` respectively ``timing.strategy`` from the
+extension configuration.
+Three consequences follow from this code:
+
+- The tags carry **no** ``identifier`` attribute.
+  A strategy is identified by its ``getName()`` return value alone.
+- When no name matches, the **first** tagged service wins.
+  ``GlobalScopingStrategy`` and ``DynamicTimingStrategy`` carry ``priority: 100`` in
+  :file:`Configuration/Services.yaml` so that they come first and hold that fallback.
+- When a family has no tagged service at all, the factory throws a ``RuntimeException``.
+
+Each factory implements its own family interface and delegates every call to the selected
+strategy, and the interface name is aliased to the factory.
+Anything type-hinting ``ScopingStrategyInterface`` or ``TimingStrategyInterface``
+therefore receives the factory and, through it, the configured strategy.
+
+.. _architecture-custom-strategy:
+
+Adding a strategy from another extension
+----------------------------------------
+
+Because the factories iterate a tag rather than a hard-coded list, a strategy declared in
+another extension needs nothing but the tag:
 
 .. code-block:: php
-   :caption: Classes/Service/Scoping/PerPageScopingStrategy.php
-
-   public function getNextTransition(Context $context, ?int $pageId = null): ?int
-   {
-       $workspaceId = $this->resolveWorkspaceId($context);
-       $languageId = $this->resolveLanguageId($context);
-       $now = \time();
-
-       if ($pageId === null) {
-           return $this->temporalContentRepository->getNextTransition($now, $workspaceId, $languageId);
-       }
-
-       $candidates = \array_filter([
-           $this->temporalContentRepository->getNextPageTransition($now, $workspaceId, $languageId),
-           $this->temporalContentRepository->getNextContentTransitionForPage($pageId, $now, $workspaceId, $languageId),
-       ], static fn (?int $value): bool => $value !== null);
-
-       return $candidates === [] ? null : \min($candidates);
-   }
-
-Global scoping calls ``getNextTransition()`` directly; per-content scoping resolves the
-affected pages through ``sys_refindex`` first.
-
-Timeline Example
-================
-
-Scenario
---------
-
-- **09:00:** Page render, 3 content elements:
-
-  - Element A: ``starttime = 10:00``
-  - Element B: visible now, ``endtime = 12:00``
-  - Element C: visible now, no restrictions
-
-- **11:00:** Another page with ``starttime = 11:00``
-
-Execution Flow
---------------
-
-**09:00 - Initial Render:**
-
-.. code-block:: text
-
-   1. Query finds:
-      - Page starttime: 11:00
-      - Content A starttime: 10:00
-      - Content B endtime: 12:00
-
-   2. Calculate next transition:
-      min(11:00, 10:00, 12:00) = 10:00
-
-   3. Set cache lifetime:
-      10:00 - 09:00 = 3600 seconds (1 hour)
-
-   4. Render page:
-      - Element A: Hidden (starttime not reached)
-      - Element B: Visible
-      - Element C: Visible
-
-   5. Cache result until 10:00
-
-**10:00 - Cache Expires (automatic):**
-
-.. code-block:: text
-
-   1. Cache miss triggers regeneration
-
-   2. Query finds:
-      - Page starttime: 11:00
-      - Content B endtime: 12:00
-      (Element A now visible, no future starttime)
-
-   3. Calculate next transition:
-      min(11:00, 12:00) = 11:00
-
-   4. Set cache lifetime:
-      11:00 - 10:00 = 3600 seconds
-
-   5. Render page:
-      - Element A: NOW VISIBLE ✅
-      - Element B: Still visible
-      - Element C: Visible
-
-   6. Cache result until 11:00
-
-**11:00 - Cache Expires (automatic):**
-
-.. code-block:: text
-
-   1. Cache miss triggers regeneration
-
-   2. Query finds:
-      - Content B endtime: 12:00
-      (Page now visible in menus)
-
-   3. Calculate next transition:
-      min(12:00) = 12:00
-
-   4. Set cache lifetime:
-      12:00 - 11:00 = 3600 seconds
-
-   5. Render page + update menus:
-      - Page: NOW IN MENU ✅
-      - Element A: Visible
-      - Element B: Still visible
-      - Element C: Visible
-
-   6. Cache result until 12:00
-
-**12:00 - Cache Expires (automatic):**
-
-.. code-block:: text
-
-   1. Cache miss triggers regeneration
-
-   2. Query finds: No future transitions
-
-   3. Set cache lifetime: Default (24 hours)
-
-   4. Render page:
-      - Element A: Visible
-      - Element B: NOW HIDDEN ✅
-      - Element C: Visible
-
-   5. Cache for 24 hours (no more temporal changes)
-
-**Result:** ✅ Fully automatic, zero manual intervention
-
-Performance Analysis
-====================
-
-Query Cost
-----------
-
-Each cache regeneration executes:
-
-.. code-block:: sql
-
-   -- One MIN() query per monitored table and per temporal field.
-   -- With the default tables that is four queries: pages/tt_content x starttime/endtime.
-
-   SELECT MIN(starttime) FROM pages
-   WHERE starttime > {now}
-     AND deleted = 0 AND hidden = 0
-     AND sys_language_uid = {language}
-   -- workspace filter...
-
-   SELECT MIN(endtime) FROM tt_content
-   WHERE endtime > {now}
-     AND deleted = 0 AND hidden = 0
-     AND sys_language_uid = {language}
-   -- workspace filter, plus "AND pid = {pageId}" for per-page/per-content scoping
-
-**Indexes** (added by the extension via :file:`ext_tables.sql`):
-
-- ``pages(starttime, sys_language_uid)``
-- ``pages(endtime, sys_language_uid)``
-- ``tt_content(starttime, sys_language_uid)``
-- ``tt_content(endtime, sys_language_uid)``
-
-**Measured Performance:**
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 30 30
-
-   * - Operation
-     - Time
-     - Notes
-   * - Pages query
-     - ~2-4ms
-     - Indexed, aggregates only
-   * - Content query
-     - ~3-6ms
-     - More rows, still indexed
-   * - Calculation overhead
-     - ~0.1ms
-     - Array operations
-   * - **Total per cache miss**
-     - **~5-10ms**
-     - One-time cost
-
-Cache Hit Rate Impact
----------------------
-
-Typical TYPO3 site:
-
-- Cache hit rate: 95-99%
-- Cache miss: 1-5% of requests
-
-Effective overhead:
-
-.. code-block:: text
-
-   10ms (query) × 2% (miss rate) = 0.2ms average per page load
-
-**Verdict:** ✅ Negligible performance impact
-
-Comparison: Current Workarounds
---------------------------------
-
-**Manual Clearing:**
-
-- Editorial overhead: ~5-10 minutes per scheduled item
-- Risk: Forgotten cache clears = broken content
-- Cost: Developer time + broken user experience
-
-**Cron Cache Clearing:**
-
-- Server overhead: Clear ALL caches regularly
-- Side effect: Destroys all cache performance
-- Granularity: Limited by cron frequency
-
-**No Caching:**
-
-- Every request regenerates: ~50-200ms per page
-- 100x slower than temporal cache solution
-
-Context Awareness
-=================
-
-Workspace Support
------------------
-
-Extension respects TYPO3 workspace context:
+    :caption: EXT:my_extension/Classes/Scoping/RootlineScopingStrategy.php
+
+    namespace MyVendor\MyExtension\Scoping;
+
+    use Netresearch\TemporalCache\Domain\Model\TemporalContent;
+    use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
+    use TYPO3\CMS\Core\Context\Context;
+
+    final class RootlineScopingStrategy implements ScopingStrategyInterface
+    {
+        public function getCacheTagsToFlush(TemporalContent $content, Context $context): array
+        {
+            return ['pageId_' . $content->pid];
+        }
+
+        public function getNextTransition(Context $context, ?int $pageId = null): ?int
+        {
+            return null;
+        }
+
+        public function getName(): string
+        {
+            return 'rootline';
+        }
+    }
+
+.. code-block:: yaml
+    :caption: EXT:my_extension/Configuration/Services.yaml
+
+    services:
+      MyVendor\MyExtension\Scoping\RootlineScopingStrategy:
+        tags:
+          - { name: 'nr_temporal_cache.scoping_strategy' }
+
+Setting ``scoping.strategy`` to ``rootline`` then activates it.
+
+.. note::
+    Inside this extension, autoregistration excludes ``Service/Scoping/*Strategy.php`` and
+    ``Service/Timing/*Strategy.php``, so its own strategies need explicit service
+    definitions.
+    An extension with the default ``autoconfigure`` setup only has to add the tag.
+
+.. _architecture-repository:
+
+Transition lookups
+==================
+
+All temporal queries live in
+``Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository``
+(contract: ``TemporalContentRepositoryInterface``).
+Three methods feed the strategies:
 
 .. code-block:: php
+    :caption: Classes/Domain/Repository/TemporalContentRepositoryInterface.php
 
-   $workspaceId = $this->context->getPropertyFromAspect('workspace', 'id');
+    // Earliest transition across every monitored table (site-wide)
+    public function getNextTransition(
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int;
 
-   // Query includes workspace overlay records
-   $qb->where(/* workspace-aware conditions */);
+    // Earliest transition in the pages table only
+    public function getNextPageTransition(
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int;
 
-**Result:** Preview mode shows correct temporal behavior for workspace versions.
+    // Earliest transition in the content tables, restricted to one pid
+    public function getNextContentTransitionForPage(
+        int $pageId,
+        int $currentTimestamp,
+        int $workspaceUid = 0,
+        int $languageUid = 0
+    ): ?int;
 
-Language Support
-----------------
+Each of them runs one ``MIN()`` query per monitored table and per temporal field
+(``starttime``, ``endtime``) and returns the smallest non-null result.
+With the two default tables that is four queries.
 
-Extension respects language context:
+``findMinTransitionForTable()`` builds every query the same way:
+
+- ``removeAll()`` on the restrictions.
+  TYPO3's ``StartTimeRestriction``/``EndTimeRestriction`` would hide exactly the future
+  records the lookup needs.
+- ``MIN(<field>)`` selected as a literal, ``WHERE <field> > :now``.
+  Records with ``0`` are excluded by that comparison, so no separate ``!= 0`` clause exists.
+- The table's ``deleted`` and ``disabled`` columns, resolved from TCA, each compared to
+  ``0``.
+  When no TCA is available the query simply runs without them.
+- ``pid = :pageId`` when the caller passed a page id.
+- The workspace clause: for workspace ``0`` it matches ``t3ver_wsid = 0 OR t3ver_wsid IS
+  NULL``, otherwise ``t3ver_wsid = :workspace``.
+- ``sys_language_uid = :language`` whenever the language id is ``>= 0``.
+
+.. _architecture-request-cache:
+
+Request-level memoization
+-------------------------
+
+``getNextTransition()`` — the site-wide lookup only — is memoized in
+``Netresearch\TemporalCache\Service\Cache\TransitionCache``, a singleton keyed by
+timestamp, workspace id and language id.
+Repeated site-wide lookups within the same request and the same second are answered from
+memory.
+``getNextPageTransition()`` and ``getNextContentTransitionForPage()`` are not memoized.
+
+.. _architecture-indexes:
+
+Indexes
+-------
+
+:file:`ext_tables.sql` adds two composite indexes per default table so the ``MIN()``
+aggregation and the ``> :now`` range scan can be served from an index:
+
+- ``pages``: ``idx_temporalcache_starttime (starttime, sys_language_uid)`` and
+  ``idx_temporalcache_endtime (endtime, sys_language_uid)``
+- ``tt_content``: the same two indexes
+
+``temporalcache:verify`` checks that these indexes exist.
+Tables registered by other extensions get no index from this extension.
+
+.. _architecture-scoping:
+
+What each scoping strategy does
+===============================
+
+A scoping strategy answers two separate questions, and the answers do not have to agree.
+
+``getNextTransition()``
+   Used by ``DynamicTimingStrategy`` to compute a cache lifetime.
+
+``getCacheTagsToFlush()``
+   Used by ``SchedulerTimingStrategy`` to flush caches from the scheduler task.
+   ``DynamicTimingStrategy`` never calls it.
+
+.. list-table:: Scoping strategies
+    :header-rows: 1
+    :widths: 20 40 40
+
+    * - Strategy
+      - ``getNextTransition()`` covers
+      - ``getCacheTagsToFlush()`` returns
+    * - ``global``
+      - Every monitored table, site-wide. The page id is ignored.
+      - ``['pages']`` — the tag every page cache entry carries.
+    * - ``per-page``
+      - The ``pages`` table site-wide, plus the content tables restricted to the rendered
+        page. Falls back to the site-wide lookup when no page id is available.
+      - ``['pageId_<uid>']`` for a page, ``['pageId_<pid>']`` for a content element.
+    * - ``per-content``
+      - Every monitored table, site-wide — the same lookup as ``global``.
+      - One ``pageId_<uid>`` tag per page that ``sys_refindex`` reports for the element.
+
+.. important::
+    ``per-content`` narrows the flush tags, not the cache lifetime.
+    Its ``getNextTransition()`` deliberately returns the site-wide transition, because a
+    content element can be embedded into arbitrary pages and a narrowed lifetime would risk
+    serving stale embedded content.
+    Combined with ``dynamic`` timing — which only ever reads the lifetime — ``per-content``
+    therefore behaves exactly like ``global``.
+    Its precision takes effect with ``scheduler`` or ``hybrid`` timing.
+
+.. note::
+    ``per-page`` keeps menus correct by watching all page transitions site-wide, but it does
+    not see content embedded from another page through ``CONTENT``/``RECORDS`` cObjects.
+    That page's lifetime is not shortened when the embedded element transitions.
+
+.. _architecture-scoping-refindex:
+
+Refindex resolution
+-------------------
+
+``PerContentScopingStrategy`` resolves the affected pages through
+``Netresearch\TemporalCache\Service\RefindexService``, which reads ``sys_refindex``.
+It falls back to the element's own ``pid`` when ``scoping.use_refindex`` is off, when the
+lookup returns no page, or when it throws.
+Pages are never resolved through the refindex — a page transition always yields the page's
+own tag.
+
+.. _architecture-timing:
+
+What each timing strategy does
+==============================
+
+.. list-table:: Timing strategies
+    :header-rows: 1
+    :widths: 20 40 40
+
+    * - Strategy
+      - ``getCacheLifetime()``
+      - ``processTransition()``
+    * - ``dynamic``
+      - Seconds until the scoping strategy's next transition, capped at
+        ``advanced.default_max_lifetime``. ``60`` if the transition is already in the past,
+        ``advanced.default_max_lifetime`` if there is none.
+      - No-op. Expiry alone does the work.
+    * - ``scheduler``
+      - ``null`` — the listener leaves TYPO3's lifetime alone.
+      - Flushes every tag the scoping strategy returns from the ``pages`` cache.
+    * - ``hybrid``
+      - Delegates to the strategy configured under ``timing.hybrid.pages``.
+      - Delegates per record: ``timing.hybrid.pages`` for a page,
+        ``timing.hybrid.content`` for anything else.
+
+.. note::
+    ``HybridTimingStrategy::getCacheLifetime()`` always uses the ``pages`` rule; it cannot
+    tell during page generation which content elements a page contains.
+    With the default ``pages = dynamic`` the lifetime calculation therefore still queries
+    the content tables through the scoping strategy.
+
+.. _architecture-scheduler-task:
+
+The scheduler task
+------------------
+
+``Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask`` is what drives
+``processTransition()``.
+Each run reads the last-run timestamp from TYPO3's ``Registry``
+(namespace ``tx_temporalcache``, key ``scheduler_last_run``), asks
+``findTransitionsInRange()`` for every transition since then, hands each one to the active
+timing strategy, and writes the new timestamp back.
+A transition that fails is logged and the run continues with the next one.
+
+The interval is whatever frequency the task is given in the Scheduler module.
+
+.. _architecture-context:
+
+Workspace and language awareness
+================================
+
+All three scoping strategies read the current context through the trait
+``Netresearch\TemporalCache\Service\Scoping\ResolvesContextAspects``:
 
 .. code-block:: php
+    :caption: Classes/Service/Scoping/ResolvesContextAspects.php
 
-   $languageId = $this->context->getPropertyFromAspect('language', 'id');
+    $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
+    $languageId = $context->getPropertyFromAspect('language', 'id', 0);
 
-   $qb->where(
-       $qb->expr()->eq('sys_language_uid', $languageId)
-   );
+Both values are passed down into every query, so a workspace preview and each language
+resolve their own next transition and therefore their own cache lifetime.
+One frontend request carries one workspace and one language, so the number of queries does
+not grow with the number of languages configured on the site.
 
-**Result:** Each language has independent cache lifetimes based on translated content's temporal fields.
+.. _architecture-extensibility:
 
 Extensibility
 =============
 
-Custom Tables
--------------
+.. _architecture-custom-tables:
+
+Monitoring additional tables
+----------------------------
 
 Additional tables are registered with
-``Netresearch\TemporalCache\Service\TemporalMonitorRegistry``. The registry is an autowired
-singleton service and ``registerTable()`` is an instance method, so obtain it through
-constructor injection - there is no static registration API:
+``Netresearch\TemporalCache\Service\TemporalMonitorRegistry``.
+The registry is an autowired singleton and ``registerTable()`` is an instance method, so
+obtain it through constructor injection — there is no static registration API:
 
 .. code-block:: php
+    :caption: EXT:my_extension/Classes/Service/NewsTemporalRegistration.php
 
-   namespace YourVendor\YourExtension\Service;
+    namespace MyVendor\MyExtension\Service;
 
-   use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
+    use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 
-   final class NewsTemporalRegistration
-   {
-       public function __construct(
-           private readonly TemporalMonitorRegistry $monitorRegistry
-       ) {
-           $this->monitorRegistry->registerTable(
-               'tx_news_domain_model_news',
-               ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
-           );
-       }
-   }
+    final class NewsTemporalRegistration
+    {
+        public function __construct(
+            private readonly TemporalMonitorRegistry $monitorRegistry
+        ) {
+            $this->monitorRegistry->registerTable(
+                'tx_news_domain_model_news',
+                ['uid', 'pid', 'title', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid']
+            );
+        }
+    }
 
-The second argument lists the columns to select and is optional; omitting it applies the
-default field list shown above.
-
-.. note::
-   The registry has no field mapping: the table's temporal columns must literally be named
-   ``starttime`` and ``endtime``. ``registerTable()`` throws an ``InvalidArgumentException``
-   when the field list omits ``uid``, ``starttime`` or ``endtime``, when the table name is
-   empty, or when it is ``pages`` or ``tt_content`` - both are monitored by default and
-   cannot be re-registered.
-
-Registered tables are picked up by ``TemporalContentRepository``, which queries every table
-returned by ``TemporalMonitorRegistry::getAllTables()`` when it looks for the next
-transition.
-
-Custom Transition Logic
-------------------------
+The second argument is optional.
+Omitting it applies the default field list, which is the one shown above.
 
 .. note::
-   The TemporalCacheLifetime class is ``final`` and cannot be extended.
-   Use custom event listeners instead.
+    The registry has no field mapping: the table's temporal columns must literally be named
+    ``starttime`` and ``endtime``.
+    ``registerTable()`` throws an ``InvalidArgumentException`` when the field list omits
+    ``uid``, ``starttime`` or ``endtime``, when the table name is empty, or when it is
+    ``pages`` or ``tt_content`` — both are monitored by default and cannot be re-registered.
 
-For custom temporal logic, create your own PSR-14 event listener:
+``TemporalContentRepository`` queries every table returned by
+``TemporalMonitorRegistry::getAllTables()``, so each registered table adds two ``MIN()``
+queries per lookup.
+``getNextContentTransitionForPage()`` queries every registered table except ``pages``,
+which requires those tables to carry a ``pid``.
+
+.. _architecture-custom-listener:
+
+Custom cache lifetime logic
+---------------------------
+
+.. note::
+    ``TemporalCacheLifetime`` is ``final`` and cannot be extended.
+    Register your own listener instead.
 
 .. code-block:: php
+    :caption: EXT:my_extension/Classes/EventListener/CustomTemporalLogic.php
 
-   namespace YourVendor\YourExtension\EventListener;
+    namespace MyVendor\MyExtension\EventListener;
 
-   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
+    use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
-   final class CustomTemporalLogic
-   {
-       public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
-       {
-           // Add your custom temporal checks
-           $customTransition = $this->getCustomTransition();
-           if ($customTransition) {
-               $currentLifetime = $event->getCacheLifetime();
-               $lifetime = min($currentLifetime, $customTransition - time());
-               $event->setCacheLifetime($lifetime);
-           }
-       }
+    final class CustomTemporalLogic
+    {
+        public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
+        {
+            $customTransition = $this->getCustomTransition($event->getPageId());
 
-       private function getCustomTransition(): ?int
-       {
-           // Your custom logic here
-           return null;
-       }
-   }
+            if ($customTransition !== null) {
+                $event->setCacheLifetime(
+                    \min($event->getCacheLifetime(), \max(0, $customTransition - \time()))
+                );
+            }
+        }
 
-Register in ``Configuration/Services.yaml``:
+        private function getCustomTransition(int $pageId): ?int
+        {
+            return null;
+        }
+    }
 
 .. code-block:: yaml
+    :caption: EXT:my_extension/Configuration/Services.yaml
 
-   services:
-     YourVendor\YourExtension\EventListener\CustomTemporalLogic:
-       tags:
-         - name: event.listener
-           identifier: 'your-extension/custom-temporal-logic'
-           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
-           after: 'temporal-cache/modify-cache-lifetime'
+    services:
+      MyVendor\MyExtension\EventListener\CustomTemporalLogic:
+        tags:
+          - name: event.listener
+            identifier: 'my-extension/custom-temporal-logic'
+            event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
+            after: 'temporal-cache/modify-cache-lifetime'
 
-Limitations & Trade-offs
-=========================
+.. _architecture-limitations:
 
-Current Limitations
--------------------
+Known limitations
+=================
 
-1. **Symptom Fix:**
-   Solves problem within current architecture but doesn't fix root cause
-   (missing absolute expiration in TYPO3 core).
+Only the page cache is addressed
+   The listener sets the page cache lifetime.
+   Other caches keep whatever lifetime their own code assigns.
 
-2. **Recalculation:**
-   Queries execute on every cache miss. Minimal overhead but not zero.
+Per-second granularity
+   Transitions are Unix timestamps; nothing finer is possible.
 
-3. **Maximum Granularity:**
-   Limited to per-second precision (Unix timestamps).
+No cross-page dependency detection with ``dynamic`` timing
+   ``per-page`` scoping does not shorten a page's lifetime for content embedded from
+   elsewhere, and ``per-content`` scoping only narrows flush tags.
 
-4. **Cross-Page Dependencies:**
-   Doesn't detect when Page A's visibility affects Page B's content.
+Scheduler timing flushes only what the scoping strategy names
+   With ``per-page`` or ``per-content`` scoping a page transition flushes only that page's
+   own tag, so menus on other pages are not refreshed by the scheduler run.
+   ``global`` scoping flushes the ``pages`` tag and does refresh them.
 
-When Phase 2/3 Are Better
---------------------------
+Additional tables get no indexes
+   :file:`ext_tables.sql` covers ``pages`` and ``tt_content``.
+   A registered table needs its own index on ``starttime`` and ``endtime``.
 
-This extension becomes obsolete when TYPO3 core implements:
+.. _architecture-next-steps:
 
-- **Phase 2:** Absolute expiration timestamps in ``CacheTag`` API
-- **Phase 3:** Automatic temporal dependency detection
-
-See :ref:`phases` for migration path.
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`phases` - Future improvements and migration plan
-- `Source Code <https://github.com/netresearch/t3x-nr-temporal-cache>`__ - Examine implementation
-- `Forge #14277 <https://forge.typo3.org/issues/14277>`__ - Track core development
+- :ref:`performance-considerations` — configuration trade-offs
+- :ref:`configuration` — every option in detail
+- :ref:`phases` — where this approach sits relative to a core solution
+- `Source code <https://github.com/netresearch/t3x-nr-temporal-cache>`__
+- `Forge #14277 <https://forge.typo3.org/issues/14277>`__ — the core issue

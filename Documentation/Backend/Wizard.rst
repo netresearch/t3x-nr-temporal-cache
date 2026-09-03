@@ -3,399 +3,151 @@
 .. _backend-wizard:
 
 ====================
-Configuration Wizard
+Configuration wizard
 ====================
 
-Guided configuration setup with presets and performance impact calculator.
+Guided walkthrough of the available strategies, with three ready-made preset combinations.
 
-Wizard Overview
-===============
+.. important::
+    The wizard does not write any configuration.
+    Every "Apply" button ends in a notification that points at
+    :guilabel:`Admin Tools > Settings > Extension Configuration > nr_temporal_cache`, where the settings have to
+    be entered by hand.
+    See :ref:`configuration` for the settings themselves.
 
-The Configuration Wizard helps you:
+.. _backend-wizard-steps:
 
-- Select optimal configuration for your site size
-- Choose from predefined presets
-- Calculate performance impact
-- Test configuration before applying
-- Export configuration as PHP code
-
-Wizard Steps
+Wizard steps
 ============
 
-Step 1: Site Profile
----------------------
+The wizard is a single backend action that renders one step at a time, selected by a ``step`` parameter in the
+URL.
+Opening :guilabel:`Configuration Wizard` from the module menu starts at the welcome step.
 
-Select your site characteristics:
+.. _backend-wizard-step-welcome:
 
-**Small Site**
-   - <1,000 pages
-   - <10 temporal transitions/day
-   - Single or few languages
-   - Recommended: Default configuration
+Welcome
+-------
 
-**Medium Site**
-   - 1,000-10,000 pages
-   - 10-50 transitions/day
-   - Multi-language possible
-   - Recommended: Per-page scoping + Harmonization
+Shows three figures for the current site:
 
-**Large Site**
-   - >10,000 pages
-   - >50 transitions/day
-   - Multi-language common
-   - Recommended: Per-content scoping + Scheduler + Harmonization
+- the number of temporal records found
+- the number of days in the next 30 days that carry at least one transition
+- the number of records whose start time harmonization would move, if harmonization is enabled
 
-**Custom**
-   - Manual configuration
-   - Advanced users only
+:guilabel:`Start Configuration` continues to the analysis step.
 
-Step 2: Strategy Selection
+.. _backend-wizard-step-analysis:
+
+Analysis
+--------
+
+Lists recommendations derived from the current configuration and the figures above.
+A recommendation is shown when one of these applies:
+
+- harmonization is disabled and more than 10 of the next 30 days carry transitions
+- the scoping strategy is ``global`` and more than 100 temporal content elements exist
+- the timing strategy is ``dynamic`` and more than 20 of the next 30 days carry transitions
+
+When none applies, the step shows no recommendations.
+:guilabel:`Continue to Presets` leads to the presets step, :guilabel:`Back` returns to the welcome step.
+
+.. _backend-wizard-step-presets:
+
+Presets
+-------
+
+Shows the three preset combinations side by side, each with its scoping strategy, timing strategy and
+harmonization state.
+:guilabel:`Apply Preset` opens a confirmation dialog and then the notification described above — the preset is
+not written anywhere.
+
+:guilabel:`Custom Configuration` leads to the custom step, :guilabel:`Back` returns to the analysis step.
+
+.. _backend-wizard-step-custom:
+
+Custom configuration
+--------------------
+
+A form with the three strategy choices, pre-selected from the current configuration:
+
+Scoping strategy
+    ``global``, ``per-page`` or ``per-content``.
+
+Timing strategy
+    ``dynamic``, ``scheduler`` or ``hybrid``.
+
+Time slot harmonization
+    A single on/off switch.
+    The slots and the tolerance are not part of this form; they are configured in the extension configuration.
+
+:guilabel:`Apply Configuration` shows the notification and saves nothing.
+The form itself states that changes have to be applied in the extension configuration.
+
+.. _backend-wizard-step-summary:
+
+Summary
+-------
+
+A closing step with a link back to the dashboard.
+It is part of the module but no button in the wizard currently links to it.
+
+.. _backend-wizard-presets:
+
+Presets in detail
+=================
+
+The preset definitions live in the module controller.
+Enter the values shown here in the extension configuration to reproduce a preset.
+
+.. _backend-wizard-preset-simple:
+
+Simple (Phase 1 compatible)
 ---------------------------
 
-Choose optimization strategies:
-
-**Scoping Strategy**:
-
-- Global (simple, all pages affected)
-- Per-Page (95% reduction)
-- Per-Content (99.7% reduction)
-
-**Timing Strategy**:
-
-- Dynamic (immediate, 5-20ms overhead)
-- Scheduler (zero overhead, 1-minute delay)
-- Hybrid (mixed per table)
-
-**Harmonization**:
-
-- Disabled (precise timing)
-- Enabled (reduced cache churn)
-
-Step 3: Performance Calculator
--------------------------------
-
-Input your metrics:
-
-.. code-block:: text
-
-   Site Metrics:
-   - Number of pages: 5,000
-   - Pageviews/day: 100,000
-   - Temporal transitions/day: 25
-
-   Calculated Impact:
-   - Cache invalidations/day: 7,500 (global) → 375 (per-page) → 75 (per-content)
-   - With harmonization: 75 → 8 (grouping to 8 time slots)
-   - Overhead: 15ms per cache miss (dynamic) or 0ms (scheduler)
-
-   Recommendation: Per-content + Scheduler + Harmonization
-
-Step 4: Preview Configuration
-------------------------------
-
-Review generated configuration:
+Backward compatible with Phase 1: global scoping, dynamic timing, no harmonization.
 
 .. code-block:: php
-   :caption: Generated Configuration
+    :caption: Settings of the "Simple" preset
 
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-       'timing' => ['strategy' => 'scheduler', 'scheduler_interval' => 60],
-       'harmonization' => [
-           'enabled' => true,
-           'slots' => '00:00,06:00,12:00,18:00',
-           'tolerance' => 300,
-       ],
-   ];
+    'scoping' => ['strategy' => 'global'],
+    'timing' => ['strategy' => 'dynamic'],
+    'harmonization' => ['enabled' => false],
 
-**Actions**:
+.. _backend-wizard-preset-balanced:
 
-- Test Configuration (simulates behavior)
-- Export as PHP (download file)
-- Apply Configuration (updates extension settings)
+Balanced
+--------
 
-Step 5: Testing
----------------
-
-Test configuration without applying:
-
-**Test Results**:
-
-.. code-block:: text
-
-   Simulation Results (based on current temporal content):
-
-   Next 24 Hours:
-   - Transitions: 8 (down from 25 with harmonization)
-   - Cache invalidations: 40 pages (down from 5,000 with per-content)
-   - Estimated cache hit ratio: 82% (vs 35% with global scoping)
-
-   Query Performance:
-   - Database queries: 0ms (scheduler timing)
-   - Background task frequency: Every 60 seconds
-
-   Overall Assessment: ✅ Recommended for your site
-
-**Interpretation**:
-
-- Green: Optimal configuration
-- Yellow: Acceptable with monitoring
-- Red: Not recommended, revise settings
-
-Configuration Presets
-======================
-
-Small Site Preset
------------------
-
-**Configuration**:
+Per-page scoping with hybrid timing and harmonization on a six-hour grid.
 
 .. code-block:: php
+    :caption: Settings of the "Balanced" preset
 
-   'scoping' => ['strategy' => 'global'],
-   'timing' => ['strategy' => 'dynamic'],
-   'harmonization' => ['enabled' => false],
+    'scoping' => ['strategy' => 'per-page'],
+    'timing' => ['strategy' => 'hybrid'],
+    'harmonization' => ['enabled' => true, 'slots' => '00:00,06:00,12:00,18:00'],
 
-**Characteristics**:
+.. _backend-wizard-preset-aggressive:
 
-- Zero configuration complexity
-- Minimal performance impact
-- Suitable for <1,000 pages
+Aggressive optimization
+-----------------------
 
-Medium Site Preset
-------------------
-
-**Configuration**:
+Per-content scoping backed by the reference index, scheduler timing and harmonization on a four-hour grid.
 
 .. code-block:: php
+    :caption: Settings of the "Aggressive Optimization" preset
 
-   'scoping' => ['strategy' => 'per-page'],
-   'timing' => ['strategy' => 'dynamic'],
-   'harmonization' => [
-       'enabled' => true,
-       'slots' => '00:00,06:00,12:00,18:00', // Every 6 hours
-   ],
+    'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
+    'timing' => ['strategy' => 'scheduler'],
+    'harmonization' => ['enabled' => true, 'slots' => '00:00,04:00,08:00,12:00,16:00,20:00'],
 
-**Characteristics**:
+.. _backend-wizard-next-steps:
 
-- Balanced accuracy and performance
-- 95-98% reduction in cache churn
-- Suitable for 1,000-10,000 pages
-
-Large Site Preset
------------------
-
-**Configuration**:
-
-.. code-block:: php
-
-   'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-   'timing' => ['strategy' => 'scheduler', 'scheduler_interval' => 60],
-   'harmonization' => [
-       'enabled' => true,
-       'slots' => '00:00,04:00,08:00,12:00,16:00,20:00', // Every 4 hours
-   ],
-
-**Characteristics**:
-
-- Maximum efficiency
-- 99.7% reduction + zero per-page overhead
-- Suitable for >10,000 pages
-
-High-Traffic Preset
--------------------
-
-**Configuration**:
-
-.. code-block:: php
-
-   'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-   'timing' => [
-       'strategy' => 'hybrid',
-       'hybrid' => [
-           'pages' => 'dynamic',
-           'content' => 'scheduler',
-       ],
-   ],
-   'harmonization' => [
-       'enabled' => true,
-       'slots' => '00:00,04:00,08:00,12:00,16:00,20:00',
-   ],
-
-**Characteristics**:
-
-- Real-time menu updates + background content processing
-- Optimized for >1M pageviews/day
-- Balances accuracy and performance
-
-Performance Impact Calculator
-==============================
-
-Input Fields
-------------
-
-**Site Metrics**:
-
-- Number of pages
-- Number of languages
-- Pageviews per day
-- Temporal transitions per day
-- Cache hit ratio baseline (optional)
-
-**Current Configuration** (optional):
-
-- Pre-fill with current settings
-- Compare impact of changes
-
-Calculated Metrics
-------------------
-
-**Cache Invalidations**:
-
-.. code-block:: text
-
-   Global Scoping:
-   - Per transition: All 5,000 pages invalidated
-   - Daily: 25 transitions × 5,000 = 125,000 invalidations
-
-   Per-Page Scoping:
-   - Per transition: 1 page invalidated
-   - Daily: 25 transitions × 1 = 25 invalidations
-   - Reduction: 99.98%
-
-   With Harmonization (8 slots):
-   - Transitions: 25 → 8
-   - Invalidations: 25 → 8
-   - Reduction: 68% additional
-
-**Query Overhead**:
-
-.. code-block:: text
-
-   Dynamic Timing:
-   - Per cache miss: 15ms (4 queries × 3.75ms avg)
-   - Daily (at 70% cache hit ratio): 30,000 × 15ms = 450 seconds
-   - Impact: Noticeable but manageable
-
-   Scheduler Timing:
-   - Per cache miss: 0ms
-   - Background: 60-second intervals
-   - Impact: Minimal
-
-**Cache Hit Ratio**:
-
-.. code-block:: text
-
-   Baseline: 90%
-   With extension (global): 35% (frequent site-wide invalidations)
-   With optimization: 82% (targeted invalidations + harmonization)
-
-Comparison View
----------------
-
-Side-by-side comparison:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 35 35
-
-   * - Metric
-     - Current
-     - Proposed
-   * - Cache invalidations/day
-     - 125,000
-     - 8
-   * - Query overhead
-     - 15ms per miss
-     - 0ms
-   * - Cache hit ratio
-     - 35%
-     - 82%
-   * - Assessment
-     - ⚠️ High impact
-     - ✅ Optimized
-
-Applying Configuration
-=======================
-
-Apply Button
-------------
-
-Applies configuration to extension settings.
-
-**Process**:
-
-1. Validates configuration
-2. Backs up current settings
-3. Applies new settings
-4. Flushes cache
-5. Confirms success
-
-**Confirmation Dialog**:
-
-.. code-block:: text
-
-   Apply Configuration?
-
-   This will:
-   - Update extension settings
-   - Flush all page caches
-   - Restart scheduler tasks (if timing changes)
-
-   Current settings will be backed up and can be restored.
-
-   [Cancel]  [Apply]
-
-Export as PHP
--------------
-
-Downloads configuration as PHP code for manual installation.
-
-**Use Cases**:
-
-- Version control configuration
-- Deploy to multiple environments
-- Share configuration with team
-- Document setup
-
-**Generated File**:
-
-.. code-block:: php
-   :caption: temporal_cache_config.php
-
-   <?php
-   // Generated by TYPO3 Temporal Cache Configuration Wizard
-   // Date: 2025-10-30 12:00:00
-
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-content'],
-       'timing' => ['strategy' => 'scheduler'],
-       // ... full configuration
-   ];
-
-Test Configuration
-------------------
-
-Simulates configuration without applying.
-
-**Test Process**:
-
-1. Analyzes current temporal content
-2. Simulates cache behavior with proposed settings
-3. Calculates projected metrics
-4. Provides recommendation
-
-**Test Report**:
-
-- Projected cache invalidations
-- Estimated cache hit ratio
-- Query performance impact
-- Overall recommendation (green/yellow/red)
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`configuration` - Detailed configuration reference
-- :ref:`backend-dashboard` - Monitor after configuration
-- :ref:`performance-considerations` - Understand trade-offs
-- :ref:`backend-tips` - Optimization recommendations
+- :ref:`configuration` — where the settings are actually entered
+- :ref:`configuration-strategies` — what the scoping and timing strategies do
+- :ref:`backend-dashboard` — check the effect after changing the configuration
+- :ref:`backend-tips` — practical recommendations

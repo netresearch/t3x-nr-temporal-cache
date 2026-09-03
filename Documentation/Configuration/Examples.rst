@@ -2,304 +2,176 @@
 
 .. _configuration-examples:
 
-=====================
-Examples & Presets
-=====================
+==================
+Examples & presets
+==================
 
-Pre-configured presets for common site profiles and real-world configuration scenarios.
+Complete configurations, and what each of them actually changes.
+
+For help choosing between them, see :ref:`performance-strategies` and
+:ref:`decision-guide`.
+
+.. note::
+   Every example that sets ``timing.strategy`` to ``scheduler``, or routes a
+   content type to the scheduler through ``hybrid``, depends on the scheduler
+   task.
+   Read :ref:`scheduler-setup` first — this version registers no task type, so
+   nothing processes those transitions yet.
 
 .. _configuration-presets:
 
-Configuration Presets
-=====================
+Presets offered by the wizard
+=============================
 
-Small Site Preset
------------------
+The Wizard tab of the backend module offers these three presets.
+The values below are the ones it shows; the wizard does not write them — apply
+them in the Extension Manager or in :file:`config/system/additional.php`.
 
-**Profile**:
+Simple
+------
 
-- Pages: <1,000
-- Traffic: <100,000 pageviews/month
-- Temporal changes: <10 per day
-
-**Configuration**:
+Global scoping, dynamic timing, no harmonization — the shipped defaults.
 
 .. code-block:: text
 
    scoping.strategy = global
-   scoping.use_refindex = 1
    timing.strategy = dynamic
    harmonization.enabled = 0
-   advanced.default_max_lifetime = 86400
-   advanced.debug_logging = 0
 
-**Benefits**:
+Every temporal transition flushes every page cache, and the page cache lifetime
+is capped at the next transition anywhere on the site.
+Nothing beyond the extension itself has to be set up.
 
-- Zero configuration required (all defaults)
-- Simple and reliable
-- Minimal overhead for small sites
-
-Medium Site Preset
-------------------
-
-**Profile**:
-
-- Pages: 1,000-10,000
-- Traffic: 100,000-1,000,000 pageviews/month
-- Temporal changes: 10-50 per day
-
-**Configuration**:
+Balanced
+--------
 
 .. code-block:: text
 
    scoping.strategy = per-page
-   scoping.use_refindex = 1
-   timing.strategy = dynamic
+   timing.strategy = hybrid
    harmonization.enabled = 1
    harmonization.slots = 00:00,06:00,12:00,18:00
-   harmonization.tolerance = 3600
-   harmonization.auto_round = 0
-   advanced.default_max_lifetime = 86400
-   advanced.debug_logging = 0
 
-**Benefits**:
+With ``timing.hybrid.pages`` and ``timing.hybrid.content`` left at their
+defaults, page transitions stay dynamic and content transitions are routed to
+the scheduler task.
+The cache lifetime follows the page rule, so it is still calculated on every
+page cache generation, narrowed to page transitions site-wide plus content
+transitions on the page being rendered.
 
-- 95%+ reduction in cache invalidations
-- 98%+ reduction with harmonization
-- Minimal per-page overhead
-- Automatic updates at slot times
-
-Large Site Preset
------------------
-
-**Profile**:
-
-- Pages: >10,000
-- Traffic: >1,000,000 pageviews/month
-- Temporal changes: >50 per day
-
-**Configuration**:
+Aggressive
+----------
 
 .. code-block:: text
 
    scoping.strategy = per-content
    scoping.use_refindex = 1
    timing.strategy = scheduler
-   timing.scheduler_interval = 60
-   harmonization.enabled = 1
-   harmonization.slots = 00:00,06:00,12:00,18:00
-   harmonization.tolerance = 3600
-   harmonization.auto_round = 0
-   advanced.default_max_lifetime = 86400
-   advanced.debug_logging = 0
-
-**Benefits**:
-
-- 99.7% reduction in cache invalidations
-- Zero per-page overhead
-- Background processing
-- Maximum efficiency
-
-High-Traffic Site Preset
--------------------------
-
-**Profile**:
-
-- Traffic: >10,000,000 pageviews/month
-- Performance SLA: <100ms response time
-- Real-time requirements: Immediate menu updates
-
-**Configuration**:
-
-.. code-block:: text
-
-   scoping.strategy = per-content
-   scoping.use_refindex = 1
-   timing.strategy = hybrid
-   timing.hybrid.pages = dynamic
-   timing.hybrid.content = scheduler
-   timing.scheduler_interval = 60
    harmonization.enabled = 1
    harmonization.slots = 00:00,04:00,08:00,12:00,16:00,20:00
-   harmonization.tolerance = 1800
-   harmonization.auto_round = 0
-   advanced.default_max_lifetime = 86400
-   advanced.debug_logging = 0
 
-**Benefits**:
-
-- Real-time menu updates (dynamic for pages)
-- Zero overhead for content (scheduler for content elements)
-- Maximum cache efficiency
-- Frequent harmonization slots (every 4 hours)
+The extension stops modifying the cache lifetime altogether.
+Invalidation happens only when the scheduler task processes a transition, and
+then it flushes exactly the pages on which the changed content appears,
+resolved through ``sys_refindex``.
+This is the combination in which per-content scoping pays off — and the one
+that does nothing at all without the scheduler task.
 
 .. _configuration-scenarios:
 
-Common Scenarios
-================
+Worked configurations
+=====================
 
-Scenario 1: News Site with Hourly Articles
--------------------------------------------
+Exact publication times matter
+------------------------------
 
-**Requirements**:
-
-- New articles published every hour
-- Menus must update immediately
-- High traffic (5M pageviews/month)
-
-**Configuration**:
-
-.. code-block:: text
-
-   scoping.strategy = per-content
-   timing.strategy = hybrid
-   timing.hybrid.pages = dynamic
-   timing.hybrid.content = scheduler
-   harmonization.enabled = 1
-   harmonization.slots = 00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00
-
-**Result**:
-
-- Menus update immediately (dynamic for pages)
-- Content updates every hour (scheduler + hourly slots)
-- Minimal overhead (per-content scoping)
-
-Scenario 2: Corporate Site with Scheduled Pages
-------------------------------------------------
-
-**Requirements**:
-
-- 5-10 scheduled pages per month
-- Low traffic (50,000 pageviews/month)
-- Simple setup
-
-**Configuration**:
-
-.. code-block:: text
-
-   # Use all defaults
-   scoping.strategy = global
-   timing.strategy = dynamic
-   harmonization.enabled = 0
-
-**Result**:
-
-- Zero configuration required
-- Simple and reliable
-- Minimal impact due to rare transitions
-
-Scenario 3: Event Calendar with Daily Updates
-----------------------------------------------
-
-**Requirements**:
-
-- Events with starttime/endtime
-- Daily content updates
-- Medium traffic (500,000 pageviews/month)
-
-**Configuration**:
+Flash sales, embargoed articles: the transition must happen at the time the
+editor entered.
 
 .. code-block:: text
 
    scoping.strategy = per-page
    timing.strategy = dynamic
-   harmonization.enabled = 1
-   harmonization.slots = 00:00,12:00
-   harmonization.tolerance = 3600
+   harmonization.enabled = 0
 
-**Result**:
+Dynamic timing is the only strategy that expires the cache at the transition
+itself.
+Harmonization stays off so no timestamp is moved.
+Scoping is ``per-page`` because under dynamic timing the scoping strategy only
+supplies the next-transition timestamp, and ``per-page`` is the one that
+narrows that timestamp to the page being rendered; ``per-content`` would return
+the site-wide value here.
 
-- Targeted invalidation (per-page)
-- Updates at midnight and noon (harmonization)
-- Real-time accuracy (dynamic timing)
-
-Scenario 4: Multi-Language Portal
-----------------------------------
-
-**Requirements**:
-
-- 10 languages
-- 5,000 pages per language
-- Frequent temporal content
-
-**Configuration**:
+Many content transitions, menus must stay current
+-------------------------------------------------
 
 .. code-block:: text
 
    scoping.strategy = per-content
-   timing.strategy = scheduler
-   timing.scheduler_interval = 60
+   scoping.use_refindex = 1
+   timing.strategy = hybrid
+   timing.hybrid.pages = dynamic
+   timing.hybrid.content = scheduler
+
+Page transitions keep their dynamic lifetime, which is what keeps menus
+correct.
+Content transitions are handed to the scheduler task, which flushes only the
+pages the content appears on.
+Note that the lifetime query still runs on every page cache generation: it
+follows the page rule, and that rule is ``dynamic`` here.
+
+Fewer, grouped cache flushes
+----------------------------
+
+.. code-block:: text
+
    harmonization.enabled = 1
    harmonization.slots = 00:00,06:00,12:00,18:00
    harmonization.tolerance = 3600
 
-**Result**:
+Transitions within an hour of a slot are moved onto it, so several records
+share one transition time instead of each having its own.
+Records further than an hour from every slot keep their original times.
+Harmonization is applied when it is invoked — through the
+:guilabel:`Harmonize selected` action in the Content tab of the backend module,
+or through :bash:`vendor/bin/typo3 temporalcache:harmonize` — not when editors
+save a record.
 
-- Per-language isolation (automatic)
-- Maximum efficiency (per-content + scheduler)
-- Reduced churn (harmonization)
-
-Scenario 5: E-Commerce with Flash Sales
-----------------------------------------
-
-**Requirements**:
-
-- Flash sales start at specific times
-- Product availability changes frequently
-- Critical: Exact timing required
-
-**Configuration**:
+Publication at one fixed time of day
+------------------------------------
 
 .. code-block:: text
 
-   scoping.strategy = per-content
-   timing.strategy = dynamic
-   harmonization.enabled = 0
-   # No harmonization: exact timing critical for sales
-
-**Result**:
-
-- Precise transition timing (no harmonization)
-- Minimal scope impact (per-content)
-- Real-time updates (dynamic timing)
-
-Scenario 6: Blog with Weekly Posts
------------------------------------
-
-**Requirements**:
-
-- New posts every Monday at 09:00
-- Low temporal activity
-- Small site (500 pages)
-
-**Configuration**:
-
-.. code-block:: text
-
-   scoping.strategy = global
-   timing.strategy = dynamic
    harmonization.enabled = 1
    harmonization.slots = 09:00
    harmonization.tolerance = 3600
 
-**Result**:
+With a single slot, only timestamps within an hour of 09:00 are moved onto it.
+Raise ``harmonization.tolerance`` to cover the spread you actually want to
+absorb; a timestamp at 20:00 is 11 hours from the slot and needs a tolerance of
+at least 39600 to be moved.
 
-- Simple configuration
-- All posts publish at 09:00 (harmonization)
-- Minimal overhead (few transitions)
+Multi-language site
+-------------------
 
-PHP Configuration Examples
-==========================
+No language-specific setting exists.
+Every transition query filters on the language of the current context, and the
+cache tags the scoping strategies emit are page-based, so language handling
+needs no configuration.
 
-Complete Extension Configuration
----------------------------------
+.. _configuration-examples-php:
 
-Add to ``config/system/additional.php``:
+PHP configuration
+=================
+
+Complete configuration
+----------------------
 
 .. code-block:: php
+   :caption: config/system/additional.php
 
    <?php
-   // Large site optimized configuration
+
    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
        'scoping' => [
            'strategy' => 'per-content',
@@ -321,32 +193,28 @@ Add to ``config/system/additional.php``:
        ],
    ];
 
-Environment-Specific Configuration
------------------------------------
+Every key is optional; the getters in
+:php:`Netresearch\TemporalCache\Configuration\ExtensionConfiguration` supply the
+documented default for anything absent.
 
-Different settings per environment:
+Environment-specific configuration
+----------------------------------
 
 .. code-block:: php
+   :caption: config/system/additional.php
 
    <?php
-   // Development: Enable debug logging
+
    if (getenv('TYPO3_CONTEXT') === 'Development') {
        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['debug_logging'] = true;
    }
 
-   // Production: Optimized for performance
-   if (getenv('TYPO3_CONTEXT') === 'Production') {
-       $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-           'scoping' => ['strategy' => 'per-content'],
-           'timing' => ['strategy' => 'scheduler', 'scheduler_interval' => 60],
-           'harmonization' => ['enabled' => true, 'slots' => '00:00,06:00,12:00,18:00'],
-       ];
-   }
+:file:`additional.php` is read after the settings written by the Extension
+Manager, so assignments here override them.
 
-Next Steps
+Next steps
 ==========
 
-- :ref:`configuration-strategies` - Understand optimization strategies
+- :ref:`configuration-strategies` - What each setting does
+- :ref:`configuration-advanced` - Cache lifetime cap, debug logging, scheduler task
 - :ref:`configuration-troubleshooting` - Diagnose configuration issues
-- :ref:`backend-wizard` - Use guided configuration wizard
-- :ref:`decision-guide` - Choose the right configuration

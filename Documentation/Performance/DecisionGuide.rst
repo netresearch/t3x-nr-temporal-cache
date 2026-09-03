@@ -2,330 +2,225 @@
 
 .. _decision-guide:
 
-================================
-Site-Specific Decision Guide
-================================
+==============
+Decision guide
+==============
 
 .. important::
-   The extension provides flexible strategies for different site sizes and can be used
-   effectively on sites of any size with appropriate configuration.
+    No benchmark figures for this extension exist in this repository, so this chapter gives
+    no thresholds in pages, requests or milliseconds.
+    It describes which configuration matches which shape of site, and what to measure on
+    your own installation before deciding.
 
-Decision Matrix by Site Size
-============================
+.. _decision-guide-questions:
 
-Small Sites (<1,000 pages)
----------------------------
+Four questions that decide the configuration
+============================================
 
-✅ **Recommended Configuration**: Default (Global + Dynamic)
+Where is the temporal content?
+   Only in the ``pages`` table, so only menus and the page tree are affected?
+   Or in ``tt_content`` and other records too?
+   ``per-page`` scoping only helps when content transitions outnumber page transitions:
+   page transitions stay site-wide in every strategy.
 
-.. code-block:: php
-   :caption: ext_localconf.php or config/system/additional.php
+Is content reused across pages?
+   If elements are placed on one page each, ``per-page`` scoping is accurate.
+   If ``CONTENT`` or ``RECORDS`` cObjects pull elements onto other pages, only
+   ``per-content`` scoping resolves those references — and only for flush tags, which means
+   ``scheduler`` or ``hybrid`` timing.
 
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'global'],
-       'timing' => ['strategy' => 'dynamic'],
-       'harmonization' => ['enabled' => false],
-   ];
+How far apart are transitions?
+   With ``dynamic`` timing the effective page cache lifetime is the gap to the next
+   transition in scope.
+   If that gap is routinely shorter than the interval in which a page would otherwise be
+   requested twice, the page cache is doing little work.
 
-**Why**:
+Is a delay acceptable?
+   ``scheduler`` timing trades exactness for zero per-request cost.
+   Content appears or disappears up to one scheduler interval late.
 
-- Zero configuration required
-- Simple and reliable
-- Minimal temporal content = minimal impact
-- Performance overhead negligible
+.. _decision-guide-configurations:
 
-**Expected Impact**:
+Configurations
+==============
 
-- Cache invalidations: Low frequency (matches temporal content)
-- Overhead: 5-20ms per page cache
-- Overall: Negligible impact
+.. _decision-guide-default:
 
-**Verdict**: ✅ Safe to install
-
-Medium Sites (1,000-10,000 pages)
-----------------------------------
-
-✅ **Recommended Configuration**: Per-Page + Dynamic + Harmonization
-
-.. code-block:: php
-   :caption: ext_localconf.php or config/system/additional.php
-
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-page'],
-       'timing' => ['strategy' => 'dynamic'],
-       'harmonization' => [
-           'enabled' => true,
-           'slots' => '00:00,06:00,12:00,18:00',
-           'tolerance' => 300,
-       ],
-   ];
-
-**Why**:
-
-- 95%+ reduction in cache invalidations (per-page scoping)
-- 98%+ reduction in transitions (harmonization)
-- Real-time updates (dynamic timing)
-- Balanced performance/accuracy trade-off
-
-**Expected Impact**:
-
-- Cache invalidations: Targeted (affected pages only)
-- Overhead: 5-20ms per page cache
-- Overall: Minimal impact with major efficiency gains
-
-**Verdict**: ⚠️ Test thoroughly, monitor closely
-
-Large Sites (>10,000 pages)
-----------------------------
-
-✅ **Recommended Configuration**: Per-Content + Scheduler + Harmonization
-
-.. code-block:: php
-   :caption: ext_localconf.php or config/system/additional.php
-
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-       'timing' => ['strategy' => 'scheduler', 'scheduler_interval' => 60],
-       'harmonization' => [
-           'enabled' => true,
-           'slots' => '00:00,06:00,12:00,18:00',
-           'tolerance' => 300,
-       ],
-   ];
-
-**Why**:
-
-- 99.7% reduction in cache invalidations (per-content scoping)
-- Zero per-page overhead (scheduler timing)
-- 98%+ reduction in transitions (harmonization)
-- Maximum efficiency
-
-**Expected Impact**:
-
-- Cache invalidations: Minimal (only affected pages)
-- Overhead: 0ms per page (background processing)
-- Overall: Excellent performance, suitable for large sites
-
-**Requires**: Scheduler task setup (see :ref:`configuration`)
-
-**Verdict**: ⚠️ Test extensively, implement all mitigations
-
-High-Traffic Sites (>10M pageviews/month)
-------------------------------------------
-
-✅ **Recommended Configuration**: Per-Content + Hybrid + Harmonization
-
-.. code-block:: php
-   :caption: ext_localconf.php or config/system/additional.php
-
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-       'timing' => [
-           'strategy' => 'hybrid',
-           'hybrid' => [
-               'pages' => 'dynamic',
-               'content' => 'scheduler',
-           ],
-       ],
-       'harmonization' => [
-           'enabled' => true,
-           'slots' => '00:00,04:00,08:00,12:00,16:00,20:00', // Every 4 hours
-           'tolerance' => 300,
-       ],
-   ];
-
-**Why**:
-
-- Real-time menu updates (dynamic for pages)
-- Zero overhead for content (scheduler for content elements)
-- Frequent harmonization slots (every 4 hours)
-- Optimized for both accuracy and performance
-
-**Expected Impact**:
-
-- Cache invalidations: Minimal and targeted
-- Overhead: 5-20ms for pages only (content has zero overhead)
-- Overall: Optimal for high-traffic scenarios
-
-**Verdict**: ⚠️ Evaluate carefully, robust infrastructure required
-
-Multi-Language Sites
---------------------
-
-⚠️ **Special Considerations**:
-
-Query overhead multiplies by number of languages with dynamic timing.
-
-✅ **Recommended**: Scheduler or Hybrid timing
-
-.. code-block:: php
-   :caption: ext_localconf.php or config/system/additional.php
-
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
-       'scoping' => ['strategy' => 'per-content'],
-       'timing' => ['strategy' => 'scheduler'],
-       'harmonization' => ['enabled' => true],
-   ];
-
-**Why**:
-
-- Eliminates per-page query overhead across all languages
-- Per-language isolation (automatic)
-- Background processing more efficient
-
-When NOT to Use This Extension
--------------------------------
-
-❌ Consider alternatives if:
-
-- No temporal content is used (no benefit from extension)
-- Content can tolerate manual cache clearing
-- Site has >50,000 pages AND >100 transitions/day
-- Waiting for Phase 2/3 TYPO3 core integration is acceptable
-
-See :ref:`performance-alternatives` for other solutions.
-
-Real-World Impact Scenarios
-============================
-
-Scenario 1: Corporate Website (Low Impact)
--------------------------------------------
-
-**Profile**:
-
-- 100 pages, single language
-- 2-3 pages scheduled per month
-- Default cache: 24 hours
-
-**With Extension**:
-
-- Minimal change (occasional expiration)
-- Cache hit ratio: 90% → 88%
-- Query load: Negligible
-
-**Verdict**: ✅ Safe to use
-
-Scenario 2: News Portal (Medium Impact)
+Default: global scoping, dynamic timing
 ---------------------------------------
 
-**Profile**:
+.. code-block:: php
+    :caption: config/system/additional.php — this is what an unconfigured install does
 
-- 500 pages, 5 languages = 2,500 page variants
-- 20 articles scheduled daily (every 1-2 hours)
-- Current cache: 24-hour default
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
+        'scoping' => ['strategy' => 'global'],
+        'timing' => ['strategy' => 'dynamic'],
+    ];
 
-**With Extension**:
+Fits a site where transitions are rare and the page count is small enough that regenerating
+everything is cheap.
+Nothing can be missed and nothing has to be set up.
 
-- Cache expires every 1-2 hours
-- Cache hit ratio: 90% → 40%
-- Query load: 10,000 queries per cache rebuild
+The cost is exact and predictable: every transition anywhere expires the whole page cache.
+If transitions are frequent, this is the configuration to move away from first.
 
-**With Mitigation** (indexing + warming + harmonization):
+.. _decision-guide-per-page:
 
-- Query time: 5ms → 2ms per query
-- Cache warming reduces user-facing impact
-- Cache hit ratio stabilizes: 60-70%
+Narrow the lifetime: per-page scoping, dynamic timing
+-----------------------------------------------------
 
-**Verdict**: ⚠️ Acceptable with proper infrastructure
+.. code-block:: php
+    :caption: config/system/additional.php
 
-Scenario 3: Enterprise Portal (High Impact)
--------------------------------------------
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
+        'scoping' => ['strategy' => 'per-page'],
+        'timing' => ['strategy' => 'dynamic'],
+    ];
 
-**Profile**:
+Fits a site whose temporal content is mostly content elements sitting on the page they
+belong to.
+A scheduled element then shortens only its own page's lifetime.
 
-- 10,000 pages, 10 languages = 100,000 page variants
-- 100+ elements scheduled across departments daily
-- Multiple independent content teams
+What it does not change: page transitions still shorten every page's lifetime, because a
+page entering or leaving the tree changes menus everywhere.
+On a site whose temporal content is mostly *pages*, this configuration behaves close to the
+default.
 
-**With Extension**:
+What it can miss: an element embedded onto another page through ``CONTENT``/``RECORDS``.
+That page keeps its long lifetime through the element's transition.
 
-- Cache expires every 10-30 minutes
-- Cache hit ratio: 90% → 30%
-- Query load: 400,000 queries per rebuild
-- Constant cache churn
+.. _decision-guide-scheduler:
 
-**Verdict**: ❌ DO NOT USE - needs Phase 2 solution
+Remove per-request cost: scheduler timing
+------------------------------------------
 
-→ **Recommendation**: Wait for Phase 2/3 or custom solution
+.. code-block:: php
+    :caption: config/system/additional.php
 
-Decision Formula
-================
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
+        'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
+        'timing' => ['strategy' => 'scheduler'],
+    ];
 
-**Step 1: Calculate Your Metrics**
+Fits a site where the page cache has to keep its normal lifetime and a delay of one
+scheduler interval is acceptable.
+Page generation then runs no extra query at all, and invalidation is limited to the pages
+the reference index reports.
 
-.. code-block:: text
+Requires the Scheduler task to be registered and cron to run it; without both, nothing is
+invalidated.
+Requires ``sys_refindex`` to be current, otherwise the strategy silently falls back to the
+element's own page.
 
-   A = Requests_per_day
-   B = Temporal_transitions_per_day
-   C = Number_of_pages
-   D = Page_regeneration_time (ms)
+Consider before choosing it:
 
-**Step 2: Estimate Cache Impact**
+- A page transition flushes only that page's tag, so menus elsewhere are not refreshed.
+  If correct menus matter more than cache hits, keep ``global`` scoping and accept the
+  full flush.
+- The task loads every temporal record on the site on each run.
+- Transitions on translated records are not processed: the task runs against the live
+  workspace and the default language only.
 
-.. code-block:: text
+.. _decision-guide-hybrid:
 
-   Cache_invalidations_per_day = B × C (with global scoping)
-   Cache_invalidations_per_day = B × 0.05 × C (with per-page scoping)
-   Cache_invalidations_per_day = B × 0.003 × C (with per-content scoping)
-
-**Step 3: Apply Decision Logic**
-
-.. code-block:: text
-
-   if (C < 1000 && B < 10) {
-       ✅ Safe to install (default configuration)
-   } else if (C < 10000 && B < 50 && can_implement_mitigations) {
-       ⚠️ Test thoroughly, optimize configuration
-   } else if (C < 50000 && B < 100 && robust_infrastructure) {
-       ⚠️ Evaluate carefully, implement ALL mitigations
-   } else {
-       ❌ Wait for Phase 2/3 or use manual clearing
-   }
-
-Testing Checklist
-=================
-
-Before Production Deployment
+Split the two: hybrid timing
 ----------------------------
 
-**Development Testing**:
+.. code-block:: php
+    :caption: config/system/additional.php
 
-.. code-block:: text
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache'] = [
+        'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
+        'timing' => [
+            'strategy' => 'hybrid',
+            'hybrid' => [
+                'pages' => 'dynamic',
+                'content' => 'scheduler',
+            ],
+        ],
+    ];
 
-   □ Install extension in development
-   □ Enable debug logging
-   □ Measure baseline performance (without extension)
-   □ Install extension and measure impact
-   □ Verify temporal transitions work correctly
-   □ Check database query performance (<5ms per query)
+Fits a site that needs menus to be exact but can tolerate a delay on content elements.
+Page transitions keep shortening lifetimes; content transitions are handled by the task.
 
-**Staging Testing**:
+.. note::
+    The lifetime calculation always follows the ``pages`` rule, and that calculation covers
+    the content tables as well.
+    ``pages = dynamic`` therefore keeps the per-request queries — hybrid changes who reacts
+    to content transitions, not the query cost.
 
-.. code-block:: text
+.. warning::
+    Do not configure ``pages = scheduler`` together with ``content = dynamic``.
+    Content transitions are silently dropped in that combination; see
+    :ref:`performance-limitations-hybrid`.
 
-   □ Deploy to staging with production-like data
-   □ Run synthetic load tests
-   □ Monitor cache hit ratio
-   □ Test cache miss storms (trigger transition under load)
-   □ Validate CDN behavior (if applicable)
-   □ Test across all languages (if multi-language)
+.. _decision-guide-harmonization:
 
-**Production Rollout**:
+Add harmonization when publication times are scattered
+------------------------------------------------------
 
-.. code-block:: text
+Harmonization helps whichever strategy is configured, because it reduces the number of
+distinct transition moments in the data.
+It is a rewrite of editorial ``starttime``/``endtime`` values, so it needs the editors'
+agreement, and its effect depends on how close the existing times already are to the chosen
+slots.
+See :ref:`performance-strategies-harmonization`.
 
-   □ Enable for preview workspace first
-   □ Monitor for 1 week
-   □ Validate performance is acceptable
-   □ Enable for live workspace
-   □ Monitor continuously for first month
+.. _decision-guide-not-for-you:
 
-See :ref:`performance-limitations` for mitigation strategies.
+When not to use the extension
+=============================
 
-Next Steps
+No record uses ``starttime`` or ``endtime``
+   Every lookup returns ``null`` and the lifetime falls back to
+   ``advanced.default_max_lifetime``.
+   The queries still run.
+   There is nothing to gain.
+
+Correct menus everywhere are required *and* the full flush is unaffordable
+   The two are in tension: only ``global`` scoping refreshes menus on unaffected pages, and
+   only the narrower strategies keep the cache.
+   No configuration resolves that; see :ref:`performance-alternatives` for approaches that
+   take menus out of the page cache entirely.
+
+Manual clearing is already reliable in practice
+   Then the extension only adds moving parts.
+
+.. _decision-guide-measure:
+
+What to measure
+===============
+
+Before deploying, on a copy of the production data:
+
+.. code-block:: bash
+    :caption: How much temporal content exists, and when it transitions
+
+    vendor/bin/typo3 temporalcache:analyze
+    vendor/bin/typo3 temporalcache:list
+
+.. code-block:: bash
+    :caption: Confirm the indexes exist before measuring query cost
+
+    vendor/bin/typo3 temporalcache:verify
+
+Then measure, with the extension installed and again without it:
+
+- The page cache hit ratio over a period covering several transitions.
+- Page generation time on a cache miss, which tells you the cost of a lookup on your data
+  volume.
+- What arrives at the origin when a transition passes, if a CDN or reverse proxy is in
+  front.
+
+Enable ``advanced.debug_logging`` while doing this: the listener then logs the lifetime it
+set, the cap it applied and both strategy names for every cache write.
+
+.. _decision-guide-next-steps:
+
+Next steps
 ==========
 
-- :ref:`performance-strategies` - Optimization approaches
-- :ref:`performance-limitations` - Understand constraints
-- :ref:`performance-alternatives` - Explore alternatives
-- :ref:`configuration` - Complete configuration reference
+- :ref:`performance-strategies` — what each setting does
+- :ref:`performance-limitations` — what none of them fixes
+- :ref:`performance-alternatives` — solving it without this extension
+- :ref:`configuration` — every option in detail

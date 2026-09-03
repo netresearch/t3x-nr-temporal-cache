@@ -2,361 +2,238 @@
 
 .. _performance-faq:
 
-================================
-Frequently Asked Questions
-================================
+==========================
+Frequently asked questions
+==========================
 
-Q: Why does my entire site cache expire when one page has a future starttime?
-=============================================================================
+.. _performance-faq-whole-site:
 
-A: This is a Phase 1 architectural constraint when using **global scoping strategy**.
+Why does my entire site cache expire when one page has a future starttime?
+=========================================================================
 
-The default ``global`` scoping strategy queries all monitored tables site-wide, so a
-transition anywhere shortens the cache lifetime of every page.
+Because the default scoping strategy is ``global``.
+Its transition lookup covers every monitored table site-wide and ignores the page id, so
+every page cache entry written in that second gets the same shortened lifetime.
 
-**Solution**: Switch to per-page or per-content scoping strategies. Both narrow the lookup
-to the page being rendered, using the page ID that ``ModifyCacheLifetimeForPageEvent``
-provides:
-
-.. code-block:: php
-   :caption: ext_localconf.php
-
-   // Per-page scoping (95%+ reduction)
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy'] = 'per-page';
-
-   // Per-content scoping (99.7% reduction)
-   $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy'] = 'per-content';
-
-Phase 2/3 (TYPO3 core integration) will enable native per-page scoping. See :ref:`phases`.
-
-Q: Can I disable this for specific page trees?
-===============================================
-
-A: Not in v1.0.x. Configuration options are planned for v1.2.0.
-
-**Workaround**: Register your own listener for the same event, ordered after this
-extension's listener, and undo its lifetime for the page trees you want to exclude:
+Switching to ``per-page`` narrows it — but only for content elements:
 
 .. code-block:: php
-   :caption: EXT:my_extension/Classes/EventListener/ConditionalTemporalCache.php
+    :caption: config/system/additional.php
 
-   namespace MyVendor\MyExtension\EventListener;
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['scoping']['strategy'] = 'per-page';
 
-   use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
+A transition in the ``pages`` table still shortens every page's lifetime, in every strategy,
+because a page entering or leaving the tree changes menus everywhere.
 
-   final class ConditionalTemporalCache
-   {
-       /**
-        * @param int[] $excludedPageIds pages that keep the long lifetime
-        */
-       public function __construct(private readonly array $excludedPageIds = [])
-       {
-       }
+.. warning::
+    Switching to ``per-content`` does **not** help here.
+    That strategy narrows flush tags, not lifetimes, and flush tags are only read by
+    ``scheduler`` and ``hybrid`` timing.
+    With the default ``dynamic`` timing it behaves exactly like ``global``.
 
-       public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
-       {
-           if ($this->isExcluded($event->getPageId())) {
-               $event->setCacheLifetime(86400);
-           }
-       }
+.. _performance-faq-page-trees:
 
-       private function isExcluded(int $pageId): bool
-       {
-           return in_array($pageId, $this->excludedPageIds, true);
-       }
-   }
-
-.. code-block:: yaml
-   :caption: EXT:my_extension/Configuration/Services.yaml
-
-   services:
-     MyVendor\MyExtension\EventListener\ConditionalTemporalCache:
-       tags:
-         - name: event.listener
-           identifier: 'my-extension/conditional-temporal-cache'
-           event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
-           after: 'temporal-cache/modify-cache-lifetime'
-
-**Future**: Native configuration support in v1.2.0+.
-
-Q: Will this work with my CDN/Varnish setup?
-=============================================
-
-A: Yes, but be aware of cache miss storms.
-
-**CDN Behavior**:
-
-- CDN respects ``Cache-Control`` headers from TYPO3
-- When TYPO3 cache expires, CDN cache also expires
-- ALL requests hit origin simultaneously = potential overload
-
-**Mitigation**:
-
-✅ Configure ``stale-while-revalidate``:
-
-.. code-block:: apache
-   :caption: Apache .htaccess
-
-   Header set Cache-Control "public, max-age=3600, stale-while-revalidate=300"
-
-✅ Enable origin rate limiting
-✅ Use per-page/per-content scoping (reduces synchronized expiration)
-✅ Implement cache warming
-
-See :ref:`performance-limitations` for detailed mitigation strategies.
-
-Q: Should I use this on a 50,000 page site?
-============================================
-
-A: Probably not with default configuration, unless:
-
-✅ Very infrequent temporal transitions (<10/day)
-✅ Robust infrastructure with cache warming
-✅ Thorough staging testing completed
-✅ Per-content scoping + scheduler timing configured
-✅ All mitigation strategies implemented
-
-**Recommendation**:
-
-- Test thoroughly in staging with production-like data
-- Monitor continuously in production
-- Consider waiting for Phase 2/3 (TYPO3 core integration)
-
-See :ref:`decision-guide` for site-specific recommendations.
-
-Q: Does this affect backend performance?
-=========================================
-
-A: No, only frontend page cache generation is affected.
-
-**Backend operations unchanged**:
-
-- Page editing
-- Content editing
-- Backend module access
-- Scheduler tasks
-- CLI commands
-
-**Frontend impact**:
-
-- 4 database queries per page cache generation (dynamic timing)
-- ~5-20ms overhead per cache miss
-- Zero overhead with scheduler timing
-
-Q: What if I don't use temporal content?
-=========================================
-
-A: The extension has minimal impact - queries return null, default cache lifetime is used.
-
-**However**: There's no benefit to installing it if you don't use starttime/endtime.
-
-**Uninstall if**:
-
-- No pages use starttime/endtime
-- No content elements use starttime/endtime
-- No custom records use temporal fields
-
-Q: How do I monitor extension performance?
+Can I disable this for specific page trees?
 ===========================================
 
-A: Track these metrics:
+Not through configuration.
+The settings are global to the installation; there is no page-tree, doktype or content-type
+filter.
 
-**Cache Hit Ratio**:
-
-.. code-block:: bash
-
-   # TYPO3 Admin Panel → Cache
-   # Monitor: cache_hits / (cache_hits + cache_misses)
-
-**Database Query Performance**:
-
-.. code-block:: sql
-
-   -- Enable slow query log
-   SET GLOBAL slow_query_log = 'ON';
-   SET GLOBAL long_query_time = 0.05; -- 50ms threshold
-
-   -- Check for temporal cache queries
-   SELECT * FROM mysql.slow_log
-   WHERE sql_text LIKE '%starttime%' OR sql_text LIKE '%endtime%';
-
-**Origin Request Rate** (with CDN):
-
-- Monitor CDN analytics for request spikes
-- Correlate with cache expiration times
-- Alert on spikes >10x baseline
-
-**Page Generation Time**:
-
-- Use APM tools (New Relic, Datadog)
-- Compare before/after extension installation
-- Acceptable increase: <10ms per page
-
-See :ref:`performance-limitations` for complete monitoring guide.
-
-Q: Can I use this with EXT:warming?
-====================================
-
-A: Yes, and it's recommended for large sites!
-
-**Setup**:
-
-1. Install warming extension:
-
-.. code-block:: bash
-
-   composer req typo3/cms-warming
-
-2. Configure warming task:
+The workaround is a second listener on the same event, ordered after this extension's, that
+overrides the lifetime for the pages it should not apply to:
 
 .. code-block:: php
-   :caption: ext_localconf.php
+    :caption: EXT:my_extension/Classes/EventListener/ConditionalTemporalCache.php
 
-   use TYPO3\CMS\Warming\Task\WarmTask;
+    namespace MyVendor\MyExtension\EventListener;
 
-   // Configure warming to run before cache expiration
-   $task = new WarmTask();
-   $task->setInterval(3600); // Run every hour
+    use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 
-3. Monitor next expiration:
+    final class ConditionalTemporalCache
+    {
+        /**
+         * @param int[] $excludedPageIds pages that keep the long lifetime
+         */
+        public function __construct(private readonly array $excludedPageIds = [])
+        {
+        }
 
-.. code-block:: bash
+        public function __invoke(ModifyCacheLifetimeForPageEvent $event): void
+        {
+            if (\in_array($event->getPageId(), $this->excludedPageIds, true)) {
+                $event->setCacheLifetime(86400);
+            }
+        }
+    }
 
-   # Warm cache 5 minutes before expiration
-   # Based on extension's next transition timestamp
+.. code-block:: yaml
+    :caption: EXT:my_extension/Configuration/Services.yaml
 
-**Result**: Proactive cache warming eliminates user-facing cache misses.
+    services:
+      MyVendor\MyExtension\EventListener\ConditionalTemporalCache:
+        tags:
+          - name: event.listener
+            identifier: 'my-extension/conditional-temporal-cache'
+            event: TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent
+            after: 'temporal-cache/modify-cache-lifetime'
 
-Q: What happens during high-traffic cache expiration?
-======================================================
+.. _performance-faq-cdn:
 
-A: Potential "thundering herd" problem with global scoping.
-
-**Scenario**:
-
-::
-
-   10:00 AM: ALL site caches expire (10,000 pages)
-   10:00:01: First 100 concurrent requests hit origin
-   10:00:02: All requests regenerate simultaneously
-   Result: Server load spike
-
-**Mitigation**:
-
-✅ Per-page/per-content scoping (eliminates synchronized expiration)
-✅ Stale-while-revalidate (serves stale content during regeneration)
-✅ Origin rate limiting (prevents overload)
-✅ Cache warming (proactive regeneration)
-
-Q: How does this work with workspaces?
-=======================================
-
-A: Extension respects workspace context automatically.
-
-**Behavior**:
-
-- Queries are workspace-aware
-- Preview mode shows correct temporal behavior
-- Live workspace and preview workspaces have independent cache lifetimes
-- No configuration needed
-
-**Example**:
-
-::
-
-   Live workspace: Page has starttime = 10:00 AM
-   Draft workspace: Same page edited, starttime = 11:00 AM
-
-   Result:
-   - Live workspace cache expires at 10:00 AM
-   - Draft workspace cache expires at 11:00 AM
-   - Independent cache lifetimes ✅
-
-Q: Can I combine this with custom cache tags?
-==============================================
-
-A: Yes, extension works alongside custom cache tagging.
-
-**Extension responsibility**: Set cache lifetime
-**Your responsibility**: Cache tagging and invalidation logic
-
-**Example**:
-
-.. code-block:: php
-
-   // Your code: Custom cache tags
-   $cacheManager->flushByTag('news_category_5');
-
-   // Extension: Sets cache lifetime
-   $event->setCacheLifetime($nextTransition - time());
-
-   // Result: Both work together ✅
-
-Q: What's the performance impact of harmonization?
-===================================================
-
-A: Harmonization REDUCES performance impact significantly.
-
-**Without harmonization**:
-
-- 500 scheduled items/day = 500 cache invalidations
-- Constant cache churn
-
-**With harmonization** (4 slots/day):
-
-- 500 items → grouped to 4 time slots
-- 4 cache invalidations/day
-- **99.2% reduction** in cache churn
-
-**Overhead**: Near-zero (simple time rounding calculation)
-
-See :ref:`performance-strategies` for configuration.
-
-Q: Does this work with multi-language sites?
-=============================================
-
-A: Yes, but query overhead multiplies by language count.
-
-**Impact**:
-
-- 1 language: 4 queries per cache generation
-- 5 languages: 20 queries per cache generation
-- 10 languages: 40 queries per cache generation
-
-**Mitigation**:
-
-✅ Use scheduler timing (eliminates per-page overhead)
-✅ Database query caching (reduces redundant queries)
-✅ Per-language cache isolation (automatic)
-
-Q: When will Phase 2/3 be available?
+Will this work with a CDN or Varnish?
 =====================================
 
-A: Tentative timeline (subject to change):
+Yes, with one caveat.
+A CDN honors the ``Cache-Control`` window it is given, so a shortened page cache lifetime
+propagates to the edge.
+With ``global`` scoping every entry carries the same expiry, so the edge misses arrive
+together and reach the origin as one wave.
 
-**Phase 2** (Absolute Expiration API):
+The mitigations are the usual ones — serve stale while revalidating, rate-limit the origin,
+warm the cache ahead of a known transition — plus the extension-side option of moving to
+``scheduler`` timing, which stops shortening lifetimes altogether.
+See :ref:`performance-limitations-synchronized-expiry`.
 
-- RFC discussion: 2025
-- Implementation: 2025-2026
-- TYPO3 LTS inclusion: v15 or v16 (2026-2027)
+.. _performance-faq-backend:
 
-**Phase 3** (Automatic Detection):
+Does this affect backend performance?
+=====================================
 
-- Research phase: Post-Phase 2
-- Timeline: 2027+ (long-term vision)
+The cache lifetime listener runs on frontend page cache writes only, so ordinary backend
+editing is untouched.
 
-See :ref:`phases` for complete roadmap and migration path.
+Three parts of the extension do run in the backend, on demand: the backend module, the
+Reports module status provider, and the console commands.
+The backend module and the harmonization analysis load temporal records to build their
+figures, so they get slower as the amount of temporal content grows.
 
-**What this means**:
+.. _performance-faq-no-temporal-content:
 
-- Extension remains necessary for 2-5+ years
-- Migration path will be provided
-- Extension will become obsolete when Phase 2/3 are stable
+What if I do not use temporal content at all?
+=============================================
 
-Next Steps
+Every lookup returns ``null`` and the lifetime falls back to
+``advanced.default_max_lifetime`` (default ``86400``), so behavior is unchanged.
+The queries still run on every page cache write with ``dynamic`` timing.
+
+There is no benefit in that case — uninstall it.
+
+.. _performance-faq-monitoring:
+
+How do I see what the extension is doing?
+=========================================
+
+Turn on ``advanced.debug_logging``.
+The listener then logs, for every page cache write it modifies: the lifetime it set, the
+uncapped value, the cap and where the cap came from, and the names of both active
+strategies.
+
+.. code-block:: php
+    :caption: config/system/additional.php
+
+    $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['debug_logging'] = true;
+
+The same flag makes ``SchedulerTimingStrategy`` log each flush with the tags it flushed, and
+makes the scheduler task log its run window.
+
+To see the data rather than the decisions:
+
+.. code-block:: bash
+
+    vendor/bin/typo3 temporalcache:analyze   # counts and statistics
+    vendor/bin/typo3 temporalcache:list      # every temporal record and its next transition
+    vendor/bin/typo3 temporalcache:verify    # indexes and configuration
+
+.. _performance-faq-warming:
+
+Can I combine this with cache warming?
+======================================
+
+Yes, and it is worth doing with ``global`` scoping, where all entries expire at the same
+known moment.
+``temporalcache:list`` reports the next transition per record, so a warming run can be
+scheduled shortly after it.
+
+The extension ships no warming itself and integrates with no particular warming extension;
+anything that requests pages after the transition works.
+
+.. _performance-faq-thundering-herd:
+
+What happens under load when the cache expires?
+===============================================
+
+With ``global`` scoping, every page cache entry expires at the same second, so every
+subsequent request is a miss until the entries are rebuilt.
+Under load that arrives at the origin as a single burst.
+
+Four levers, in rough order of effectiveness:
+
+- ``scheduler`` timing — nothing expires by time.
+- ``per-page`` scoping — content transitions stagger; page transitions do not.
+- Stale-while-revalidate at the edge, so the burst is absorbed.
+- Cache warming timed to the known transition.
+
+.. _performance-faq-workspaces:
+
+How does this work with workspaces?
+===================================
+
+With ``dynamic`` timing, correctly and without configuration.
+The strategies read the workspace id from the Context API and pass it into every query; a
+live request and a workspace preview therefore resolve different transitions and get
+different lifetimes.
+
+.. warning::
+    With ``scheduler`` or ``hybrid`` timing this does not hold.
+    The scheduler task looks for transitions in the live workspace and the default language
+    only, so transitions on workspace versions and on translated records are not processed.
+
+.. _performance-faq-cache-tags:
+
+Can I combine this with my own cache tags?
+==========================================
+
+Yes.
+The extension sets the page cache lifetime and, under ``scheduler`` timing, flushes
+``pages`` or ``pageId_*`` tags.
+It does not interfere with tags your own code adds or flushes.
+
+If your listener also sets a lifetime, order it after
+``temporal-cache/modify-cache-lifetime`` and combine the two values with ``min()`` rather
+than overwriting.
+
+.. _performance-faq-harmonization:
+
+What does harmonization cost?
+=============================
+
+Nothing at runtime — it changes no code path.
+``temporalcache:harmonize`` rewrites the stored ``starttime``/``endtime`` values once, and
+from then on the same transition lookups simply find fewer distinct moments.
+
+The real cost is editorial: publication times move to the nearest slot within the
+configured tolerance.
+Preview with ``--dry-run`` before running it, because the command writes by default.
+
+.. _performance-faq-multilanguage:
+
+Does the query cost multiply with the number of languages?
+==========================================================
+
+No.
+One frontend request carries one language, and the language id from the Context API goes
+into the query as a single ``sys_language_uid`` condition.
+A ten-language site runs the same number of queries per cache write as a single-language
+site — each language just maintains its own cache entries and its own transitions.
+
+The number of queries grows with the number of **monitored tables**, at two per table.
+
+.. _performance-faq-next-steps:
+
+Next steps
 ==========
 
-- :ref:`performance-strategies` - Optimization approaches
-- :ref:`performance-limitations` - Understand constraints
-- :ref:`decision-guide` - Site-specific recommendations
-- :ref:`phases` - Future improvements roadmap
+- :ref:`performance-strategies` — what each setting changes
+- :ref:`performance-limitations` — what none of them fixes
+- :ref:`decision-guide` — choosing a configuration
+- :ref:`architecture` — the implementation behind the answers

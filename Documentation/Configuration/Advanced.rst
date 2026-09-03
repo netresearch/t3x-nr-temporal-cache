@@ -3,12 +3,14 @@
 .. _configuration-advanced:
 
 ================
-Advanced Options
+Advanced options
 ================
 
-Fine-tune cache lifetime limits, enable debug logging, and configure scheduler tasks.
+Cache lifetime cap, debug logging and the scheduler task.
 
-Advanced Settings
+.. _configuration-advanced-settings:
+
+Advanced settings
 =================
 
 .. confval:: advanced.default_max_lifetime
@@ -17,48 +19,46 @@ Advanced Settings
    :Default: ``86400``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['default_max_lifetime']
 
-   Maximum cache lifetime in seconds when no temporal content exists.
+   Upper bound in seconds for the cache lifetime this extension calculates.
 
-   **Configuration Priority:**
+   Two places read it:
 
-   The extension respects TYPO3's cache configuration hierarchy:
+   #. :php:`DynamicTimingStrategy::getCacheLifetime()` returns this value when
+      no transition is scheduled at all, and caps the calculated lifetime at it
+      otherwise.
+   #. :php:`TemporalCacheLifetime` caps the value it finally writes to the
+      event, using the hierarchy below.
 
-   1. **TypoScript** ``config.cache_period`` (if configured) - Takes precedence
-   2. **This extension setting** (fallback when TypoScript not set)
-   3. **TYPO3's default** 86400 seconds / 24 hours (final fallback)
+   **Configuration hierarchy**
 
-   **Purpose:**
+   :php:`TemporalCacheLifetime::determineMaxLifetime()` takes the first value
+   that applies:
 
-   Safety cap to prevent extremely long cache lifetimes if no temporal content is scheduled for months.
-   Even with no temporal content, cache refreshes at least once per configured period.
+   #. TypoScript ``config.cache_period``, when it is set and greater than 0
+   #. This setting, when it is greater than 0
+   #. 86400 seconds
 
-   **Why this exists:**
+   A value of 0 or less is therefore not a way to lift the cap — it is skipped
+   and 86400 is used.
 
-   TYPO3 has a default cache timeout (24 hours), but our extension can override
-   it when calculating temporal transitions. This setting caps our calculated
-   lifetime to prevent extremely long cache durations (e.g., 6 months if no
-   transitions are scheduled).
-
-   **Best Practice - Use TypoScript:**
-
-   Configure site-wide cache via TypoScript instead of this extension setting:
+   **Prefer TypoScript for a site-wide period**
 
    .. code-block:: typoscript
       :caption: setup.typoscript
 
-      config.cache_period = 43200  # 12 hours site-wide
+      config.cache_period = 43200
 
-   This automatically applies to temporal cache calculations and all other
-   TYPO3 cache operations, providing consistent cache behavior.
+   TypoScript wins over this setting and applies to all other TYPO3 cache
+   handling as well.
+   Configure the extension setting only when temporal cache should have a
+   different maximum than the rest of the site.
 
-   **Extension Config Examples:**
-
-   Only configure this setting if you need temporal cache to have a different
-   maximum than your site-wide cache configuration.
+   Examples
+   --------
 
    .. code-block:: text
 
-      # Default: 24 hours (aligns with TYPO3 default)
+      # Default: 24 hours
       advanced.default_max_lifetime = 86400
 
       # Shorter: 12 hours
@@ -67,16 +67,9 @@ Advanced Settings
       # Longer: 48 hours
       advanced.default_max_lifetime = 172800
 
-   **Debug Logging:**
-
-   Enable ``advanced.debug_logging`` to see which configuration source is used:
-
-   .. code-block:: text
-
-      # Log shows:
-      max_from_typoscript: 43200       # If config.cache_period set
-      max_from_extension_config: 86400 # This setting
-      max_lifetime: 43200              # Actual value used (TypoScript wins)
+   With ``advanced.debug_logging`` enabled, the listener records
+   which source it used in the ``max_from_typoscript``,
+   ``max_from_extension_config`` and ``max_lifetime`` keys of its log entry.
 
 .. confval:: advanced.debug_logging
 
@@ -84,133 +77,110 @@ Advanced Settings
    :Default: ``false``
    :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['advanced']['debug_logging']
 
-   Enable detailed logging for debugging.
+   Gates the extension's diagnostic log entries.
+   Three call sites check it:
 
-   **When enabled:**
+   :php:`TemporalCacheLifetime`
+      Debug entry per page cache generation in which a lifetime was set, with
+      the keys ``lifetime``, ``uncapped_lifetime``, ``max_lifetime``,
+      ``max_from_typoscript``, ``max_from_extension_config``,
+      ``timing_strategy`` and ``scoping_strategy``.
 
-   - Logs strategy selection decisions
-   - Logs cache lifetime calculations
-   - Logs transition processing
-   - Logs error details
+   :php:`SchedulerTimingStrategy`
+      Info entry per processed transition, with the flushed cache tags and the
+      active scoping strategy.
 
-   **Log location:**
+   :php:`TemporalCacheSchedulerTask`
+      Debug entries when the task starts and when it finds no transitions in
+      the range it examined.
+
+   Errors are logged regardless of this setting, and so is the completion entry
+   of the scheduler task, so a failing transition is visible without switching
+   it on.
+
+   **Log location**
+
+   Log entries go to TYPO3's configured log writers; the default file writer
+   writes to :file:`var/log/typo3_*.log`.
 
    .. code-block:: bash
 
-      # TYPO3 system log
-      var/log/typo3_*.log
-
-      # Filter for temporal cache
-      grep temporal_cache var/log/typo3_*.log
+      grep TemporalCache var/log/typo3_*.log
 
    .. warning::
-      Enable only for debugging. Generates significant log volume on high-traffic sites.
+      Enable only for debugging.
+      The listener writes one entry per page cache generation.
 
    Example
    -------
 
    .. code-block:: text
 
-      # Enable for debugging
       advanced.debug_logging = 1
 
 .. _scheduler-setup:
 
-Scheduler Task Setup
-====================
+Scheduler task
+==============
 
-Required for ``scheduler`` and ``hybrid`` timing strategies.
+The ``scheduler`` and ``hybrid`` timing strategies do not flush caches
+themselves.
+They rely on :php:`Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask`,
+which finds the transitions that occurred since its last run and hands each one
+to the active timing strategy.
 
-Step 1: Create Scheduler Task
-------------------------------
+.. warning::
+   This version ships the task class and its service definition, but registers
+   no task type: nothing is added to
+   :php:`$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']`, which
+   is the list the Scheduler module builds its task selection from.
+   The task therefore does not appear under :guilabel:`Create new task`, and
+   there is no supported way to schedule it.
 
-1. Navigate to **System → Scheduler**
-2. Click **Create new task** (+ icon)
-3. Select **Temporal Cache: Process Transitions**
-4. Configure:
+   Consequences while that is the case:
 
-   - **Type**: Single task
-   - **Start**: Now
-   - **Frequency**: Every 1 minute (or as configured)
-   - **Description**: Process temporal cache transitions
+   - ``timing.strategy = scheduler`` leaves the page cache lifetime untouched
+     and has nothing that flushes it, so temporal content does not update.
+   - ``timing.strategy = hybrid`` still calculates a lifetime as long as
+     ``timing.hybrid.pages`` is ``dynamic``, but content transitions routed to
+     the scheduler are never processed.
+   - The targeted cache tags of ``per-page`` and ``per-content`` scoping are
+     never used, because only the task triggers them.
 
-5. Click **Save**
+   ``timing.strategy = dynamic`` is unaffected — it needs no task.
 
-Step 2: Verify Execution
--------------------------
-
-1. Go to **System → Scheduler**
-2. Find your task in the list
-3. Check **Last execution** and **Next execution** timestamps
-4. Verify **Status** shows success
-
-Troubleshooting
----------------
-
-**Task not running**:
-
-- Verify TYPO3 Scheduler cron is configured
-- Check system cron: ``crontab -l | grep scheduler``
-- Should have: ``* * * * * /path/to/typo3 scheduler:run``
-
-**Task fails**:
-
-- Check logs: ``var/log/typo3_*.log``
-- Enable debug logging: ``advanced.debug_logging = 1``
-- Verify database indexes are created
-
-Example Scheduler Cron
-----------------------
-
-Add to system crontab (``crontab -e``):
+Once a task type is registered, the Scheduler still needs a cron entry that
+runs it:
 
 .. code-block:: bash
+   :caption: crontab
 
-   # Run TYPO3 Scheduler every minute
    * * * * * /usr/bin/php /var/www/html/vendor/bin/typo3 scheduler:run
 
-For DDEV:
+:bash:`scheduler:run` executes every task that is due.
 
-.. code-block:: bash
+.. _configuration-advanced-verify:
 
-   # Run inside DDEV container
-   * * * * * ddev exec vendor/bin/typo3 scheduler:run
+Verifying the setup
+===================
 
-Scheduler Configuration Best Practices
----------------------------------------
+:bash:`vendor/bin/typo3 temporalcache:verify` runs four checks:
 
-**Interval Recommendations**:
+#. An index whose leading column is ``starttime``, and one whose leading column
+   is ``endtime``, on both ``pages`` and ``tt_content``
+#. ``scoping.strategy`` is one of ``global``, ``per-page``, ``per-content`` and
+   ``timing.strategy`` is one of ``dynamic``, ``scheduler``, ``hybrid``
+#. The time slot configuration, when harmonization is enabled
+#. The columns the queries rely on: ``starttime``, ``endtime``, ``hidden``,
+   ``deleted``, ``sys_language_uid`` on both tables, plus ``pid`` on
+   ``tt_content``
 
-.. code-block:: text
+It exits with 0 when every check passes and 1 otherwise.
+Add ``--verbose`` for the per-field table of the schema check.
 
-   Small sites (<1,000 pages):
-   - Not needed (use dynamic timing)
-
-   Medium sites (1,000-10,000 pages):
-   - Consider scheduler for content only (hybrid mode)
-   - Interval: 60-120 seconds
-
-   Large sites (>10,000 pages):
-   - Use scheduler for both pages and content
-   - Interval: 60 seconds
-
-   High-traffic sites (>1M pageviews/month):
-   - Use scheduler or hybrid mode
-   - Interval: 60 seconds
-   - Monitor scheduler execution time
-
-**Monitoring**:
-
-.. code-block:: text
-
-   1. Check execution frequency in System → Scheduler
-   2. Review execution time (should be <1 second)
-   3. Monitor for task failures
-   4. Check logs for errors
-
-Next Steps
+Next steps
 ==========
 
-- :ref:`configuration-strategies` - Configure optimization strategies
-- :ref:`configuration-examples` - See complete configuration examples
+- :ref:`configuration-strategies` - Scoping, timing and harmonization settings
+- :ref:`configuration-examples` - Complete configuration examples
 - :ref:`configuration-troubleshooting` - Diagnose configuration issues

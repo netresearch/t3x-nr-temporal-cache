@@ -6,143 +6,147 @@
 Introduction
 ============
 
-The Problem: 20 Years of Temporal Cache Issues
-===============================================
+.. _introduction-problem:
 
-TYPO3 Forge Issue `#14277 <https://forge.typo3.org/issues/14277>`__
-was reported in **August 2004** and remains unsolved as of 2025.
+The problem
+===========
 
-Root Cause
-----------
+TYPO3 invalidates a page cache entry when the data behind it changes, or when somebody
+flushes a cache tag.
+Neither happens when time simply passes.
 
-TYPO3's cache invalidation architecture is **event-driven** (invalidates when
-data changes) but doesn't handle **temporal dependencies** (when time passes).
+A page or a content element with ``starttime`` or ``endtime`` changes its visibility at a
+fixed moment without any record being edited.
+The cached output still holds the visibility snapshot taken when it was rendered, and it
+keeps holding it until its lifetime runs out or an editor clears the cache by hand.
 
-The cache system supports:
+This is the subject of TYPO3 Forge issue
+`#14277 <https://forge.typo3.org/issues/14277>`__, which is still open.
 
-- ✅ Event-driven invalidation: Invalidate when page edited/deleted
-- ✅ Tag-based invalidation: Flush specific cache entries by tag
-- ✅ Relative TTL: Cache for N seconds from NOW
-
-But it's missing:
-
-- ❌ Temporal invalidation: Invalidate at absolute timestamp
-- ❌ Time-aware caching: Understand time-based visibility rules
+.. _introduction-symptoms:
 
 Symptoms
 --------
 
-When pages or content elements have ``starttime`` or ``endtime`` values set:
+Expiring content
+   A page with an ``endtime`` in the past stays in cached menus.
 
-**Expiring Content:**
-   Pages with ``endtime`` remain visible in menus after expiration until cache
-   is manually cleared.
+Scheduled content
+   A page with a ``starttime`` that has arrived does not appear in cached menus.
 
-**Scheduled Content:**
-   Pages with ``starttime`` don't appear in menus when their scheduled time
-   arrives until cache is manually cleared.
+Content elements
+   An element with ``starttime``/``endtime`` does not appear or disappear in cached page
+   output.
 
-**Content Elements:**
-   Content blocks with ``starttime/endtime`` don't update automatically in
-   cached page output.
+Anything rendered from a cached page
+   Sitemaps, breadcrumbs and listings inherit the same stale snapshot.
 
-**Other Components:**
-   Sitemaps, search results, breadcrumbs, and any cached listings don't reflect
-   time-based visibility changes.
+.. _introduction-solution:
 
-Impact
-------
+What this extension does
+========================
 
-This affects **ALL** TYPO3 installations using:
+The extension registers a listener on
+``TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent``.
+When TYPO3 writes a page cache entry, the listener asks the configured strategies for the
+next ``starttime``/``endtime`` transition and shortens the entry's lifetime so it ends
+there.
+The page is then regenerated at that moment with the correct visibility.
 
-- Navigation menus (HMENU)
-- Scheduled content publication
-- Content elements with time restrictions
-- News/blog posts with publication dates
-- Event calendars
-- Any extension using ``starttime/endtime`` fields
+An alternative mode replaces the shortened lifetime with a Scheduler task that flushes the
+affected cache tags in the background.
+Which of the two runs is a configuration choice; see :ref:`configuration`.
 
-**Severity:** HIGH
+.. _introduction-default-behavior:
 
-- Core CMS functionality (content scheduling) is unreliable
-- No automatic solution exists in TYPO3 core
-- Manual cache clearing required for every time-based transition
-- Affects production sites' editorial workflows
-
-Community Impact
-----------------
-
-- **Age:** 20+ years unresolved (2004-2025)
-- **Watchers:** 5+ users actively tracking
-- **Versions:** Confirmed affecting v9.5.7 through v14
-- **Scope:** System-wide architectural limitation
-
-Related Issues
---------------
-
-- `#16815 <https://forge.typo3.org/issues/16815>`__ - Sitemap ignoring start/end flags
-- `#98964 <https://forge.typo3.org/issues/98964>`__ - Menu caching excessive cache_hash records
-
-Why It Took 20 Years to Solve
+Default behavior and its cost
 ------------------------------
 
-The issue manifests differently across components:
+.. warning::
+    Out of the box the extension uses **global scoping** with **dynamic timing**
+    (``scoping.strategy = global``, ``timing.strategy = dynamic``).
+    In that combination the lifetime of *every* page cache entry is cut back to the
+    earliest upcoming transition anywhere on the site, so **all page caches expire at every
+    temporal transition**, not only the caches of the affected pages.
 
-**Menus:**
-   "Page is live but not in navigation"
+That is a deliberate default: it is the safest setting and needs no configuration.
+It is also the most expensive one, and on a site with frequent transitions it can flatten
+the cache hit ratio.
 
-**Content Elements:**
-   "I had to clear cache to make scheduled content appear"
+The extension ships two ways to narrow it:
 
-**Search:**
-   "Search results show expired pages"
+- ``scoping.strategy = per-page`` shortens a page's lifetime for content on that page only.
+  Page transitions are still watched site-wide, because a page appearing or disappearing
+  changes menus everywhere.
+- ``timing.strategy = scheduler`` (with ``per-page`` or ``per-content`` scoping) stops
+  shortening lifetimes altogether and flushes individual ``pageId_*`` tags from a
+  background task instead.
 
-Same root cause, different symptoms - making systematic diagnosis difficult.
+Read :ref:`performance-considerations` before deploying to a site where the cache hit
+ratio matters, and :ref:`architecture-scoping` for what each strategy actually covers.
 
-What This Extension Does
-=========================
+.. _introduction-status:
+
+Status
+======
 
 .. important::
-   **Extension Status**: This extension is **beta** (version 0.9.0). The only published tag is a pre-release.
-   The code is thoroughly tested, follows TYPO3 best practices, and is professionally
-   maintained.
+    ``ext_emconf.php`` declares version **0.9.0** and state **beta**.
+    The only tag published so far is the pre-release ``v0.9.0-alpha1``.
 
-   **Approach Status**: The temporal cache solution is **experimental**. This extension
-   implements Phase 1 as a pragmatic workaround with known limitations (site-wide cache
-   synchronization) until TYPO3 core provides native temporal cache support (Phase 2/3).
+The approach itself is a workaround.
+TYPO3's cache API has no absolute expiration timestamp, so the extension can only
+approximate one by shortening relative lifetimes or by flushing tags from a scheduled task.
+A solution inside TYPO3 core would not need either.
+See :ref:`phases` for what such a solution would look like and what would change here.
 
-Implements **Phase 1** of a three-phase solution:
+.. _introduction-requirements:
 
-1. **Phase 1 (This Extension):** Dynamic cache lifetime based on next temporal
-   transition - works TODAY with current TYPO3 versions
-2. **Phase 2 (Future Core):** Absolute expiration API in TYPO3 cache system
-   (planned for v15/v16)
-3. **Phase 3 (Future Core):** Automatic temporal cache awareness (long-term vision)
+Requirements
+============
 
-See :ref:`phases` for complete roadmap, migration path, and detailed explanation of
-why Phase 1 is necessary today.
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
 
-Quick Start
+    * - Requirement
+      - Value
+    * - TYPO3
+      - ``^12.4 || ^13.0 || ^14.0``
+    * - PHP
+      - ``^8.1``
+    * - Required TYPO3 extensions
+      - ``scheduler``, ``reports``
+    * - License
+      - GPL-2.0-or-later
+
+.. _introduction-quick-start:
+
+Quick start
 ===========
 
-Installation::
+.. code-block:: bash
+    :caption: Install
 
-   composer req netresearch/nr-temporal-cache
+    composer require netresearch/nr-temporal-cache
 
-Configuration:
+Run the database analyzer afterwards so the indexes from :file:`ext_tables.sql` are
+created, then confirm the installation:
 
-   **None required!** Extension works automatically after installation.
+.. code-block:: bash
+    :caption: Verify
 
-Result:
+    vendor/bin/typo3 temporalcache:verify
 
-   ✅ Menus update when pages reach starttime/endtime
-   ✅ Content elements appear/disappear automatically
-   ✅ Sitemaps and listings stay current
-   ✅ Zero manual cache clearing needed
+No configuration is required.
+The extension is active as soon as it is installed, with global scoping and dynamic timing.
 
-Next Steps
+.. _introduction-next-steps:
+
+Next steps
 ==========
 
-- :ref:`installation` - Detailed setup guide
-- :ref:`architecture` - Technical implementation details
-- :ref:`phases` - Complete three-phase roadmap
+- :ref:`installation` — setup and verification in detail
+- :ref:`configuration` — scoping, timing and harmonization options
+- :ref:`performance-considerations` — what the defaults cost and how to narrow them
+- :ref:`architecture` — how the listener, strategies and queries fit together
