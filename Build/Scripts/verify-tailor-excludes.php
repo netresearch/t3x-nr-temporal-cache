@@ -3,62 +3,49 @@
 declare(strict_types=1);
 
 /*
- * Guards Build/ExcludeFromPackaging.php against upstream drift.
+ * Guards Build/ExcludeFromPackaging.php against drift from tailor's own list.
  *
- * That file REPLACES tailor's own conf/ExcludeFromPackaging.php rather than
- * merging with it, so it restates the upstream list in full. When tailor adds
- * an entry, our copy silently stops covering it and files reappear in the TER
- * zip. This script compares the two and fails when they diverge.
+ * That file REPLACES tailor's conf/ExcludeFromPackaging.php rather than merging
+ * with it (VersionService::getExcludeConfiguration() returns the loaded array
+ * verbatim), so it restates the upstream list in full. Two ways that goes wrong:
+ *
+ *   - tailor ADDS an entry and our copy stops covering it, so the file
+ *     reappears in the TER zip;
+ *   - tailor REMOVES an entry and we keep excluding a file that should ship.
+ *
+ * Both directions are checked, against Build/TailorDefaults-1.7.0.php — a
+ * committed snapshot of the pinned release rather than whatever tailor happens
+ * to be installed. That keeps the check meaningful in CI, where tailor is not a
+ * dependency: comparing against an absent tool could only ever be skipped, and a
+ * check that skips is a check that passes for the wrong reason.
+ *
+ * Entries this repository adds on top of the upstream list are expected and are
+ * reported for information, not as failures.
  *
  * Usage:
  *   php Build/Scripts/verify-tailor-excludes.php
- *   php Build/Scripts/verify-tailor-excludes.php /path/to/tailor/conf/ExcludeFromPackaging.php
+ *   php Build/Scripts/verify-tailor-excludes.php /path/to/other/ExcludeFromPackaging.php
  *
- * Without an argument it locates tailor in the usual global Composer paths and
- * skips (exit 0) when tailor is not installed, so the script is safe to run in
- * environments that have no tailor. Exit 1 means real drift.
+ * The optional argument replaces the snapshot as the baseline — pass a freshly
+ * downloaded upstream file to check the snapshot itself against a new release.
  */
 
 $ours = __DIR__ . '/../ExcludeFromPackaging.php';
-if (!is_file($ours)) {
-    fwrite(STDERR, "Missing {$ours}\n");
-    exit(1);
-}
+$snapshot = __DIR__ . '/../TailorDefaults-1.7.0.php';
 
 // An explicit argument always wins, including "" and "0", which a truthiness
-// test would drop back into auto-discovery — the script would then compare
+// test would drop back to the default baseline — the script would then compare
 // against a different file and report success for it.
-$explicitPath = array_key_exists(1, $argv) ? $argv[1] : null;
+$baseline = array_key_exists(1, $argv) ? $argv[1] : $snapshot;
 
-if ($explicitPath !== null) {
-    if (!is_file($explicitPath)) {
-        fwrite(STDERR, "Not a file: {$explicitPath}\n");
+foreach (['baseline' => $baseline, 'exclude list' => $ours] as $label => $path) {
+    if (!is_file($path)) {
+        fwrite(STDERR, "Missing {$label}: {$path}\n");
         exit(1);
-    }
-    $upstreamFile = $explicitPath;
-} else {
-    $candidates = [
-        getenv('HOME') . '/.composer/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
-        getenv('HOME') . '/.config/composer/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
-        __DIR__ . '/../../.Build/vendor/typo3/tailor/conf/ExcludeFromPackaging.php',
-    ];
-
-    $upstreamFile = null;
-    foreach ($candidates as $candidate) {
-        if (is_file($candidate)) {
-            $upstreamFile = $candidate;
-            break;
-        }
-    }
-
-    if ($upstreamFile === null) {
-        echo "tailor not installed — nothing to compare. Install with:\n";
-        echo "  composer global require typo3/tailor:^1\n";
-        exit(0);
     }
 }
 
-$upstream = require $upstreamFile;
+$upstream = require $baseline;
 $mine = require $ours;
 
 foreach (['directories', 'files'] as $key) {
@@ -70,25 +57,41 @@ foreach (['directories', 'files'] as $key) {
 
 $exit = 0;
 foreach (['directories', 'files'] as $key) {
+    // tailor added an entry we do not carry: it would ship in the TER zip.
     $missing = array_values(array_diff($upstream[$key], $mine[$key]));
     if ($missing !== []) {
         $exit = 1;
         fwrite(STDERR, sprintf(
-            "Upstream tailor excludes %d %s that %s does not:\n  %s\n"
+            "Upstream excludes %d %s that Build/ExcludeFromPackaging.php does not:\n  %s\n"
             . "Add them to the \"tailor defaults, verbatim\" block.\n\n",
             count($missing),
             $key,
-            'Build/ExcludeFromPackaging.php',
             implode("\n  ", $missing)
         ));
+    }
+
+    // Entries we carry beyond the upstream list. Most are this repository's own
+    // additions and are fine; the ones that matter are entries tailor has since
+    // REMOVED, which would keep a file out of the zip that should now ship.
+    // The two cannot be told apart mechanically, so they are listed for review
+    // rather than failed on.
+    $extra = array_values(array_diff($mine[$key], $upstream[$key]));
+    if ($extra !== []) {
+        printf(
+            "%d local %s beyond the baseline (expected for this repository's own"
+            . " additions; check none of them is an entry tailor has removed):\n  %s\n\n",
+            count($extra),
+            $key,
+            implode("\n  ", $extra)
+        );
     }
 }
 
 if ($exit === 0) {
     printf(
-        "Build/ExcludeFromPackaging.php covers every upstream entry (%s).\n"
-        . "  directories: %d upstream, %d ours\n  files:       %d upstream, %d ours\n",
-        $upstreamFile,
+        "Build/ExcludeFromPackaging.php covers every entry in %s\n"
+        . "  directories: %d baseline, %d ours\n  files:       %d baseline, %d ours\n",
+        basename($baseline),
         count($upstream['directories']),
         count($mine['directories']),
         count($upstream['files']),
