@@ -8,7 +8,7 @@ Approach, limits and a core solution
 
 .. important::
     ``ext_emconf.php`` declares version **0.9.0** and state **beta**.
-    ``v0.9.0`` is the first published release.
+    ``v0.9.0`` is the first stable release.
 
 .. _phases-overview:
 

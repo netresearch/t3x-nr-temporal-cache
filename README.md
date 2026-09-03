@@ -12,7 +12,7 @@ Automatic cache invalidation for time-based content, developed by [Netresearch D
 
 **Addresses [TYPO3 Forge Issue #14277](https://forge.typo3.org/issues/14277)**: "Start/Stop time for pages is ignored in standard menu objects", reported in 2004 and still open.
 
-> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. [v0.9.0](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0) is the first release published to TER and Packagist. Beta means the API may still change before 1.0.
+> **Status**: `ext_emconf.php` declares version 0.9.0, state `beta`. [v0.9.0](https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0) is the first stable release, published to TER and Packagist. Beta means the API may still change before 1.0.
 
 ## The Problem (20+ Years Old)
 
@@ -51,7 +51,7 @@ Dynamic timing caps the page cache lifetime at the next transition; scheduler an
 - ✅ **Plugin Output** - Any cached plugin with temporal records
 - ✅ **Custom Records** - Tables registered through `TemporalMonitorRegistry`; `pages` and `tt_content` are monitored by default
 
-## Phase 1 Features
+## Features
 
 ### Three Scoping Strategies
 
@@ -332,7 +332,7 @@ The rendered manual lives in `Documentation/` (build it with `composer docs:rend
 - **[Command-line interface](Documentation/CommandLine/Index.rst)** - CLI command reference
 - **[Reports Module](Documentation/Administrator/ReportsModule.rst)** - TYPO3 Reports integration
 - **[Architecture](Documentation/Architecture/Index.rst)** - Technical details
-- **[Phases](Documentation/Phases/Index.rst)** - Three-phase approach
+- **[Phases](Documentation/Phases/Index.rst)** - Approach, limits and a core solution
 
 ## Compatibility
 
@@ -344,7 +344,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 | `^13.0`          | `^8.1`       | 8.2, 8.3, 8.4, 8.5        |
 | `^14.0`          | `^8.1`       | 8.3, 8.4, 8.5             |
 
-## The Three-Phase Roadmap
+## What a core solution would need
 
 ### Phase 1: Extension with Strategies (Current)
 - ✅ Dynamic cache lifetime via PSR-14 event
@@ -363,7 +363,7 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 - Automatic detection of starttime/endtime dependencies
 - Uses the Phase 2 API transparently
 
-The intent is to deprecate this extension once TYPO3 core covers Phase 2 and 3. See [Phases](Documentation/Phases/Index.rst).
+None of this describes committed work in TYPO3 core: there is no accepted RFC, no target version and no timeline. The intent is to deprecate this extension if core ever covers it. See [Phases](Documentation/Phases/Index.rst).
 
 ## Testing
 

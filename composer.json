@@ -1,7 +1,7 @@
 {
     "name": "netresearch/nr-temporal-cache",
     "type": "typo3-cms-extension",
-    "description": "Phase 1 Experimental Approach: Addresses TYPO3 Forge #14277 via site-wide cache synchronization. Automatic cache invalidation for time-based content. WARNING: ALL page caches expire on EVERY temporal transition (starttime/endtime). Read Performance Considerations documentation before deployment. Alternative approaches (USER_INT menus) may be more suitable for high-traffic sites.",
+    "description": "Automatic TYPO3 cache invalidation for time-based content (starttime/endtime), addressing Forge #14277. Three scoping strategies (global, per-page, per-content) and three timing strategies (dynamic, scheduler, hybrid). The default global scoping expires all page caches on every transition - read the Performance chapter before deployment.",
     "keywords": [
         "TYPO3",
         "cache",
@@ -11,9 +11,7 @@
         "endtime",
         "menu",
         "content",
-        "publication",
-        "phase1",
-        "experimental"
+        "publication"
     ],
     "homepage": "https://github.com/netresearch/t3x-nr-temporal-cache",
     "license": "GPL-2.0-or-later",

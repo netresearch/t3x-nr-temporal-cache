@@ -253,7 +253,7 @@ timing strategy.
 Slots and tolerance
 -------------------
 
-Slots are a single comma-separated string of ``HH:MM`` values.
+Slots are a single comma-separated string of ``HH:MM`` or ``H:MM`` values.
 Each timestamp is moved to its *nearest* slot, and only when the distance to that slot is at
 most ``harmonization.tolerance`` seconds.
 

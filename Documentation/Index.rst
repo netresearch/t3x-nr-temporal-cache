@@ -37,15 +37,16 @@ without manual cache clearing.
 
 .. important::
    **Extension Status**: Beta (version 0.9.0, state ``beta`` in
-   :file:`ext_emconf.php`). ``v0.9.0`` is the first published release. Beta
+   :file:`ext_emconf.php`). ``v0.9.0`` is the first stable release. Beta
    means the API may still change before 1.0 — test before using in
    production.
 
-   **Approach**: This is an **experimental solution** implementing Phase 1
-   of a three-phase approach. The extension provides a pragmatic workaround
-   until TYPO3 core provides native temporal cache support (Phase 2/3).
+   **Approach**: TYPO3's cache API has no absolute expiration, so the extension
+   approximates one by shortening relative lifetimes or by flushing tags from a
+   scheduled task. A solution inside TYPO3 core would need neither.
 
-   See :ref:`phases` for the complete roadmap and migration path.
+   See :ref:`phases` for what the approach cannot do, and what core would have to
+   provide to make the extension unnecessary.
 
 ----
 
@@ -76,7 +77,7 @@ Documentation
 
     ..  card:: 🔧 Installation
 
-        Complete installation guide for TYPO3 v12.4 LTS and v13.4 LTS including
+        Complete installation guide for TYPO3 v12.4 LTS, v13 and v14 including
         Composer setup, extension activation, and verification steps.
 
         ..  card-footer:: :ref:`Installation Guide <installation>`
@@ -108,18 +109,18 @@ Documentation
 
     ..  card:: 🏗️ Architecture
 
-        Deep dive into root cause analysis, implementation approach, and how
-        Phase 1 addresses the temporal content problem.
+        Deep dive into root cause analysis, the implementation approach, and how
+        the extension addresses the temporal content problem.
 
         ..  card-footer:: :ref:`Architecture Details <architecture>`
             :button-style: btn btn-primary stretched-link
 
-    ..  card:: 🔮 Roadmap & Phases
+    ..  card:: 🔮 Approach & Limits
 
-        Understand the three-phase solution approach, migration path, and future
-        TYPO3 core integration (Phase 2/3). Learn about experimental vs stable status.
+        Why the extension works the way it does, what the approach cannot do, and
+        what a solution inside TYPO3 core would have to provide.
 
-        ..  card-footer:: :ref:`View Roadmap <phases>`
+        ..  card-footer:: :ref:`Approach and limits <phases>`
             :button-style: btn btn-success stretched-link
 
 .. Meta Menu
