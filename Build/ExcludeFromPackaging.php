@@ -15,10 +15,10 @@ declare(strict_types=1);
  *
  * The override REPLACES tailor's own conf/ExcludeFromPackaging.php; nothing is
  * merged (VersionService::getExcludeConfiguration() returns the loaded array
- * verbatim). The upstream 1.7.0 list is therefore restated below in full, with
- * this extension's additions marked. When tailor's defaults change, re-sync the
- * first block — Build/Scripts/verify-tailor-excludes.php compares the two and
- * fails when they drift.
+ * verbatim). Rather than restate the upstream entries here, this file composes
+ * them from TailorDefaults-1.7.0.php — a snapshot of the release
+ * `typo3/tailor:^1` installs — so each upstream entry exists in exactly one
+ * place and refreshing the snapshot is the whole update.
  *
  * Matching, per VersionService::createZipArchiveFromPath():
  *   directories  preg_match('/^' . $entry . '/i', $path)      root-anchored
@@ -39,27 +39,10 @@ declare(strict_types=1);
  * shipped to TER, where they are what a reader finds after unpacking.
  */
 
-return [
-    'directories' => [
-        // --- tailor 1.7.0 defaults, verbatim ---------------------------------
-        '.build',
-        '.ddev',
-        '.git',
-        '.github',
-        '.gitlab',
-        '.gitlab-ci',
-        '.idea',
-        '.phive',
-        'bin',
-        'build',
-        'public',
-        'tailor-version-artefact',
-        'tailor-version-upload',
-        'tests',
-        'tools',
-        'vendor',
+$tailorDefaults = require __DIR__ . '/TailorDefaults-1.7.0.php';
 
-        // --- this extension --------------------------------------------------
+return [
+    'directories' => array_merge($tailorDefaults['directories'], [
         // Serena MCP server state and agent scratch output: developer-machine
         // artifacts with no meaning outside the checkout.
         '.serena',
@@ -67,63 +50,8 @@ return [
         // The rendered manual is published to docs.typo3.org; shipping a copy
         // would double the artifact and go stale against it.
         'Documentation-GENERATED-temp',
-    ],
-    'files' => [
-        // --- tailor 1.7.0 defaults, verbatim ---------------------------------
-        'CODE_OF_CONDUCT.md',
-        'DS_Store',
-        'Dockerfile',
-        'ExtensionBuilder.json',
-        'Makefile',
-        'bower.json',
-        'codeception.yml',
-        'composer.lock',
-        'crowdin.yaml',
-        'docker-compose.yml',
-        'dynamicReturnTypeMeta.json',
-        'editorconfig',
-        'env',
-        'eslintignore',
-        'eslintrc.json',
-        'gitattributes',
-        'gitignore',
-        'gitlab-ci.yml',
-        'gitmodules',
-        'gitreview',
-        'package-lock.json',
-        'package.json',
-        'phive.xml',
-        'php-cs-fixer.dist.php',
-        'php-cs-fixer.php',
-        'php_cs',
-        'php_cs.php',
-        'phpcs.xml',
-        'phpcs.xml.dist',
-        'phplint.yml',
-        'phpstan-baseline.neon',
-        'phpstan.neon',
-        'phpstan.neon.dist',
-        'phpstorm.meta.php',
-        'phpunit.xml',
-        'phpunit.xml.dist',
-        'prettierrc.json',
-        'rector.php',
-        'scrutinizer.yml',
-        'styleci.yml',
-        'stylelint.config.js',
-        'stylelintrc',
-        'travis.yml',
-        'tslint.yaml',
-        'tslint.yml',
-        'typoscript-lint.yaml',
-        'typoscript-lint.yml',
-        'typoscriptlint.yaml',
-        'typoscriptlint.yml',
-        'webpack.config.js',
-        'webpack.mix.js',
-        'yarn.lock',
-
-        // --- this extension --------------------------------------------------
+    ]),
+    'files' => array_merge($tailorDefaults['files'], [
         // Agent instructions. AGENTS.md matches the scoped copies in Classes/,
         // Tests/ and elsewhere too, which is intended — the suffix match on the
         // basename cannot be scoped to the root anyway.
@@ -147,5 +75,5 @@ return [
         // Upstream 1.7.0 knows only crowdin.yaml; this repository uses the
         // .yml spelling, which the default list therefore misses.
         'crowdin.yml',
-    ],
+    ]),
 ];
