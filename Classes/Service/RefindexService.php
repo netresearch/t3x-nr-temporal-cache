@@ -54,7 +54,7 @@ class RefindexService implements SingletonInterface
         }
 
         // 2. Find references from sys_refindex
-        $referencedPages = $this->findReferencesFromRefindex($contentUid, $languageUid);
+        $referencedPages = $this->findReferencesFromRefindex($contentUid);
         $pageIds = \array_merge($pageIds, $referencedPages);
 
         // 3. Check for mount points that might display this content
@@ -111,11 +111,14 @@ class RefindexService implements SingletonInterface
      * - Plugin configurations
      * - Custom content references
      *
+     * sys_refindex carries no language column: it maps references between records, and the
+     * language lives on the referenced record itself. Filtering on one here silently matched
+     * nothing on SQLite and raised "Unknown column" on MySQL, which the caller swallowed.
+     *
      * @param int $contentUid UID of the content element
-     * @param int $languageUid Language UID
      * @return array<int> Array of page UIDs
      */
-    private function findReferencesFromRefindex(int $contentUid, int $languageUid): array
+    private function findReferencesFromRefindex(int $contentUid): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_refindex');
 
@@ -130,10 +133,6 @@ class RefindexService implements SingletonInterface
                 $queryBuilder->expr()->eq(
                     'ref_uid',
                     $queryBuilder->createNamedParameter($contentUid, Connection::PARAM_INT)
-                ),
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($languageUid, Connection::PARAM_INT)
                 )
             )
             ->executeQuery();
