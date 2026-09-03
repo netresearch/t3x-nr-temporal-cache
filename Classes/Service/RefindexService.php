@@ -19,7 +19,9 @@ use TYPO3\CMS\Core\SingletonInterface;
  * - Direct page references
  * - Mount point references
  * - Shortcut page references
- * - Multi-language scenarios
+ *
+ * References are resolved irrespective of language: sys_refindex has no language column,
+ * and a reference to a content element holds for every language of the referencing page.
  */
 class RefindexService implements SingletonInterface
 {
@@ -40,7 +42,10 @@ class RefindexService implements SingletonInterface
      * - Pages referencing via CONTENT/RECORDS cObjects
      *
      * @param int $contentUid UID of the content element
-     * @param int $languageUid Language UID for language-specific references
+     * @param int $languageUid Has no effect. sys_refindex carries no language column, and the
+     *                         pages, mount-point and shortcut lookups resolve a reference
+     *                         regardless of language. Retained so the signature stays
+     *                         compatible; pass anything, or omit it.
      * @return array<int> Array of unique page UIDs where content appears
      */
     public function findPagesWithContent(int $contentUid, int $languageUid = 0): array
