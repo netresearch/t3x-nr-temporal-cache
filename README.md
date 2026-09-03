@@ -155,7 +155,7 @@ From `composer.json` and `ext_emconf.php`:
 1. **Apply the database schema.** The extension ships its indexes in `ext_tables.sql` — `idx_temporalcache_starttime` and `idx_temporalcache_endtime` on `pages` and `tt_content` — so they are created by the schema migrator, not by hand:
 
 ```bash
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 ```
 
    Admin Tools → Maintenance → Analyze Database Structure does the same. `vendor/bin/typo3 temporalcache:verify` reports whether the indexes are in place.
@@ -257,7 +257,7 @@ The twelve settings from `ext_conf_template.txt`, with their defaults:
 - Round transitions to fixed time slots
 
 **Time Slots** (`harmonization.slots`, default `00:00,06:00,12:00,18:00`)
-- Comma-separated slots in HH:MM format
+- Comma-separated slots on a 24-hour clock; `HH:MM` and `H:MM` are both accepted
 
 **Tolerance** (`harmonization.tolerance`, default `3600`)
 - Maximum shift harmonization may apply, in seconds. A transition further from its nearest slot is left untouched; `0` disables harmonization entirely

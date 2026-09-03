@@ -179,7 +179,6 @@ Complete configuration
        ],
        'timing' => [
            'strategy' => 'scheduler',
-           'scheduler_interval' => 60,
        ],
        'harmonization' => [
            'enabled' => true,

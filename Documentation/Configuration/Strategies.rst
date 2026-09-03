@@ -179,28 +179,6 @@ Controls when the extension checks for temporal transitions.
       timing.hybrid.pages = dynamic
       timing.hybrid.content = scheduler
 
-.. confval:: timing.scheduler_interval
-
-   :type: integer
-   :Default: ``60``
-   :Path: $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_temporal_cache']['timing']['scheduler_interval']
-
-   Intended check interval in seconds for the scheduler timing strategy.
-   :php:`ExtensionConfiguration::getSchedulerInterval()` reads the value and
-   raises anything below 60 to 60.
-
-   .. warning::
-      No component of this version reads that getter.
-      How often transitions are actually processed is set by the frequency of
-      the scheduler task itself, not by this value.
-
-   Example
-   -------
-
-   .. code-block:: text
-
-      timing.scheduler_interval = 60
-
 .. confval:: timing.hybrid.pages
 
    :type: string

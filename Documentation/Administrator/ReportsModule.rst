@@ -124,7 +124,8 @@ When harmonization is **enabled**:
 
 - Current time slot configuration
 - Tolerance setting
-- Auto-round on save status
+- Auto-round flag, which the report shows for reference only — nothing
+  rounds timestamps on save
 - The reduction harmonization would achieve on the current content, as a percentage
 
 **Status levels:**
