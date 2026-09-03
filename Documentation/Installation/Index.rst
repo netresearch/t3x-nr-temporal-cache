@@ -266,7 +266,7 @@ Content does not update
       vendor/bin/typo3 extension:list
 
 2. Confirm the timing strategy: ``scheduler`` and ``hybrid`` depend on the
-   scheduler task, and this version registers no task type — see
+   scheduler task, so confirm it is created and running — see
    :ref:`scheduler-setup`
 
 3. Clear all caches::

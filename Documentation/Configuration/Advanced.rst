@@ -129,28 +129,25 @@ They rely on :php:`Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask`,
 which finds the transitions that occurred since its last run and hands each one
 to the active timing strategy.
 
-.. warning::
-   This version ships the task class and its service definition, but registers
-   no task type: nothing is added to
-   :php:`$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']`, which
-   is the list the Scheduler module builds its task selection from.
-   The task therefore does not appear under :guilabel:`Create new task`, and
-   there is no supported way to schedule it.
+:file:`ext_localconf.php` registers the task type in
+:php:`$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']`, the list
+the Scheduler module builds its task selection from, so
+:guilabel:`Scheduler → Create new task` offers **Temporal Cache: Process
+transitions**.
 
-   Consequences while that is the case:
+.. note::
+   Registering the task type is not the same as scheduling it.
+   Until a task is created and runs,
+   ``timing.strategy = scheduler`` leaves the page cache lifetime untouched and
+   has nothing that flushes it; ``hybrid`` still calculates a lifetime for
+   whichever content type is routed to ``dynamic``, but the transitions routed
+   to the scheduler wait for the task; and the targeted cache tags of
+   ``per-page`` and ``per-content`` scoping stay unused, because only the task
+   triggers them.
+   ``timing.strategy = dynamic`` needs no task at all.
 
-   - ``timing.strategy = scheduler`` leaves the page cache lifetime untouched
-     and has nothing that flushes it, so temporal content does not update.
-   - ``timing.strategy = hybrid`` still calculates a lifetime as long as
-     ``timing.hybrid.pages`` is ``dynamic``, but content transitions routed to
-     the scheduler are never processed.
-   - The targeted cache tags of ``per-page`` and ``per-content`` scoping are
-     never used, because only the task triggers them.
-
-   ``timing.strategy = dynamic`` is unaffected — it needs no task.
-
-Once a task type is registered, the Scheduler still needs a cron entry that
-runs it:
+Creating the task is not enough on its own either — the Scheduler needs a cron
+entry that runs it:
 
 .. code-block:: bash
    :caption: crontab

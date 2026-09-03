@@ -15,8 +15,9 @@ For help choosing between them, see :ref:`performance-strategies` and
    Every example that sets ``timing.strategy`` to ``scheduler``, or routes a
    content type to the scheduler through ``hybrid``, depends on the scheduler
    task.
-   Read :ref:`scheduler-setup` first — this version registers no task type, so
-   nothing processes those transitions yet.
+   Read :ref:`scheduler-setup` first: the task type is registered, but a task
+   still has to be created in the Scheduler module and run by cron before those
+   transitions are processed.
 
 .. _configuration-presets:
 

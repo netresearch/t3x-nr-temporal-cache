@@ -42,8 +42,8 @@ Cache not updating
 
    Only ``dynamic`` expires the cache by itself.
    ``scheduler`` relies entirely on the scheduler task, and ``hybrid`` does for
-   whichever content type is routed to it — and this version registers no task
-   type, so those transitions are never processed.
+   whichever content type is routed to it, so check that the task exists in the
+   Scheduler module and that cron is running it.
    See :ref:`scheduler-setup`.
 
 #. **Do the indexes exist?**

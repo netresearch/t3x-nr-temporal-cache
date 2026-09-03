@@ -320,13 +320,21 @@ final class VerifyCommand extends Command
             }
         }
 
-        // Check tolerance
+        // Check tolerance. 0 is a deliberate setting, not an error: harmonizeTimestamp()
+        // returns the timestamp unchanged whenever its distance to the nearest slot
+        // exceeds the tolerance, so a tolerance of 0 moves nothing and switches rounding
+        // off. Reporting that INVALID contradicted the manual and failed the whole
+        // command over a working configuration.
         $tolerance = $this->configuration->getHarmonizationTolerance();
-        $toleranceValid = $tolerance > 0 && $tolerance <= 86400; // Max 1 day
+        $toleranceValid = $tolerance >= 0 && $tolerance <= 86400; // Max 1 day
         $results[] = [
             'Tolerance',
             $tolerance . ' seconds (' . (int)($tolerance / 60) . ' minutes)',
-            $toleranceValid ? '<fg=green>OK</>' : '<fg=red>INVALID</>',
+            match (true) {
+                !$toleranceValid => '<fg=red>INVALID</>',
+                $tolerance === 0 => '<fg=yellow>ROUNDING OFF</>',
+                default => '<fg=green>OK</>',
+            },
         ];
         if (!$toleranceValid) {
             $allValid = false;
