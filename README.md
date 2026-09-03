@@ -128,7 +128,7 @@ Visual management interface at **Admin Tools → Temporal Cache**:
 composer require netresearch/nr-temporal-cache:^0.9
 ```
 
-`0.9.0` is a beta release, so a project with `minimum-stability` below `beta` needs `composer require netresearch/nr-temporal-cache:^0.9@beta`.
+No stability flag is needed: `v0.9.0` carries no pre-release suffix, so Composer treats it as a stable version and the default `minimum-stability: stable` accepts it. The `beta` state in `ext_emconf.php` is TYPO3's own maturity label, which Composer does not read — it means the API may still change before 1.0, not that the package resolves differently.
 
 ### TER (TYPO3 Extension Repository)
 
