@@ -24,5 +24,11 @@ jobs:
       archive-prefix: 'nr-temporal-cache'
       package-name: 'netresearch/nr-temporal-cache'
       extension-key: 'nr_temporal_cache'
+      # tailor packages the working directory and ignores .gitattributes, so
+      # export-ignore has no effect on the TER zip — this list is what keeps
+      # agent instructions, DDEV scaffolding and repository tooling out of it.
+      # Build/Scripts/verify-tailor-excludes.php guards it against drift from
+      # tailor's own defaults, and runs as a job in harness-verify.yml.
+      exclude-from-packaging: 'Build/ExcludeFromPackaging.php'
     secrets:
       TYPO3_TER_ACCESS_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
