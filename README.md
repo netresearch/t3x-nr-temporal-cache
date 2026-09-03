@@ -125,7 +125,7 @@ Visual management interface at **Admin Tools → Temporal Cache**:
 ### Composer
 
 ```bash
-composer require netresearch/nr-temporal-cache:^0.9
+composer require netresearch/nr-temporal-cache:^1.0
 ```
 
 No stability flag is needed: `v1.0.0` carries no pre-release suffix, and `ext_emconf.php` declares state `stable`.

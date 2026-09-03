@@ -226,8 +226,9 @@ Controls when the extension checks for temporal transitions.
    back to ``dynamic``.
    Only read when ``timing.strategy = hybrid``.
 
-   This rule routes content transitions to the scheduler task, and it also
-   contributes to the page cache lifetime.
+   This rule routes content transitions to the strategy it names — the
+   scheduler task when set to ``scheduler``, the dynamic strategy when set to
+   ``dynamic`` — and it also contributes to the page cache lifetime.
    :php:`HybridTimingStrategy::getCacheLifetime()` asks the strategies both rules
    resolve to and takes the earliest non-null answer, because a rendered page
    depends on the page record and on the content on it alike.
