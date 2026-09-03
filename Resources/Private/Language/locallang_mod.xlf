@@ -16,7 +16,7 @@
                 <source>Temporal Cache: Process Transitions</source>
             </trans-unit>
             <trans-unit id="task.processTransitions.description" resname="task.processTransitions.description">
-                <source>Processes all temporal content transitions that occurred since the last run and invalidates the affected caches. Required for the scheduler and hybrid timing strategies.</source>
+                <source>Processes all temporal content transitions that occurred since the last run and invalidates the affected caches. Required by the scheduler timing strategy, and by hybrid timing when at least one of its rules is set to scheduler.</source>
             </trans-unit>
 
             <!-- Menu -->
