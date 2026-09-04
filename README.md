@@ -322,7 +322,7 @@ See the [installation guide](Documentation/Installation/Index.rst) and the [conf
 
 ## Documentation
 
-The rendered manual lives in `Documentation/` (build it with `composer docs:render`):
+The manual is published at [docs.typo3.org](https://docs.typo3.org/p/netresearch/nr-temporal-cache/1.0/en-us/) and lives in `Documentation/` (build it locally with `composer docs:render`):
 
 - **[Introduction](Documentation/Introduction/Index.rst)** - Problem background
 - **[Performance Considerations](Documentation/Performance/Index.rst)** - Performance impact and mitigation
@@ -332,6 +332,7 @@ The rendered manual lives in `Documentation/` (build it with `composer docs:rend
 - **[Command-line interface](Documentation/CommandLine/Index.rst)** - CLI command reference
 - **[Reports Module](Documentation/Administrator/ReportsModule.rst)** - TYPO3 Reports integration
 - **[Architecture](Documentation/Architecture/Index.rst)** - Technical details
+- **[Public API](Documentation/Api/Index.rst)** - What Semantic Versioning covers, and what is internal
 - **[Phases](Documentation/Phases/Index.rst)** - Approach, limits and a core solution
 
 ## Compatibility
