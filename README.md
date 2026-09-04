@@ -322,7 +322,7 @@ See the [installation guide](Documentation/Installation/Index.rst) and the [conf
 
 ## Documentation
 
-The manual is published at [docs.typo3.org](https://docs.typo3.org/p/netresearch/nr-temporal-cache/1.0/en-us/) and lives in `Documentation/` (build it locally with `composer docs:render`):
+The manual lives in `Documentation/` (build it locally with `composer docs:render`). Rendering to [docs.typo3.org](https://docs.typo3.org/p/netresearch/nr-temporal-cache/main/en-us/) is set up but not yet approved by the TYPO3 Documentation Team, so that URL does not resolve yet:
 
 - **[Introduction](Documentation/Introduction/Index.rst)** - Problem background
 - **[Performance Considerations](Documentation/Performance/Index.rst)** - Performance impact and mitigation
