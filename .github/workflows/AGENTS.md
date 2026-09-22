@@ -10,7 +10,7 @@ All workflows are thin callers of shared reusables — logic, pinning, and harde
 | File | Calls | Purpose |
 |------|-------|---------|
 | `ci.yml` | `netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main` | Test matrix PHP 8.1–8.5 × TYPO3 ^12.4/^13.0/^14.0 (with excludes), functional tests on |
-| `checks.yml` | `netresearch/typo3-ci-workflows` + `netresearch/.github` reusables | security, gitleaks, zizmor, fuzz, license-check, CodeQL, scorecard, dependency-review, pr-quality + local gate job |
+| `checks.yml` | `netresearch/typo3-ci-workflows` + `netresearch/.github` reusables | security, betterleaks, zizmor, fuzz, license-check, CodeQL, scorecard, dependency-review, pr-quality + local gate job |
 | `harness-verify.yml` | `netresearch/.github/.github/workflows/script-check.yml@main` | Agent-harness consistency (`Build/Scripts/verify-harness.sh`) |
 | `release.yml` | `netresearch/typo3-ci-workflows/.github/workflows/release-typo3-extension.yml@main` | Extension release |
 | `auto-merge-deps.yml`, `labeler.yml`, `community.yml`, `check-template-drift.yml` | `netresearch/.github` reusables | Dependency auto-merge, labeling, stale/lock/greetings, template drift |
