@@ -21,6 +21,15 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[UsesClass(TransitionEvent::class)]
 final class DynamicTimingStrategyTest extends UnitTestCase
 {
+    /**
+     * A fixed "now" handed to the subject. Reading \time() in the test and
+     * again in the subject lets a second tick between the two calls, which
+     * made the exact-lifetime assertions fail intermittently (#99). A value
+     * far from the real clock also makes a subject that ignores the injected
+     * clock fail every run instead of once in a while.
+     */
+    private const NOW = 1_700_000_000;
+
     private ScopingStrategyInterface&Stub $scopingStrategy;
 
     private ExtensionConfiguration&Stub $configuration;
@@ -38,7 +47,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
 
         $this->subject = new DynamicTimingStrategy(
             $this->scopingStrategy,
-            $this->configuration
+            $this->configuration,
+            static fn (): int => self::NOW,
         );
     }
 
@@ -86,8 +96,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     /**     */
     public function testGetCacheLifetimeReturnsLifetimeUntilNextTransition(): void
     {
-        $currentTime = \time();
-        $nextTransition = $currentTime + 3600;
+        $nextTransition = self::NOW + 3600;
 
         $this->configuration
             ->method('getDefaultMaxLifetime')
@@ -121,8 +130,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     /**     */
     public function testGetCacheLifetimeCapsAtMaximum(): void
     {
-        $currentTime = \time();
-        $nextTransition = $currentTime + 172800; // 2 days
+        $nextTransition = self::NOW + 172800; // 2 days
 
         $this->scopingStrategy
             ->method('getNextTransition')
@@ -140,8 +148,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     /**     */
     public function testGetCacheLifetimeReturnsMinimumForPastTransitions(): void
     {
-        $currentTime = \time();
-        $pastTransition = $currentTime - 3600;
+        $pastTransition = self::NOW - 3600;
 
         $this->scopingStrategy
             ->method('getNextTransition')
@@ -155,8 +162,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     /**     */
     public function testGetCacheLifetimePassesPageIdToScopingStrategy(): void
     {
-        $currentTime = \time();
-        $nextTransition = $currentTime + 1800;
+        $nextTransition = self::NOW + 1800;
 
         $this->configuration
             ->method('getDefaultMaxLifetime')
@@ -170,7 +176,7 @@ final class DynamicTimingStrategyTest extends UnitTestCase
             ->with($this->context, 42)
             ->willReturn($nextTransition);
 
-        $subject = new DynamicTimingStrategy($scopingStrategy, $this->configuration);
+        $subject = new DynamicTimingStrategy($scopingStrategy, $this->configuration, static fn (): int => self::NOW);
 
         self::assertSame(1800, $subject->getCacheLifetime($this->context, 42));
     }
