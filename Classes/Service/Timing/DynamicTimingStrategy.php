@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
+use Closure;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
@@ -38,10 +39,20 @@ use TYPO3\CMS\Core\Context\Context;
  */
 class DynamicTimingStrategy implements TimingStrategyInterface
 {
+    /** @var Closure():int */
+    private readonly Closure $clock;
+
+    /**
+     * @param Closure():int|null $clock Source of the current Unix time. Defaults to
+     *                                      \time(); tests pass a fixed value so the lifetime
+     *                                      does not depend on the second the test runs in.
+     */
     public function __construct(
         private readonly ScopingStrategyInterface $scopingStrategy,
-        private readonly ExtensionConfiguration $configuration
+        private readonly ExtensionConfiguration $configuration,
+        ?Closure $clock = null,
     ) {
+        $this->clock = $clock ?? \time(...);
     }
 
     /**
@@ -85,7 +96,7 @@ class DynamicTimingStrategy implements TimingStrategyInterface
      */
     public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
-        $currentTime = \time();
+        $currentTime = ($this->clock)();
 
         // Delegate transition discovery to the scoping strategy so per-page/per-content
         // scoping can narrow the cache lifetime to the page currently being rendered.
