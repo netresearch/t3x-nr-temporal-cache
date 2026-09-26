@@ -14,7 +14,7 @@ Requirements
 **Minimum**, as declared in :file:`composer.json`:
 
 - PHP 8.1 or newer
-- TYPO3 ``^12.4 || ^13.0 || ^14.0``
+- TYPO3 ``^12.4 || ^13.4 || ^14.3``
 - ``typo3/cms-scheduler`` and ``typo3/cms-reports``, both pulled in as
   dependencies
 
@@ -41,15 +41,15 @@ The combinations below are the ones the CI matrix in
      - PHP version
      - Status
      - Notes
-   * - 12.4+
+   * - 12.4 LTS
      - 8.1 - 8.4
      - ✅ Supported
      - PHP 8.5 is excluded from this cell in CI
-   * - 13.0+
+   * - 13.4 LTS
      - 8.2 - 8.5
      - ✅ Supported
      - PHP 8.1 is excluded from this cell in CI
-   * - 14.0+
+   * - 14.3 LTS
      - 8.3 - 8.5
      - ✅ Supported
      - PHP 8.1 and 8.2 are excluded from this cell in CI

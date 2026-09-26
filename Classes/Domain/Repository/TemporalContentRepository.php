@@ -545,7 +545,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      *
      * Why the superglobal and not a schema service: TYPO3's Schema API
      * (TcaSchemaFactory) only exists from TYPO3 13.2 on (Feature-104002). This
-     * extension supports ^12.4 || ^13.0 || ^14.0, so $GLOBALS['TCA'] is the one
+     * extension supports ^12.4 || ^13.4 || ^14.3, so $GLOBALS['TCA'] is the one
      * accessor available on every supported version.
      *
      * What would replace it: the typed read

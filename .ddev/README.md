@@ -17,7 +17,7 @@ ddev start
 # Install TYPO3 v12.4 LTS with extension
 ddev install-v12
 
-# OR install TYPO3 v13.0 LTS with extension
+# OR install TYPO3 v13.4 LTS with extension
 ddev install-v13
 
 # OR install both versions
@@ -30,7 +30,7 @@ ddev install-all
 |---------|-------------|
 | `ddev start` | Start the DDEV environment |
 | `ddev install-v12` | Install TYPO3 v12.4 LTS with temporal_cache |
-| `ddev install-v13` | Install TYPO3 v13.0 LTS with temporal_cache |
+| `ddev install-v13` | Install TYPO3 v13.4 LTS with temporal_cache |
 | `ddev install-all` | Install all TYPO3 versions |
 | `ddev stop` | Stop the DDEV environment |
 | `ddev restart` | Restart the DDEV environment |
@@ -47,7 +47,7 @@ ddev install-all
 - **Frontend**: https://v12.temporal-cache.ddev.site/
 - **Backend**: https://v12.temporal-cache.ddev.site/typo3/
 
-### TYPO3 v13.0 LTS
+### TYPO3 v13.4 LTS
 - **Frontend**: https://v13.temporal-cache.ddev.site/
 - **Backend**: https://v13.temporal-cache.ddev.site/typo3/
 

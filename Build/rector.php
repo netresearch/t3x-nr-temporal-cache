@@ -47,7 +47,7 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
         ],
         // Both rules below come from the v14 set added at the bottom of this
         // file and rewrite to APIs that exist only in v14, so applying them
-        // would drop the ^12.4 || ^13.0 half of the composer.json constraint.
+        // would drop the ^12.4 || ^13.4 half of the composer.json constraint.
         // Remove them when v12/v13 support is dropped.
         //
         // Injects TYPO3\CMS\Backend\Template\Components\ComponentFactory into
@@ -68,7 +68,7 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
     // TYPO3 migration level: v14, the HIGHEST major this extension supports.
     // An UP_TO set is cumulative — up-to-typo3-14.php itself registers
     // UP_TO_TYPO3_13 plus the v14 set — so the level tracks the newest version
-    // in composer.json (^12.4 || ^13.0 || ^14.0), not the oldest; raise it when
+    // in composer.json (^12.4 || ^13.4 || ^14.3), not the oldest; raise it when
     // v15 support is added (typo3-ci-workflows#155). Compatibility with the
     // still-supported v12 is kept by the skip() list above, not by holding the
     // level back.

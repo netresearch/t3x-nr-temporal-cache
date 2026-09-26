@@ -7,7 +7,7 @@
 set -e
 
 VERSION="v13"
-TYPO3_VERSION="^13.0"
+TYPO3_VERSION="^13.4"
 
 echo "Installing TYPO3 ${TYPO3_VERSION} with temporal_cache extension..."
 

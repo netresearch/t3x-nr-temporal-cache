@@ -113,7 +113,7 @@ Requirements
     * - Requirement
       - Value
     * - TYPO3
-      - ``^12.4 || ^13.0 || ^14.0``
+      - ``^12.4 || ^13.4 || ^14.3``
     * - PHP
       - ``^8.1``
     * - Required TYPO3 extensions

@@ -11,7 +11,7 @@ TYPO3 extension addressing Forge #14277: automatic page cache invalidation for t
 
 - **Package**: `netresearch/nr-temporal-cache` (Composer) / extension key `nr_temporal_cache`
 - **Namespace**: `Netresearch\TemporalCache\` (PSR-4 from `Classes/`)
-- **Tech stack**: PHP ^8.1, TYPO3 ^12.4 || ^13.0 || ^14.0, license GPL-2.0-or-later
+- **Tech stack**: PHP ^8.1, TYPO3 ^12.4 || ^13.4 || ^14.3, license GPL-2.0-or-later
 - **Version/state**: see `ext_emconf.php` (single source of truth)
 - **Architecture map**: see `docs/ARCHITECTURE.md`
 

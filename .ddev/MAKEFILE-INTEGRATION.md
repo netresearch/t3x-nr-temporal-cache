@@ -49,7 +49,7 @@ make ci            # Complete CI pipeline
 
 # TYPO3 management
 make install-v12   # Install TYPO3 v12.4 LTS
-make install-v13   # Install TYPO3 v13.0 LTS
+make install-v13   # Install TYPO3 v13.4 LTS
 make urls          # Show all access URLs
 
 # Extension-specific commands
@@ -113,7 +113,7 @@ make up
 This will:
 1. Start DDEV environment
 2. Install TYPO3 v12.4 LTS with temporal_cache
-3. Install TYPO3 v13.0 LTS with temporal_cache
+3. Install TYPO3 v13.4 LTS with temporal_cache
 4. Show access URLs
 
 ### 3. Access TYPO3 Installations
@@ -126,7 +126,7 @@ make urls
 - Frontend: https://v12.temporal-cache.ddev.site/
 - Backend: https://v12.temporal-cache.ddev.site/typo3/
 
-**TYPO3 v13.0 LTS**:
+**TYPO3 v13.4 LTS**:
 - Frontend: https://v13.temporal-cache.ddev.site/
 - Backend: https://v13.temporal-cache.ddev.site/typo3/
 
