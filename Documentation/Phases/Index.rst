@@ -63,7 +63,7 @@ Properties of this approach
 ---------------------------
 
 Works with the released TYPO3 versions
-   ``^12.4 || ^13.0 || ^14.0``, no core patch required.
+   ``^12.4 || ^13.4 || ^14.3``, no core patch required.
 
 Nothing to configure for it to work
    The defaults (global scoping, dynamic timing) are active on installation.

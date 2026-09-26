@@ -20,7 +20,7 @@ echo ""
 
 # Install v13
 echo "=========================================="
-echo "Installing TYPO3 v13.0 LTS..."
+echo "Installing TYPO3 v13.4 LTS..."
 echo "=========================================="
 /var/www/html/.ddev/commands/web/install-v13
 
