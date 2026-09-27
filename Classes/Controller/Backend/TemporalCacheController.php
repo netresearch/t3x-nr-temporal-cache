@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Pagination\ArrayPaginator;
 use TYPO3\CMS\Core\Pagination\SimplePagination;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
@@ -322,22 +323,31 @@ final class TemporalCacheController extends ActionController
      */
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
-        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        $docHeader = $moduleTemplate->getDocHeaderComponent();
+        $buttonBar = $docHeader->getButtonBar();
+        $displayName = $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab');
 
-        // Refresh button (all actions)
-        $refreshButton = $buttonBar->makeLinkButton()
-            ->setHref($this->buildModuleUri($currentAction))
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-            ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
-            ->setShowLabelText(false);
-        $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
+        if (\method_exists($docHeader, 'setShortcutContext')) {
+            // TYPO3 v14 adds the reload and shortcut buttons itself; adding them
+            // here as well shows two reload buttons, and a manual shortcut button
+            // is deprecated there.
+            $docHeader->setShortcutContext(self::MODULE_ROUTE, $displayName, ['action' => $currentAction]);
+        } else {
+            // Refresh button (all actions)
+            $refreshButton = $buttonBar->makeLinkButton()
+                ->setHref($this->buildModuleUri($currentAction))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
+                ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                ->setShowLabelText(false);
+            $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
-        // Shortcut button (all actions)
-        $shortcutButton = $buttonBar->makeShortcutButton()
-            ->setRouteIdentifier(self::MODULE_ROUTE)
-            ->setDisplayName($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'))
-            ->setArguments(['action' => $currentAction]);
-        $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
+            // Shortcut button (all actions)
+            $shortcutButton = $buttonBar->makeShortcutButton()
+                ->setRouteIdentifier(self::MODULE_ROUTE)
+                ->setDisplayName($displayName)
+                ->setArguments(['action' => $currentAction]);
+            $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
+        }
 
         // Action-specific buttons
         switch ($currentAction) {
@@ -440,7 +450,10 @@ final class TemporalCacheController extends ActionController
     /**
      * Analyze current configuration and provide recommendations.
      *
-     * @return array<int, array<string, string>>
+     * `state` is the integer severity the `f:be.infobox` ViewHelper takes on
+     * every supported TYPO3 version (v14 also accepts the enum, v12/v13 do not).
+     *
+     * @return array<int, array{type: string, state: int, title: string, message: string}>
      */
     private function analyzeConfiguration(): array
     {
@@ -451,6 +464,7 @@ final class TemporalCacheController extends ActionController
         if (!$this->extensionConfiguration->isHarmonizationEnabled() && $stats['transitionsPerDay'] > 10) {
             $recommendations[] = [
                 'type' => 'warning',
+                'state' => ContextualFeedbackSeverity::WARNING->value,
                 'title' => 'recommendation.harmonization.title',
                 'message' => 'recommendation.harmonization.message',
             ];
@@ -460,6 +474,7 @@ final class TemporalCacheController extends ActionController
         if ($this->extensionConfiguration->getScopingStrategy() === 'global' && $stats['contentCount'] > 100) {
             $recommendations[] = [
                 'type' => 'info',
+                'state' => ContextualFeedbackSeverity::INFO->value,
                 'title' => 'recommendation.scoping.title',
                 'message' => 'recommendation.scoping.message',
             ];
@@ -469,6 +484,7 @@ final class TemporalCacheController extends ActionController
         if ($this->extensionConfiguration->getTimingStrategy() === 'dynamic' && $stats['transitionsPerDay'] > 20) {
             $recommendations[] = [
                 'type' => 'info',
+                'state' => ContextualFeedbackSeverity::INFO->value,
                 'title' => 'recommendation.timing.title',
                 'message' => 'recommendation.timing.message',
             ];

@@ -15,7 +15,7 @@
                     <f:link.action
                         action="content"
                         arguments="{filter: value}"
-                        class="btn btn-{f:if(condition: '{filter} == {value}', then: 'primary', else: 'outline-primary')}">
+                        class="btn btn-{f:if(condition: '{filter} == {value}', then: 'primary', else: 'default')}">
                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.{label}" />
                     </f:link.action>
                 </f:for>
@@ -44,7 +44,7 @@
     <!-- Content Table -->
     <f:if condition="{content}">
         <f:then>
-            <div class="table-responsive">
+            <div class="table-fit">
                 <table class="table table-striped table-hover" role="grid" aria-label="Temporal Content List">
                     <thead>
                         <tr role="row">
@@ -74,12 +74,13 @@
                                                 type="checkbox"
                                                 class="form-check-input content-checkbox"
                                                 data-uid="{item.content.uid}"
-                                                data-table="{item.content.tableName}">
+                                                data-table="{item.content.tableName}"
+                                                aria-label="{item.content.title} ({item.content.tableName}:{item.content.uid})">
                                         </f:if>
                                     </td>
                                 </f:if>
                                 <td>
-                                    <span class="badge bg-{f:if(condition: '{item.content.tableName} == \'pages\'', then: 'primary', else: 'secondary')}">
+                                    <span class="badge badge-{f:if(condition: '{item.content.tableName} == \'pages\'', then: 'primary', else: 'default')}">
                                         {f:if(condition: '{item.content.tableName} == \'pages\'', then: 'Page', else: 'Content')}
                                     </span>
                                 </td>
@@ -87,7 +88,7 @@
                                 <td>
                                     <strong>{item.content.title}</strong>
                                     <f:if condition="{item.content.hidden}">
-                                        <span class="badge bg-secondary ms-1">hidden</span>
+                                        <span class="badge badge-default ms-1">hidden</span>
                                     </f:if>
                                 </td>
                                 <td>
@@ -109,15 +110,15 @@
                                 <td>
                                     <f:if condition="{item.isVisible}">
                                         <f:then>
-                                            <span class="badge bg-success"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.active" /></span>
+                                            <span class="badge badge-success"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.active" /></span>
                                         </f:then>
                                         <f:else>
                                             <f:if condition="{item.content.starttime} > {currentTime}">
                                                 <f:then>
-                                                    <span class="badge bg-primary"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.scheduled" /></span>
+                                                    <span class="badge badge-primary"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.scheduled" /></span>
                                                 </f:then>
                                                 <f:else>
-                                                    <span class="badge bg-danger"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.expired" /></span>
+                                                    <span class="badge badge-danger"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.status.expired" /></span>
                                                 </f:else>
                                             </f:if>
                                         </f:else>
@@ -202,9 +203,9 @@
 
         </f:then>
         <f:else>
-            <div class="alert alert-info">
+            <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_INFO')}">
                 <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.no_content" />
-            </div>
+            </f:be.infobox>
         </f:else>
     </f:if>
 

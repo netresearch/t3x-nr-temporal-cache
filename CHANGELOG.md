@@ -10,6 +10,17 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+### Fixed
+
+- The backend module now shows the TYPO3 doc header on all three views. The
+  extension shipped its own `Module` layout, which replaced core's and dropped
+  the reload and bookmark buttons and the view menu the controller registers.
+- The backend module follows the light and dark scheme: badges, buttons and
+  info boxes use core's classes (`badge-*`, `btn-default`, `f:be.infobox`)
+  instead of Bootstrap colours that stay fixed in both schemes, the filter
+  buttons have a border and a visible focus ring, and headings no longer skip
+  levels. The row checkboxes in the content list have an accessible name.
+
 ## [1.0.0] - 2026-09-04
 
 First stable release. The API listed in `Documentation/Api/` follows Semantic

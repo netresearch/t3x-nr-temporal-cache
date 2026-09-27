@@ -49,3 +49,15 @@ parameters:
             identifier: argument.type
             message: '#method TYPO3\\CMS\\Core\\Imaging\\IconFactory::getIcon\(\) expects TYPO3\\CMS\\Core\\Imaging\\IconSize#'
             reportUnmatched: false
+        # method_exists($docHeader, 'setShortcutContext') in the same controller
+        # detects v14, which adds the reload and shortcut buttons itself. The
+        # method exists on v14 only, so the check is "always true" in the v14
+        # cells and "always false" in the v12/v13 cells. Drop both with v13.
+        -
+            identifier: function.alreadyNarrowedType
+            message: '#method_exists\(\) with TYPO3\\CMS\\Backend\\Template\\Components\\DocHeaderComponent and ''setShortcutContext''#'
+            reportUnmatched: false
+        -
+            identifier: function.impossibleType
+            message: '#method_exists\(\) with TYPO3\\CMS\\Backend\\Template\\Components\\DocHeaderComponent and ''setShortcutContext''#'
+            reportUnmatched: false

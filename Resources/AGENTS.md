@@ -9,7 +9,7 @@ Frontend-free resource assets:
 
 - `Private/Language/` — XLIFF translation files (`locallang_mod.xlf`, `locallang_reports.xlf` and ~30 language variants each)
 - `Private/Templates/Backend/TemporalCache/` — Fluid templates for the backend module (`Dashboard.html`, `Content.html`, `Wizard.html`)
-- `Private/Layouts/` — Fluid layouts (`Default.html`, `Module.html`)
+- `Private/Layouts/` — `Default.html` only; the module templates use core's `Module` layout (EXT:backend), which renders the doc header, so do not add a `Module.html` here
 - `Public/Icons/` — `Extension.svg`, `ModuleIcon.svg`, `ModuleIcon.legacy.svg`
 - `Public/JavaScript/backend-module.js` — backend module ES module (registered in `../Configuration/JavaScriptModules.php`)
 
