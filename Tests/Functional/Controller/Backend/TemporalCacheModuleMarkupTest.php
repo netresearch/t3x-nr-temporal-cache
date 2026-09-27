@@ -103,6 +103,54 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         self::assertStringNotContainsString('data-module-name="temporal-cache"', $body, "the extension layout must not replace core's");
     }
 
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function actionProvider(): array
+    {
+        return [
+            'dashboard' => ['dashboard'],
+            'content' => ['content'],
+            'wizard' => ['wizard'],
+        ];
+    }
+
+    /**
+     * TYPO3 14 adds its own reload and bookmark buttons, so the controller must not
+     * add them there; 12 and 13 need the controller's. Either way the doc header
+     * carries exactly one of each. One render per test: on 14 the DocHeaderComponent
+     * is a shared service, so a second render in the same process sees the first
+     * render's buttons.
+     */
+    #[Test]
+    #[DataProvider('actionProvider')]
+    public function docHeaderHasExactlyOneReloadAndOneBookmarkButton(string $action): void
+    {
+        $body = $this->render($action, 'welcome');
+
+        self::assertSame(1, \substr_count($body, 'data-identifier="actions-refresh"'), 'reload buttons');
+        self::assertSame(
+            1,
+            \substr_count($body, 'data-dispatch-action="TYPO3.ShortcutMenu.createShortcut"')
+                + \substr_count($body, '<typo3-backend-bookmark-button '),
+            'bookmark buttons (12/13: shortcut dispatch link, 14: bookmark element)'
+        );
+    }
+
+    #[Test]
+    public function viewMenuHasItsOwnLabel(): void
+    {
+        $body = $this->render('content', '');
+
+        // 12/13 render the menu as a <select> with a visually hidden <label>; 14 as a
+        // dropdown button whose visually hidden prefix is the menu label, or the first
+        // item's title when no label is set.
+        self::assertMatchesRegularExpression(
+            '#<label class="form-label visually-hidden" for="temporal_cache_menu">View</label>|<span class="visually-hidden">View:</span>#',
+            $body
+        );
+    }
+
     #[Test]
     #[DataProvider('viewProvider')]
     public function viewUsesOnlySchemeAwareCoreClasses(string $action, string $step): void

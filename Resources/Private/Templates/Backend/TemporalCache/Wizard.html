@@ -16,7 +16,7 @@
             <div class="card-body">
                 <p><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.description" /></p>
 
-                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.current_stats')}" state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_INFO')}">
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.current_stats')}" state="-1">
                     <ul class="mb-0">
                         <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.stat.total" arguments="{0: stats.totalCount}" /></li>
                         <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.stat.transitions" arguments="{0: stats.transitionsPerDay}" /></li>
@@ -191,7 +191,7 @@
                         </div>
                     </div>
 
-                    <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note')}" state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_WARNING')}">
+                    <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note')}" state="1">
                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note_text" />
                     </f:be.infobox>
 
@@ -215,7 +215,7 @@
                 <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.title" /></h2>
             </div>
             <div class="card-body">
-                <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_OK')}">
+                <f:be.infobox state="0">
                     <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.success" />
                 </f:be.infobox>
 

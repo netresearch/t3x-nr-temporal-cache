@@ -90,7 +90,7 @@
                     </div>
                     <f:if condition="{stats.harmonizableCandidates} > 0">
                         <div class="mt-3">
-                            <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_INFO')}">
+                            <f:be.infobox state="-1">
                                 <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.harmonizable_hint" arguments="{0: stats.harmonizableCandidates}" />
                                 <f:link.action action="content" arguments="{filter: 'harmonizable'}" class="btn btn-sm btn-primary ms-2">
                                     <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.view_harmonizable" />
@@ -137,7 +137,7 @@
                             </div>
                         </f:then>
                         <f:else>
-                            <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_INFO')}">
+                            <f:be.infobox state="-1">
                                 <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.no_transitions" />
                             </f:be.infobox>
                         </f:else>

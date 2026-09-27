@@ -83,6 +83,35 @@ final class BackendTemplateClassesTest extends UnitTestCase
     }
 
     #[Test]
+    public function tableCheckboxesSitInCoreFormCheckWrapper(): void
+    {
+        // Core sizes .form-check-input only inside .form-check; bare, the inputs
+        // render 0x0 on 13.4 and 14.3. Same wrapper as core's record list.
+        $source = $this->read('Content.html');
+
+        self::assertMatchesRegularExpression(
+            '#<span class="form-check form-check-type-toggle">\s*<input type="checkbox" id="select-all" class="form-check-input"#',
+            $source
+        );
+        self::assertMatchesRegularExpression(
+            '#<span class="form-check form-check-type-toggle">\s*<input\s+type="checkbox"\s+class="form-check-input content-checkbox"#',
+            $source
+        );
+    }
+
+    #[Test]
+    #[DataProvider('templateProvider')]
+    public function infoboxStatesAreIntegerLiterals(string $template): void
+    {
+        // InfoboxViewHelper::STATE_* is deprecated in 14; the ContextualFeedbackSeverity
+        // enum is rejected by 12 and 13. Integer literals work on all three.
+        $source = $this->read($template);
+
+        self::assertStringNotContainsString('InfoboxViewHelper::STATE_', $source);
+        self::assertDoesNotMatchRegularExpression('/<f:be\.infobox\b(?![^>]*\bstate="(-1|0|1|2|-2|\{recommendation\.state\})")[^>]*>/', $source, 'every infobox has an explicit state');
+    }
+
+    #[Test]
     public function extensionShipsNoModuleLayoutOfItsOwn(): void
     {
         self::assertFileDoesNotExist(

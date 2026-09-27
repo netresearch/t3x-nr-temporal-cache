@@ -11,6 +11,10 @@
                 <source>Manage temporal content and cache configuration</source>
                 <target>Manage temporal content and cache configuration</target>
             </trans-unit>
+            <trans-unit id="menu.label" resname="menu.label">
+                <source>View</source>
+                <target>Ansicht</target>
+            </trans-unit>
             <trans-unit id="menu.dashboard" resname="menu.dashboard">
                 <source>Dashboard</source>
                 <target>Dashboard</target>

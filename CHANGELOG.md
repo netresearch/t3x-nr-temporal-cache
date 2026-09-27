@@ -20,6 +20,12 @@ git history, so they name the user-facing changes rather than every commit.
   instead of Bootstrap colours that stay fixed in both schemes, the filter
   buttons have a border and a visible focus ring, and headings no longer skip
   levels. The row checkboxes in the content list have an accessible name.
+- The checkboxes of the content list are visible again on TYPO3 13 and 14.
+  They sat outside core's `form-check` wrapper, which is what gives them their
+  size, and rendered 0 by 0 pixels.
+- The view menu in the doc header has its own accessible name ("View").
+  Without a label it was an unnamed select on TYPO3 12 and 13, and on 14 it
+  was named after its first entry.
 - The backend module no longer triggers TYPO3 14 deprecations when it builds
   its doc header: it no longer adds its own reload and shortcut buttons there,
   and it creates the view menu, its entries and the link buttons directly

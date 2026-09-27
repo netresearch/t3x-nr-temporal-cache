@@ -308,6 +308,11 @@ final class TemporalCacheController extends ActionController
         try {
             $menu = GeneralUtility::makeInstance(Menu::class);
             $menu->setIdentifier('temporal_cache_menu');
+            // Without a label the view menu has no accessible name: a <select> with
+            // no label on 12 and 13, and on 14 a dropdown named after its first item.
+            $menu->setLabel($this->getLanguageService()->sL(
+                'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.label'
+            ));
 
             $actions = ['dashboard', 'content', 'wizard'];
             foreach ($actions as $action) {

@@ -50,7 +50,9 @@
                         <tr role="row">
                             <f:if condition="{harmonizationEnabled}">
                                 <th style="width: 40px;" role="columnheader">
-                                    <input type="checkbox" id="select-all" class="form-check-input" aria-label="Select all content items">
+                                    <span class="form-check form-check-type-toggle">
+                                        <input type="checkbox" id="select-all" class="form-check-input" aria-label="Select all content items">
+                                    </span>
                                 </th>
                             </f:if>
                             <th><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.table.type" /></th>
@@ -70,12 +72,14 @@
                                 <f:if condition="{harmonizationEnabled}">
                                     <td>
                                         <f:if condition="{item.hasChanges}">
-                                            <input
-                                                type="checkbox"
-                                                class="form-check-input content-checkbox"
-                                                data-uid="{item.content.uid}"
-                                                data-table="{item.content.tableName}"
-                                                aria-label="{item.content.title} ({item.content.tableName}:{item.content.uid})">
+                                            <span class="form-check form-check-type-toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    class="form-check-input content-checkbox"
+                                                    data-uid="{item.content.uid}"
+                                                    data-table="{item.content.tableName}"
+                                                    aria-label="{item.content.title} ({item.content.tableName}:{item.content.uid})">
+                                            </span>
                                         </f:if>
                                     </td>
                                 </f:if>
@@ -203,7 +207,7 @@
 
         </f:then>
         <f:else>
-            <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper::STATE_INFO')}">
+            <f:be.infobox state="-1">
                 <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:content.no_content" />
             </f:be.infobox>
         </f:else>
