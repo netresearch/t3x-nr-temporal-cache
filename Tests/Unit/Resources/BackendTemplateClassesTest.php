@@ -112,6 +112,18 @@ final class BackendTemplateClassesTest extends UnitTestCase
     }
 
     #[Test]
+    public function transitionsStatisticUsesWarningEmphasis(): void
+    {
+        // On 12.4 .text-warning is the plain Bootstrap yellow (2.16:1 on white);
+        // .text-warning-emphasis is core 12's dark variant. 13.4 maps both to the
+        // same scheme-aware colour, 14.3 has only .text-warning.
+        self::assertStringContainsString(
+            '<p class="card-text display-4 text-warning text-warning-emphasis">{stats.transitionsNext30Days}</p>',
+            $this->read('Dashboard.html')
+        );
+    }
+
+    #[Test]
     public function extensionShipsNoModuleLayoutOfItsOwn(): void
     {
         self::assertFileDoesNotExist(

@@ -23,6 +23,8 @@ git history, so they name the user-facing changes rather than every commit.
 - The checkboxes of the content list are visible again on TYPO3 13 and 14.
   They sat outside core's `form-check` wrapper, which is what gives them their
   size, and rendered 0 by 0 pixels.
+- The dashboard's "transitions in the next 30 days" figure is readable on
+  TYPO3 12 (2.16:1 before, 9.4:1 now).
 - The view menu in the doc header has its own accessible name ("View").
   Without a label it was an unnamed select on TYPO3 12 and 13, and on 14 it
   was named after its first entry.

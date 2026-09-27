@@ -198,6 +198,27 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         self::assertMatchesRegularExpression('/class="badge badge-info"/', $body);
     }
 
+    #[Test]
+    public function dashboardHarmonizationHintIsInfoCallout(): void
+    {
+        // 20 minutes after the 06:00 slot, inside the 3600 s tolerance: one
+        // harmonizable candidate, which is what makes the dashboard show the hint.
+        $this->getConnectionPool()->getConnectionForTable('tt_content')->insert('tt_content', [
+            'uid' => 9100,
+            'pid' => 1,
+            'header' => 'Harmonizable teaser',
+            'CType' => 'text',
+            'starttime' => \strtotime('tomorrow 06:20'),
+        ]);
+
+        $body = $this->render('dashboard', '');
+
+        self::assertMatchesRegularExpression(
+            '#<div class="callout callout-info">(?:(?!<div class="callout ).)*can be harmonized#s',
+            $body
+        );
+    }
+
     /**
      * @return array<string, array{string, string}>
      */
