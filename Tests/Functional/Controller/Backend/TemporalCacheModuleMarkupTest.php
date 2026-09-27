@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use InvalidArgumentException;
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -203,12 +205,15 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     {
         // 20 minutes after the 06:00 slot, inside the 3600 s tolerance: one
         // harmonizable candidate, which is what makes the dashboard show the hint.
+        // HarmonizationService measures slots in UTC (DateTime('@' . $timestamp)),
+        // so the seed is built in UTC too. A local 06:20 misses every slot in most
+        // other timezones: Europe/Berlin in summer puts it at 04:20 UTC.
         $this->getConnectionPool()->getConnectionForTable('tt_content')->insert('tt_content', [
             'uid' => 9100,
             'pid' => 1,
             'header' => 'Harmonizable teaser',
             'CType' => 'text',
-            'starttime' => \strtotime('tomorrow 06:20'),
+            'starttime' => (new DateTimeImmutable('tomorrow 06:20', new DateTimeZone('UTC')))->getTimestamp(),
         ]);
 
         $body = $this->render('dashboard', '');
