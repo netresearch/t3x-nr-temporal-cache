@@ -177,6 +177,28 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function wizardAnalysisRendersRecommendationsAsCallouts(): void
+    {
+        // One transition on each of the next 25 days: more than 20 transition days
+        // with dynamic timing makes analyzeConfiguration() recommend scheduler timing.
+        $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
+        $now = \time();
+        for ($day = 1; $day <= 25; $day++) {
+            $connection->insert('tt_content', [
+                'uid' => 9000 + $day,
+                'pid' => 1,
+                'header' => 'Daily ' . $day,
+                'CType' => 'text',
+                'starttime' => $now + $day * 86400,
+            ]);
+        }
+
+        $body = $this->render('wizard', 'analysis');
+
+        self::assertMatchesRegularExpression('/<div class="callout callout-info">.*?Use Scheduler Timing/s', $body);
+    }
+
+    #[Test]
     public function wizardSummaryHeaderHasNoFixedColours(): void
     {
         $body = $this->render('wizard', 'summary');
