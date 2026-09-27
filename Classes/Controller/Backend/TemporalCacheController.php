@@ -17,6 +17,9 @@ use Throwable;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
+use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
+use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
@@ -28,6 +31,7 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Pagination\ArrayPaginator;
 use TYPO3\CMS\Core\Pagination\SimplePagination;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
@@ -296,14 +300,18 @@ final class TemporalCacheController extends ActionController
             // Gracefully skip button creation in test/CLI environments
         }
 
-        // Create module menu
+        // Create module menu. Menu, menu items and link buttons are created with
+        // makeInstance(): that is what MenuRegistry::makeMenu(), Menu::makeMenuItem()
+        // and ButtonBar::makeLinkButton() do on 12.4 and 13.4, and what
+        // ComponentFactory::create*() does on 14.3, where the make*() methods are
+        // deprecated (#107823). ComponentFactory itself does not exist before 14.
         try {
-            $menu = $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+            $menu = GeneralUtility::makeInstance(Menu::class);
             $menu->setIdentifier('temporal_cache_menu');
 
             $actions = ['dashboard', 'content', 'wizard'];
             foreach ($actions as $action) {
-                $item = $menu->makeMenuItem()
+                $item = GeneralUtility::makeInstance(MenuItem::class)
                     ->setTitle($this->getLanguageService()->sL(
                         'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.' . $action
                     ))
@@ -334,7 +342,7 @@ final class TemporalCacheController extends ActionController
             $docHeader->setShortcutContext(self::MODULE_ROUTE, $displayName, ['action' => $currentAction]);
         } else {
             // Refresh button (all actions)
-            $refreshButton = $buttonBar->makeLinkButton()
+            $refreshButton = GeneralUtility::makeInstance(LinkButton::class)
                 ->setHref($this->buildModuleUri($currentAction))
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
                 ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
@@ -353,7 +361,7 @@ final class TemporalCacheController extends ActionController
         switch ($currentAction) {
             case 'dashboard':
                 // Quick access to content list
-                $contentButton = $buttonBar->makeLinkButton()
+                $contentButton = GeneralUtility::makeInstance(LinkButton::class)
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
                     ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))

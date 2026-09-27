@@ -20,6 +20,10 @@ git history, so they name the user-facing changes rather than every commit.
   instead of Bootstrap colours that stay fixed in both schemes, the filter
   buttons have a border and a visible focus ring, and headings no longer skip
   levels. The row checkboxes in the content list have an accessible name.
+- The backend module no longer triggers TYPO3 14 deprecations when it builds
+  its doc header: it no longer adds its own reload and shortcut buttons there,
+  and it creates the view menu, its entries and the link buttons directly
+  instead of through the deprecated `make*()` methods.
 
 ## [1.0.0] - 2026-09-04
 
