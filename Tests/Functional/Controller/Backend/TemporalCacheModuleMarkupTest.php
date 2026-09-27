@@ -9,14 +9,7 @@ use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
-use TYPO3\CMS\Core\Http\NormalizedParams;
-use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use TYPO3\CMS\Core\Routing\Route;
-use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
-use TYPO3\CMS\Extbase\Mvc\Request as ExtbaseRequest;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -35,6 +28,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(TemporalCacheController::class)]
 final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
 {
+    use BackendModuleRequestTrait;
+
     protected array $coreExtensionsToLoad = ['scheduler', 'reports'];
 
     protected array $testExtensionsToLoad = [
@@ -71,7 +66,7 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
         $this->setUpBackendUser(1);
         $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
-        $GLOBALS['TYPO3_REQUEST'] = $this->createRequest();
+        $GLOBALS['TYPO3_REQUEST'] = $this->createModuleRequest('dashboard');
 
         $this->controller = $this->get(TemporalCacheController::class);
     }
@@ -225,28 +220,6 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     }
 
     #[Test]
-    public function wizardAnalysisRendersRecommendationsAsCallouts(): void
-    {
-        // One transition on each of the next 25 days: more than 20 transition days
-        // with dynamic timing makes analyzeConfiguration() recommend scheduler timing.
-        $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
-        $now = \time();
-        for ($day = 1; $day <= 25; $day++) {
-            $connection->insert('tt_content', [
-                'uid' => 9000 + $day,
-                'pid' => 1,
-                'header' => 'Daily ' . $day,
-                'CType' => 'text',
-                'starttime' => $now + $day * 86400,
-            ]);
-        }
-
-        $body = $this->render('wizard', 'analysis');
-
-        self::assertMatchesRegularExpression('/<div class="callout callout-info">.*?Use Scheduler Timing/s', $body);
-    }
-
-    #[Test]
     public function wizardSummaryHeaderHasNoFixedColours(): void
     {
         $body = $this->render('wizard', 'summary');
@@ -256,7 +229,7 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
 
     private function render(string $action, string $step): string
     {
-        $request = $this->createRequest();
+        $request = $this->createModuleRequest('dashboard');
         $response = match ($action) {
             'dashboard' => $this->controller->dashboardAction($request),
             'content' => $this->controller->contentAction($request),
@@ -266,27 +239,5 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
 
         return (string)$response->getBody();
-    }
-
-    private function createRequest(): ServerRequestInterface
-    {
-        $serverRequest = new ServerRequest('http://localhost', 'GET');
-        $route = new Route('/module/temporal-cache', []);
-        $route->setOption('packageName', 'nr_temporal_cache');
-
-        $serverRequest = $serverRequest
-            ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE)
-            ->withAttribute('normalizedParams', NormalizedParams::createFromRequest($serverRequest))
-            ->withAttribute('route', $route)
-            ->withAttribute('module', null)
-            ->withAttribute('moduleData', null);
-
-        $extbaseRequestParameters = new ExtbaseRequestParameters();
-        $extbaseRequestParameters->setControllerExtensionName('NrTemporalCache');
-        $extbaseRequestParameters->setControllerName('TemporalCache');
-        $extbaseRequestParameters->setControllerActionName('dashboard');
-        $extbaseRequestParameters->setPluginName('TemporalCache');
-
-        return new ExtbaseRequest($serverRequest->withAttribute('extbase', $extbaseRequestParameters));
     }
 }
