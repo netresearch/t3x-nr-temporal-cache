@@ -5,14 +5,14 @@
 [![TYPO3 12](https://img.shields.io/badge/TYPO3-12-orange.svg)](https://get.typo3.org/version/12)
 [![TYPO3 13](https://img.shields.io/badge/TYPO3-13-orange.svg)](https://get.typo3.org/version/13)
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://get.typo3.org/version/14)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/releases)
 [![License](https://img.shields.io/github/license/netresearch/t3x-nr-temporal-cache)](LICENSE)
 
 Automatic cache invalidation for time-based content, developed by [Netresearch DTT GmbH](https://www.netresearch.de/).
 
 **Addresses [TYPO3 Forge Issue #14277](https://forge.typo3.org/issues/14277)**: "Start/Stop time for pages is ignored in standard menu objects", reported in 2004 and still open.
 
-> **Status**: `ext_emconf.php` declares version 1.0.0, state `stable`. The API listed in [Documentation/Api](Documentation/Api/Index.rst) follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from this release onwards.
+> **Status**: `ext_emconf.php` declares version 1.0.1, state `stable`. The API listed in [Documentation/Api](Documentation/Api/Index.rst) follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0.0 onwards.
 
 ## The Problem (20+ Years Old)
 

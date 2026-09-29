@@ -91,9 +91,8 @@ Status
 ======
 
 .. important::
-    ``ext_emconf.php`` declares version **1.0.0** and state **stable**.
-    The API covered by :ref:`api` follows Semantic Versioning from this release
-    onwards.
+    ``ext_emconf.php`` declares version **1.0.1** and state **stable**.
+    The API covered by :ref:`api` follows Semantic Versioning from 1.0.0 onwards.
 
 The approach itself is a workaround.
 TYPO3's cache API has no absolute expiration timestamp, so the extension can only

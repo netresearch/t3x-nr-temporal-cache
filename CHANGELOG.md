@@ -10,6 +10,20 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-30
+
+### Changed
+
+- The extension requires a TYPO3 LTS release: `^12.4 || ^13.4 || ^14.3` for
+  `typo3/cms-core`, `typo3/cms-scheduler` and `typo3/cms-reports`. The previous
+  constraint admitted every 13.x and 14.x release.
+- **Upgrade impact:** Composer installations on the non-LTS releases 13.0-13.3
+  and 14.0-14.2 no longer resolve this or later versions; update TYPO3 to 13.4
+  or 14.3 first. Classic mode still accepts these releases: `ext_emconf.php`
+  declares the range `12.4.0-14.3.99` for `typo3`, `scheduler` and `reports`,
+  and a range cannot leave a gap. The API listed in `Documentation/Api/` is
+  unchanged.
+
 ### Fixed
 
 - The backend module now shows the TYPO3 doc header on all three views. The
@@ -116,7 +130,8 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...main
+[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.1...main
+[1.0.1]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0-alpha1...v0.9.0
 [0.9.0-alpha1]: https://github.com/netresearch/t3x-nr-temporal-cache/releases/tag/v0.9.0-alpha1
