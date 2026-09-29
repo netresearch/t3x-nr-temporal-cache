@@ -17,10 +17,12 @@ git history, so they name the user-facing changes rather than every commit.
 - The extension requires a TYPO3 LTS release: `^12.4 || ^13.4 || ^14.3` for
   `typo3/cms-core`, `typo3/cms-scheduler` and `typo3/cms-reports`. The previous
   constraint admitted every 13.x and 14.x release.
-- **Upgrade impact:** installations on the non-LTS releases 13.0-13.3 and
-  14.0-14.2 no longer resolve this or later versions; update TYPO3 to 13.4 or
-  14.3 first. `ext_emconf.php` now caps `typo3`, `scheduler` and `reports` at
-  `14.3.99`. The API listed in `Documentation/Api/` is unchanged.
+- **Upgrade impact:** Composer installations on the non-LTS releases 13.0-13.3
+  and 14.0-14.2 no longer resolve this or later versions; update TYPO3 to 13.4
+  or 14.3 first. Classic mode still accepts these releases: `ext_emconf.php`
+  declares the range `12.4.0-14.3.99` for `typo3`, `scheduler` and `reports`,
+  and a range cannot leave a gap. The API listed in `Documentation/Api/` is
+  unchanged.
 
 ### Fixed
 
