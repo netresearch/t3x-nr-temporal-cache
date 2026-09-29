@@ -10,6 +10,29 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+### Fixed
+
+- The backend module now shows the TYPO3 doc header on all three views. The
+  extension shipped its own `Module` layout, which replaced core's and dropped
+  the reload and bookmark buttons and the view menu the controller registers.
+- The backend module follows the light and dark scheme: badges, buttons and
+  info boxes use core's classes (`badge-*`, `btn-default`, `f:be.infobox`)
+  instead of Bootstrap colours that stay fixed in both schemes, the filter
+  buttons have a border and a visible focus ring, and headings no longer skip
+  levels. The row checkboxes in the content list have an accessible name.
+- The checkboxes of the content list are visible again on TYPO3 13 and 14.
+  They sat outside core's `form-check` wrapper, which is what gives them their
+  size, and rendered 0 by 0 pixels.
+- The dashboard's "transitions in the next 30 days" figure is readable on
+  TYPO3 12 (2.16:1 before, 9.4:1 now).
+- The view menu in the doc header has its own accessible name ("View").
+  Without a label it was an unnamed select on TYPO3 12 and 13, and on 14 it
+  was named after its first entry.
+- The backend module no longer triggers TYPO3 14 deprecations when it builds
+  its doc header: it no longer adds its own reload and shortcut buttons there,
+  and it creates the view menu, its entries and the link buttons directly
+  instead of through the deprecated `make*()` methods.
+
 ## [1.0.0] - 2026-09-04
 
 First stable release. The API listed in `Documentation/Api/` follows Semantic

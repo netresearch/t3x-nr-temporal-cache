@@ -20,6 +20,9 @@
             </trans-unit>
 
             <!-- Menu -->
+            <trans-unit id="menu.label" resname="menu.label">
+                <source>View</source>
+            </trans-unit>
             <trans-unit id="menu.dashboard" resname="menu.dashboard">
                 <source>Dashboard</source>
             </trans-unit>

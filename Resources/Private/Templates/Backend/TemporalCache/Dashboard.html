@@ -12,7 +12,7 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.total" /></h5>
+                    <h2 class="card-title h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.total" /></h2>
                     <p class="card-text display-4">{stats.totalCount}</p>
                     <p class="text-muted">
                         <small><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.pages" /> {stats.pageCount} |
@@ -25,7 +25,7 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.active" /></h5>
+                    <h2 class="card-title h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.active" /></h2>
                     <p class="card-text display-4 text-success">{stats.activeCount}</p>
                     <p class="text-muted">
                         <small><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.visible_now" /></small>
@@ -37,7 +37,7 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.scheduled" /></h5>
+                    <h2 class="card-title h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.scheduled" /></h2>
                     <p class="card-text display-4 text-primary">{stats.futureCount}</p>
                     <p class="text-muted">
                         <small><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.upcoming" /></small>
@@ -49,8 +49,8 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.transitions" /></h5>
-                    <p class="card-text display-4 text-warning">{stats.transitionsNext30Days}</p>
+                    <h2 class="card-title h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.transitions" /></h2>
+                    <p class="card-text display-4 text-warning text-warning-emphasis">{stats.transitionsNext30Days}</p>
                     <p class="text-muted">
                         <small><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.stats.next_30_days" /></small>
                     </p>
@@ -64,36 +64,38 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.title" /></h5>
+                    <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.title" /></h2>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
                             <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.scoping" />:</strong>
-                            <span class="badge bg-primary">{config.scopingStrategy}</span>
+                            <span class="badge badge-primary">{config.scopingStrategy}</span>
                         </div>
                         <div class="col-md-4">
                             <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.timing" />:</strong>
-                            <span class="badge bg-info">{config.timingStrategy}</span>
+                            <span class="badge badge-info">{config.timingStrategy}</span>
                         </div>
                         <div class="col-md-4">
                             <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.harmonization" />:</strong>
                             <f:if condition="{config.harmonizationEnabled}">
                                 <f:then>
-                                    <span class="badge bg-success"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.enabled" /></span>
+                                    <span class="badge badge-success"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.enabled" /></span>
                                 </f:then>
                                 <f:else>
-                                    <span class="badge bg-secondary"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.disabled" /></span>
+                                    <span class="badge badge-default"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.disabled" /></span>
                                 </f:else>
                             </f:if>
                         </div>
                     </div>
                     <f:if condition="{stats.harmonizableCandidates} > 0">
-                        <div class="alert alert-info mt-3">
-                            <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.harmonizable_hint" arguments="{0: stats.harmonizableCandidates}" />
-                            <f:link.action action="content" arguments="{filter: 'harmonizable'}" class="btn btn-sm btn-primary ms-2">
-                                <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.view_harmonizable" />
-                            </f:link.action>
+                        <div class="mt-3">
+                            <f:be.infobox state="-1">
+                                <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.harmonizable_hint" arguments="{0: stats.harmonizableCandidates}" />
+                                <f:link.action action="content" arguments="{filter: 'harmonizable'}" class="btn btn-sm btn-primary ms-2">
+                                    <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.config.view_harmonizable" />
+                                </f:link.action>
+                            </f:be.infobox>
                         </div>
                     </f:if>
                 </div>
@@ -106,7 +108,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.title" /></h5>
+                    <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.title" /></h2>
                 </div>
                 <div class="card-body">
                     <f:if condition="{timeline}">
@@ -114,16 +116,16 @@
                             <div class="timeline">
                                 <f:for each="{timeline}" as="day">
                                     <div class="timeline-day mb-4">
-                                        <h6 class="mb-2">
+                                        <h3 class="h6 mb-2">
                                             <f:format.date format="d.m.Y">{day.timestamp}</f:format.date>
-                                            <span class="badge bg-secondary ms-2">{day.transitions -> f:count()} <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.transitions" /></span>
-                                        </h6>
+                                            <span class="badge badge-default ms-2">{day.transitions -> f:count()} <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.transitions" /></span>
+                                        </h3>
                                         <div class="timeline-events">
                                             <f:for each="{day.transitions}" as="transition">
                                                 <div class="timeline-event border-start border-3 ps-3 pb-2 {f:if(condition: '{transition.type} == \'start\'', then: 'border-success', else: 'border-danger')}">
                                                     <small class="text-muted"><f:format.date format="H:i">{transition.timestamp}</f:format.date></small>
                                                     <strong>{transition.content.title}</strong>
-                                                    <span class="badge bg-{f:if(condition: '{transition.type} == \'start\'', then: 'success', else: 'danger')}">
+                                                    <span class="badge badge-{f:if(condition: '{transition.type} == \'start\'', then: 'success', else: 'danger')}">
                                                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.{transition.type}" />
                                                     </span>
                                                     <small class="text-muted">({transition.content.tableName}:{transition.content.uid})</small>
@@ -135,9 +137,9 @@
                             </div>
                         </f:then>
                         <f:else>
-                            <div class="alert alert-info">
+                            <f:be.infobox state="-1">
                                 <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.timeline.no_transitions" />
-                            </div>
+                            </f:be.infobox>
                         </f:else>
                     </f:if>
                 </div>
@@ -150,7 +152,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.kpi.title" /></h5>
+                    <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.kpi.title" /></h2>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -174,14 +176,14 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.quick_actions.title" /></h5>
+                    <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.quick_actions.title" /></h2>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <f:link.action action="content" class="btn btn-primary">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.quick_actions.view_content" />
                         </f:link.action>
-                        <f:link.action action="wizard" class="btn btn-secondary">
+                        <f:link.action action="wizard" class="btn btn-default">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:dashboard.quick_actions.configuration_wizard" />
                         </f:link.action>
                         <f:if condition="{stats.harmonizableCandidates} > 0">

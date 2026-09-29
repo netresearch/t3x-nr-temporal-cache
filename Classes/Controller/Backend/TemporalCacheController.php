@@ -17,6 +17,9 @@ use Throwable;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
+use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
+use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
@@ -27,6 +30,8 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Pagination\ArrayPaginator;
 use TYPO3\CMS\Core\Pagination\SimplePagination;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
@@ -295,14 +300,23 @@ final class TemporalCacheController extends ActionController
             // Gracefully skip button creation in test/CLI environments
         }
 
-        // Create module menu
+        // Create module menu. Menu, menu items and link buttons are created with
+        // makeInstance(): that is what MenuRegistry::makeMenu(), Menu::makeMenuItem()
+        // and ButtonBar::makeLinkButton() do on 12.4 and 13.4, and what
+        // ComponentFactory::create*() does on 14.3, where the make*() methods are
+        // deprecated (#107823). ComponentFactory itself does not exist before 14.
         try {
-            $menu = $moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+            $menu = GeneralUtility::makeInstance(Menu::class);
             $menu->setIdentifier('temporal_cache_menu');
+            // Without a label the view menu has no accessible name: a <select> with
+            // no label on 12 and 13, and on 14 a dropdown named after its first item.
+            $menu->setLabel($this->getLanguageService()->sL(
+                'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.label'
+            ));
 
             $actions = ['dashboard', 'content', 'wizard'];
             foreach ($actions as $action) {
-                $item = $menu->makeMenuItem()
+                $item = GeneralUtility::makeInstance(MenuItem::class)
                     ->setTitle($this->getLanguageService()->sL(
                         'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.' . $action
                     ))
@@ -322,28 +336,37 @@ final class TemporalCacheController extends ActionController
      */
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
-        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        $docHeader = $moduleTemplate->getDocHeaderComponent();
+        $buttonBar = $docHeader->getButtonBar();
+        $displayName = $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab');
 
-        // Refresh button (all actions)
-        $refreshButton = $buttonBar->makeLinkButton()
-            ->setHref($this->buildModuleUri($currentAction))
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-            ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
-            ->setShowLabelText(false);
-        $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
+        if (\method_exists($docHeader, 'setShortcutContext')) {
+            // TYPO3 v14 adds the reload and shortcut buttons itself; adding them
+            // here as well shows two reload buttons, and a manual shortcut button
+            // is deprecated there.
+            $docHeader->setShortcutContext(self::MODULE_ROUTE, $displayName, ['action' => $currentAction]);
+        } else {
+            // Refresh button (all actions)
+            $refreshButton = GeneralUtility::makeInstance(LinkButton::class)
+                ->setHref($this->buildModuleUri($currentAction))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
+                ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                ->setShowLabelText(false);
+            $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
-        // Shortcut button (all actions)
-        $shortcutButton = $buttonBar->makeShortcutButton()
-            ->setRouteIdentifier(self::MODULE_ROUTE)
-            ->setDisplayName($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'))
-            ->setArguments(['action' => $currentAction]);
-        $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
+            // Shortcut button (all actions)
+            $shortcutButton = $buttonBar->makeShortcutButton()
+                ->setRouteIdentifier(self::MODULE_ROUTE)
+                ->setDisplayName($displayName)
+                ->setArguments(['action' => $currentAction]);
+            $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
+        }
 
         // Action-specific buttons
         switch ($currentAction) {
             case 'dashboard':
                 // Quick access to content list
-                $contentButton = $buttonBar->makeLinkButton()
+                $contentButton = GeneralUtility::makeInstance(LinkButton::class)
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
                     ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
@@ -440,7 +463,10 @@ final class TemporalCacheController extends ActionController
     /**
      * Analyze current configuration and provide recommendations.
      *
-     * @return array<int, array<string, string>>
+     * `state` is the integer severity the `f:be.infobox` ViewHelper takes on
+     * every supported TYPO3 version (v14 also accepts the enum, v12/v13 do not).
+     *
+     * @return array<int, array{type: string, state: int, title: string, message: string}>
      */
     private function analyzeConfiguration(): array
     {
@@ -451,6 +477,7 @@ final class TemporalCacheController extends ActionController
         if (!$this->extensionConfiguration->isHarmonizationEnabled() && $stats['transitionsPerDay'] > 10) {
             $recommendations[] = [
                 'type' => 'warning',
+                'state' => ContextualFeedbackSeverity::WARNING->value,
                 'title' => 'recommendation.harmonization.title',
                 'message' => 'recommendation.harmonization.message',
             ];
@@ -460,6 +487,7 @@ final class TemporalCacheController extends ActionController
         if ($this->extensionConfiguration->getScopingStrategy() === 'global' && $stats['contentCount'] > 100) {
             $recommendations[] = [
                 'type' => 'info',
+                'state' => ContextualFeedbackSeverity::INFO->value,
                 'title' => 'recommendation.scoping.title',
                 'message' => 'recommendation.scoping.message',
             ];
@@ -469,6 +497,7 @@ final class TemporalCacheController extends ActionController
         if ($this->extensionConfiguration->getTimingStrategy() === 'dynamic' && $stats['transitionsPerDay'] > 20) {
             $recommendations[] = [
                 'type' => 'info',
+                'state' => ContextualFeedbackSeverity::INFO->value,
                 'title' => 'recommendation.timing.title',
                 'message' => 'recommendation.timing.message',
             ];

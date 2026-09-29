@@ -11,22 +11,21 @@
     <f:if condition="{step} == 'welcome'">
         <div class="card mb-4">
             <div class="card-header">
-                <h4><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.title" /></h4>
+                <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.title" /></h2>
             </div>
             <div class="card-body">
                 <p><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.description" /></p>
 
-                <div class="alert alert-info">
-                    <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.current_stats" /></strong>
-                    <ul class="mb-0 mt-2">
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.current_stats')}" state="-1">
+                    <ul class="mb-0">
                         <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.stat.total" arguments="{0: stats.totalCount}" /></li>
                         <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.stat.transitions" arguments="{0: stats.transitionsPerDay}" /></li>
                         <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.stat.harmonizable" arguments="{0: stats.harmonizableCandidates}" /></li>
                     </ul>
-                </div>
+                </f:be.infobox>
 
                 <div class="d-grid gap-2 mt-4">
-                    <f:link.action action="wizard" arguments="{step: 'analysis'}" class="btn btn-primary btn-lg">
+                    <f:link.action action="wizard" arguments="{step: 'analysis'}" class="btn btn-primary">
                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.welcome.start" />
                     </f:link.action>
                 </div>
@@ -38,7 +37,7 @@
     <f:if condition="{step} == 'analysis'">
         <div class="card mb-4">
             <div class="card-header">
-                <h4><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.title" /></h4>
+                <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.title" /></h2>
             </div>
             <div class="card-body">
                 <p><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.description" /></p>
@@ -46,12 +45,11 @@
                 <!-- Recommendations -->
                 <f:if condition="{recommendations}">
                     <div class="recommendations mb-4">
-                        <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.recommendations" /></h5>
+                        <h3 class="h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.recommendations" /></h3>
                         <f:for each="{recommendations}" as="recommendation">
-                            <div class="alert alert-{recommendation.type}">
-                                <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{recommendation.title}" /></strong>
-                                <p class="mb-0"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{recommendation.message}" /></p>
-                            </div>
+                            <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{recommendation.title}')}" state="{recommendation.state}">
+                                <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{recommendation.message}" />
+                            </f:be.infobox>
                         </f:for>
                     </div>
                 </f:if>
@@ -60,7 +58,7 @@
                     <f:link.action action="wizard" arguments="{step: 'presets'}" class="btn btn-primary">
                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.analysis.continue" />
                     </f:link.action>
-                    <f:link.action action="wizard" arguments="{step: 'welcome'}" class="btn btn-outline-secondary">
+                    <f:link.action action="wizard" arguments="{step: 'welcome'}" class="btn btn-default">
                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.back" />
                     </f:link.action>
                 </div>
@@ -72,7 +70,7 @@
     <f:if condition="{step} == 'presets'">
         <div class="card mb-4">
             <div class="card-header">
-                <h4><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.presets.title" /></h4>
+                <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.presets.title" /></h2>
             </div>
             <div class="card-body">
                 <p><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.presets.description" /></p>
@@ -82,9 +80,9 @@
                         <div class="col-md-4 mb-3">
                             <div class="card h-100">
                                 <div class="card-body">
-                                    <h5 class="card-title">
+                                    <h3 class="card-title h5">
                                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{preset.name}" />
-                                    </h5>
+                                    </h3>
                                     <p class="card-text">
                                         <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:{preset.description}" />
                                     </p>
@@ -114,10 +112,10 @@
 
                 <div class="mt-4">
                     <div class="d-grid gap-2">
-                        <f:link.action action="wizard" arguments="{step: 'custom'}" class="btn btn-outline-primary">
+                        <f:link.action action="wizard" arguments="{step: 'custom'}" class="btn btn-default">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.presets.custom" />
                         </f:link.action>
-                        <f:link.action action="wizard" arguments="{step: 'analysis'}" class="btn btn-outline-secondary">
+                        <f:link.action action="wizard" arguments="{step: 'analysis'}" class="btn btn-default">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.back" />
                         </f:link.action>
                     </div>
@@ -130,7 +128,7 @@
     <f:if condition="{step} == 'custom'">
         <div class="card mb-4">
             <div class="card-header">
-                <h4><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.title" /></h4>
+                <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.title" /></h2>
             </div>
             <div class="card-body">
                 <p><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.description" /></p>
@@ -138,7 +136,7 @@
                 <form id="custom-config-form" method="post">
                     <!-- Scoping Strategy -->
                     <div class="mb-4">
-                        <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.scoping.title" /></h5>
+                        <h3 class="h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.scoping.title" /></h3>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="scoping_strategy" id="scoping-global" value="global" {f:if(condition: '{currentConfig.scoping.strategy} == \'global\'', then: 'checked')}>
                             <label class="form-check-label" for="scoping-global">
@@ -161,7 +159,7 @@
 
                     <!-- Timing Strategy -->
                     <div class="mb-4">
-                        <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.timing.title" /></h5>
+                        <h3 class="h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.timing.title" /></h3>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="timing_strategy" id="timing-dynamic" value="dynamic" {f:if(condition: '{currentConfig.timing.strategy} == \'dynamic\'', then: 'checked')}>
                             <label class="form-check-label" for="timing-dynamic">
@@ -184,7 +182,7 @@
 
                     <!-- Harmonization -->
                     <div class="mb-4">
-                        <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.harmonization.title" /></h5>
+                        <h3 class="h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.harmonization.title" /></h3>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="harmonization-enabled" name="harmonization_enabled" {f:if(condition: '{currentConfig.harmonization.enabled}', then: 'checked')}>
                             <label class="form-check-label" for="harmonization-enabled">
@@ -193,16 +191,15 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-warning">
-                        <strong><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note" /></strong>
-                        <p class="mb-0"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note_text" /></p>
-                    </div>
+                    <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note')}" state="1">
+                        <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.note_text" />
+                    </f:be.infobox>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.custom.save" />
                         </button>
-                        <f:link.action action="wizard" arguments="{step: 'presets'}" class="btn btn-outline-secondary">
+                        <f:link.action action="wizard" arguments="{step: 'presets'}" class="btn btn-default">
                             <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.back" />
                         </f:link.action>
                     </div>
@@ -214,15 +211,15 @@
     <!-- Summary Step -->
     <f:if condition="{step} == 'summary'">
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h4><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.title" /></h4>
+            <div class="card-header">
+                <h2 class="card-title"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.title" /></h2>
             </div>
             <div class="card-body">
-                <div class="alert alert-success">
+                <f:be.infobox state="0">
                     <f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.success" />
-                </div>
+                </f:be.infobox>
 
-                <h5><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.next_steps" /></h5>
+                <h3 class="h5"><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.next_steps" /></h3>
                 <ul>
                     <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.step1" /></li>
                     <li><f:translate key="LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:wizard.summary.step2" /></li>
