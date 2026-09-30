@@ -405,6 +405,23 @@ Contributions welcome. The conventions this repository enforces are in [`AGENTS.
 
 CI runs code style, PHPStan and Rector, plus the unit and functional suites across the version matrix above.
 
+## Governance and policies
+
+This extension follows the organisation-wide Netresearch policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles, how decisions are made and conflicts resolved.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and excluded work for the next twelve months.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): which vulnerability, licence and static-analysis findings must be fixed, by when, and how exceptions are recorded.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): where CI and release credentials are stored, who may use them, how committed secrets are detected, and when secrets are rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): the people and teams with administrative or write access to this repository.
+
+Checks that run on every pull request in this repository:
+
+- `.github/workflows/checks.yml`: Composer Audit (fails on an advisory for an installed package; `composer.json` lists the one advisory it ignores and why) and Opengrep SAST (fails on findings of severity WARNING or higher), both through `typo3-ci-workflows`' `security.yml`; Dependency Review (fails on newly added dependencies with a vulnerability of severity high or higher); PHP License Audit (`license-check.yml`, fails on an SSPL or BSL licensed Composer dependency); CodeQL with `languages: auto`, which covers `Resources/Public/JavaScript/` (CodeQL has no PHP analysis; PHPStan and Opengrep cover the PHP code); Betterleaks secret scanning; zizmor for the workflow files; the pull request quality check. The fuzz job finds no fuzz suite in `Build/phpunit/` and is skipped.
+- `.github/workflows/ci.yml`: PHP lint, code style (`Build/.php-cs-fixer.php`), PHPStan (`Build/phpstan.neon`), Rector, the unit and functional (SQLite) suites with coverage uploaded to Codecov, and the documentation rendering of `Documentation/`, across the PHP and TYPO3 matrix in [Compatibility](#compatibility).
+- `.github/workflows/harness-verify.yml`: `Build/Scripts/verify-harness.sh` and `Build/Scripts/verify-tailor-excludes.php`.
+- `.github/workflows/check-template-drift.yml`: the `.github/` files that the `typo3-extension` template in `netresearch/.github` manages, except those `.github/template.yaml` lists as intentional drift.
+
 ## Support & Issues
 
 - **Issues**: [GitHub Issues](https://github.com/netresearch/t3x-nr-temporal-cache/issues)
