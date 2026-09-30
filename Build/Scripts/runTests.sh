@@ -38,13 +38,16 @@ handleDbmsOptions() {
             fi
             ;;
         postgres|sqlite)
-            if [ -n "${DATABASE_DRIVER}" ] && [ "${DATABASE_DRIVER}" != "pdo_${DBMS}" ]; then
+            # Doctrine DBAL names the PostgreSQL PDO driver pdo_pgsql, not pdo_postgres.
+            EXPECTED_DRIVER="pdo_sqlite"
+            [ "${DBMS}" = "postgres" ] && EXPECTED_DRIVER="pdo_pgsql"
+            if [ -n "${DATABASE_DRIVER}" ] && [ "${DATABASE_DRIVER}" != "${EXPECTED_DRIVER}" ]; then
                 echo "Invalid database driver ${DATABASE_DRIVER} for ${DBMS}" >&2
                 echo >&2
                 echo "call \"./Build/Scripts/runTests.sh -h\" to display help" >&2
                 exit 1
             fi
-            DATABASE_DRIVER="pdo_${DBMS}"
+            DATABASE_DRIVER="${EXPECTED_DRIVER}"
             ;;
         *)
             echo "Invalid DBMS ${DBMS}" >&2
