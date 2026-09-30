@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Temporal Cache CLI Commands
 
 This document provides comprehensive documentation for all CLI commands available in the temporal cache extension.

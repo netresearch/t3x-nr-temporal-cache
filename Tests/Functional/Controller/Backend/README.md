@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # TemporalCacheController Functional Tests
 
 Comprehensive functional test suite for the Temporal Cache backend module controller.

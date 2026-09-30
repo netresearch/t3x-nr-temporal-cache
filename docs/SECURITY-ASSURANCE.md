@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Security assurance
 
 This document states what users of `netresearch/nr-temporal-cache` can and cannot expect in terms of security, where the extension's trust boundaries are, and which code and tests counter the weaknesses that matter for it. It describes the code on `main`; when this file and the code disagree, the code wins and this file is corrected. Vulnerabilities are reported as described in [SECURITY.md](../SECURITY.md), privately through GitHub Security Advisories. The component map is in [ARCHITECTURE.md](ARCHITECTURE.md).

@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 ## Description: Install all TYPO3 versions (v12 and v13) with temporal_cache extension
 ## Usage: install-all

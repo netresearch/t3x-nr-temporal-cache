@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ */
+
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Temporal Cache Management',
     'description' => 'Automatic TYPO3 cache invalidation for time-based content (starttime/endtime), addressing Forge #14277. Three scoping strategies (global, per-page, per-content) and three timing strategies (dynamic, scheduler, hybrid). The default global scoping expires all page caches on every transition - read the Performance chapter before deployment.',

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # CLI Commands Implementation Summary
 
 This document provides a summary of the CLI commands implementation for the TYPO3 Temporal Cache extension.

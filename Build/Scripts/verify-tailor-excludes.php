@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ *
  * Checks the TER packaging exclude list against tailor's own.
  *
  * Build/ExcludeFromPackaging.php REPLACES tailor's conf/ExcludeFromPackaging.php

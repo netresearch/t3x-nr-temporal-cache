@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Architecture
 
 Agent-facing component map. Verify claims against the referenced files before relying on them; update this file when components move.
