@@ -428,6 +428,10 @@ Checks that run on every pull request in this repository:
 - **Forge**: [TYPO3 Forge #14277](https://forge.typo3.org/issues/14277)
 - **Documentation**: [`Documentation/`](Documentation/) in this repository
 
+## Security
+
+What the extension protects and what it does not, its trust boundaries and the checks behind them: [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md). Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not in public issues.
+
 ## License
 
 GPL-2.0-or-later - See [LICENSE](LICENSE) file

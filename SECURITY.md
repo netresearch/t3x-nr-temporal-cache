@@ -42,6 +42,10 @@ Use [GitHub Security Advisories](https://github.com/netresearch/t3x-nr-temporal-
 
 This policy covers the `nr_temporal_cache` TYPO3 extension code. For vulnerabilities in dependencies or TYPO3 core, please report to the respective upstream projects.
 
+## Security Expectations
+
+The extension decides when TYPO3 regenerates cached pages; it does not decide which records are visible. What users can and cannot expect from it, its trust boundaries and the code and tests behind each claim are described in [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md).
+
 ## Safe Harbor
 
 We consider security research conducted in good faith to be authorized. We will not pursue legal action against researchers who follow responsible disclosure practices.
