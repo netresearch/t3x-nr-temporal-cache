@@ -17,7 +17,7 @@ The extension changes when TYPO3 regenerates cached pages. It does not render re
 | Console commands `temporalcache:analyze`, `:list`, `:verify`, `:harmonize` | Whoever can run `vendor/bin/typo3` on the server | Command options | `Classes/Command/` |
 | Table registration | Other extensions, through `Configuration/Services.yaml` | Table and field names | `Classes/Service/TemporalMonitorRegistry.php` |
 
-Only two paths write to the database: harmonization from the backend module (`HarmonizationService::harmonizeContent()`) and `temporalcache:harmonize` (`HarmonizeCommand::applyHarmonization()`). Both write only the `starttime` and `endtime` columns of the selected records.
+Only two paths write to content records: harmonization from the backend module (`HarmonizationService::harmonizeContent()`) and `temporalcache:harmonize` (`HarmonizeCommand::applyHarmonization()`). Both write only the `starttime` and `endtime` columns of the selected records. The scheduler task also stores the time of its last run in the TYPO3 registry (`sys_registry`, `TemporalCacheSchedulerTask::setLastRunTimestamp()`).
 
 ## Security expectations
 
@@ -75,11 +75,11 @@ Trust boundaries:
 
 | Weakness | Countermeasure | Evidence |
 |----------|----------------|----------|
-| SQL injection (CWE-89, OWASP A03) | Every value goes through `createNamedParameter()`; the one literal expression, `MIN(<field>)`, quotes the field with `quoteIdentifier()` | `Classes/Domain/Repository/TemporalContentRepository.php`, `Classes/Service/RefindexService.php` |
+| SQL injection (CWE-89, OWASP A03) | Every value that comes from a request, the configuration or the database goes through `createNamedParameter()`; the only value inlined is the integer constant `0` in the `hidden`, enable-column, `t3ver_wsid`, `starttime` and `endtime` conditions; the one literal expression, `MIN(<field>)`, quotes the field with `quoteIdentifier()` | `Classes/Domain/Repository/TemporalContentRepository.php`, `Classes/Service/RefindexService.php` |
 | Cross-site scripting (CWE-79, A03) | Fluid escapes all output; `Resources/Private/` contains no `f:format.raw`; `Resources/Public/JavaScript/backend-module.js` writes text with `textContent` and TYPO3's `Notification` API and uses no `innerHTML`; the AJAX response is `json_encode()`d; the Reports status messages contain fixed text, counts and strategy names checked against a fixed list | `Resources/Private/Templates/Backend/TemporalCache/`, `Resources/Public/JavaScript/backend-module.js`, `TemporalCacheStatusReport::getExtensionStatus()` |
 | Cross-site request forgery (CWE-352, A01) | Module routes are not `public`, so TYPO3's backend `RouteDispatcher` rejects a request without a valid route token | `Configuration/Backend/Modules.php` |
 | Missing authorization (CWE-862, A01) | Admin-only module; `PermissionService` check before writes | `Classes/Service/Backend/PermissionService.php`, `Tests/Unit/Service/Backend/PermissionServiceTest.php` |
-| Improper input validation (CWE-20) | Posted uids must be positive integers, tables must be registered; console `--table` is limited to two names | `TemporalCacheController::harmonizeAction()`, `HarmonizeCommand::execute()`, `Tests/Functional/Controller/Backend/TemporalCacheControllerTest.php` (`testHarmonizeActionHandlesInvalidUidTypes`), `Tests/Unit/Command/HarmonizeCommandTest.php` |
+| Improper input validation (CWE-20) | Posted uids must be positive integers, tables must be registered; console `--table` is limited to two names | `TemporalCacheController::harmonizeAction()`, `HarmonizeCommand::execute()`, `Tests/Unit/Command/HarmonizeCommandTest.php` |
 | Information exposure through error messages (CWE-209) | Fixed message to the client, exception detail to the log | `HarmonizationService::harmonizeContent()` |
 | Uncontrolled resource consumption (CWE-400) | Transition lookups are `MIN()` queries on indexed columns (`ext_tables.sql`), cached per request; scheduler timing removes them from page rendering | `TemporalContentRepository::getNextTransition()`, `Classes/Service/Cache/TransitionCache.php` |
 | Vulnerable and outdated components (A06) | Composer Audit, Dependency Review and PHP License Audit on every pull request; Renovate (`renovate.json`) proposes updates | `.github/workflows/checks.yml` |
