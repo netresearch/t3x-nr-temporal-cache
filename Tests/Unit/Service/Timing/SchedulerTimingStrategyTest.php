@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Context\Context;
@@ -118,5 +119,85 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('scheduler', $this->subject->getName());
+    }
+
+    public function testProcessTransitionLogsTheFlushedTagsWhenDebugLoggingIsEnabled(): void
+    {
+        $this->scopingStrategy->method('getCacheTagsToFlush')->willReturn(['pageId_5']);
+        $this->scopingStrategy->method('getName')->willReturn('per-page');
+        $this->cacheManager->method('getCache')->willReturn($this->createStub(FrontendInterface::class));
+        $this->configuration->method('isDebugLoggingEnabled')->willReturn(true);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('info')
+            ->with(
+                'Processed temporal transition',
+                self::callback(static fn (array $context): bool => $context['flushed_tags'] === ['pageId_5']
+                    && $context['strategy'] === 'per-page'
+                    && \str_contains((string)$context['event'], 'tt_content'))
+            );
+        $logger->expects(self::never())->method('error');
+
+        $this->createSubjectWithLogger($logger)->processTransition($this->createEvent());
+    }
+
+    public function testProcessTransitionDoesNotLogWhenTheConfigurationCannotBeRead(): void
+    {
+        $this->scopingStrategy->method('getCacheTagsToFlush')->willReturn(['pageId_5']);
+        $this->cacheManager->method('getCache')->willReturn($this->createStub(FrontendInterface::class));
+        $this->configuration->method('isDebugLoggingEnabled')->willThrowException(new RuntimeException('no config'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('info');
+        $logger->expects(self::never())->method('error');
+
+        $this->createSubjectWithLogger($logger)->processTransition($this->createEvent());
+    }
+
+    public function testProcessTransitionLogsAFailedFlushAndDoesNotThrow(): void
+    {
+        $this->scopingStrategy->method('getCacheTagsToFlush')->willReturn(['pageId_5']);
+        $this->cacheManager->method('getCache')->willThrowException(new RuntimeException('cache unavailable'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('error')
+            ->with(
+                'Failed to process temporal transition',
+                self::callback(static fn (array $context): bool => $context['error'] === 'cache unavailable')
+            );
+
+        // The scheduler task processes the next transition after this one, so no exception.
+        $this->createSubjectWithLogger($logger)->processTransition($this->createEvent());
+    }
+
+    private function createSubjectWithLogger(LoggerInterface $logger): SchedulerTimingStrategy
+    {
+        return new SchedulerTimingStrategy(
+            $this->scopingStrategy,
+            $this->cacheManager,
+            $this->context,
+            $logger,
+            $this->configuration
+        );
+    }
+
+    private function createEvent(): TransitionEvent
+    {
+        return new TransitionEvent(
+            content: new TemporalContent(
+                uid: 123,
+                tableName: 'tt_content',
+                title: 'Test',
+                pid: 5,
+                starttime: 1893456000,
+                endtime: null,
+                languageUid: 0,
+                workspaceUid: 0
+            ),
+            timestamp: 1893456000,
+            transitionType: 'start'
+        );
     }
 }
