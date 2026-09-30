@@ -35,7 +35,7 @@ What you can expect:
 What you cannot expect:
 
 - **The extension is not an access control.** It cannot hide a record that TYPO3 would render, and its correctness does not replace the `hidden` flag or user group restrictions.
-- **A cached page can show a record after its `endtime`, or miss one after its `starttime`, for a bounded time that depends on the configuration:**
+- **A cached page can show a record after its `endtime`, or miss one after its `starttime`, for a bounded time that depends on the configuration, including:**
   - scheduler timing sets no lifetime; a transition takes effect when `TemporalCacheSchedulerTask` next runs, so the task interval is the delay;
   - hybrid timing applies the scheduler rule to the content type configured with `scheduler` (`timing.hybrid.content` defaults to `scheduler`);
   - per-page scoping under dynamic timing considers content transitions on the rendered page only, not content embedded from other pages through CONTENT or RECORDS objects (documented in `PerPageScopingStrategy::getNextTransition()` and in the README);
@@ -88,4 +88,4 @@ Trust boundaries:
 
 - Unit and functional suites (`Build/phpunit/UnitTests.xml`, `Build/phpunit/FunctionalTests.xml`) run on every pull request across the PHP and TYPO3 matrix in `.github/workflows/ci.yml`; the functional suite runs against a real database (SQLite in CI).
 - PHPStan at `level: max` (`Build/phpstan.neon`), Rector and PHP-CS-Fixer run in the same workflow.
-- Opengrep, CodeQL for the JavaScript, Betterleaks secret scanning and zizmor run from `.github/workflows/checks.yml`; the README section "Governance and policies" lists every check and its threshold.
+- Opengrep, CodeQL for the JavaScript, Betterleaks secret scanning and zizmor run from `.github/workflows/checks.yml`; the README section "Governance and policies" lists every pull-request check.
