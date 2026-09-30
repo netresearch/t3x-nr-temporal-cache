@@ -36,14 +36,14 @@ What you cannot expect:
 
 - **The extension is not an access control.** It cannot hide a record that TYPO3 would render, and its correctness does not replace the `hidden` flag or user group restrictions.
 - **A cached page can show a record after its `endtime`, or miss one after its `starttime`, for a bounded time that depends on the configuration, including:**
-  - scheduler timing sets no lifetime; a transition takes effect when `TemporalCacheSchedulerTask` next runs, so the task interval is the delay;
-  - hybrid timing applies the scheduler rule to the content type configured with `scheduler` (`timing.hybrid.content` defaults to `scheduler`);
+  - scheduler timing sets no lifetime of its own: a cached page keeps the lifetime TYPO3 computes, which `config.cache_period` bounds (86400 seconds by default), and `TemporalCacheSchedulerTask` flushes the cache tags the scoping strategy names when it processes a passed transition;
+  - hybrid timing uses the earlier lifetime of its two rules, so it behaves like scheduler timing only when both `timing.hybrid.pages` and `timing.hybrid.content` are set to `scheduler`;
   - per-page scoping under dynamic timing considers content transitions on the rendered page only, not content embedded from other pages through CONTENT or RECORDS objects (documented in `PerPageScopingStrategy::getNextTransition()` and in the README);
   - per-content scoping resolves pages through `sys_refindex` and falls back to the parent page when the reference index is off or empty, so an outdated reference index narrows the pages that are flushed;
   - only tables registered in `TemporalMonitorRegistry` are watched; `pages` and `tt_content` are registered by default.
 - **Caches outside TYPO3's page cache are not touched.** A CDN, a reverse proxy or the browser keep their own lifetimes.
 - **Harmonization moves the visibility window on purpose.** It rewrites `starttime` and `endtime` by up to `harmonization.tolerance` seconds, earlier or later, so a record may become visible or invisible up to that long before or after the time an editor entered. The write uses the database connection directly, not DataHandler: it creates no `sys_log` or `sys_history` entry (the extension logs it through its PSR-3 logger instead), and it does not apply record-level page permissions or workspace versioning.
-- **Many transitions mean many regenerated pages.** With global scoping every transition expires every cached page (see the Performance chapter in `Documentation/Performance/`). Editors who set many distinct start and end times raise the page generation load; harmonization exists to reduce that.
+- **Many transitions mean many regenerated pages.** With global scoping and dynamic timing every transition expires every cached page (see the Performance chapter in `Documentation/Performance/`). Editors who set many distinct start and end times raise the page generation load; harmonization exists to reduce that.
 - **Extension configuration is trusted.** Values are cast to their types (`Classes/Configuration/ExtensionConfiguration.php`), not range-checked. Unknown strategy names fall back to the highest-priority strategy (`Classes/Service/SelectsNamedStrategy.php`); slots that do not match `H:MM` or `HH:MM` are ignored (`HarmonizationService::parseTimeSlot()`).
 
 ## Threat model and trust boundaries
