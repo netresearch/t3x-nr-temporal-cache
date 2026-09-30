@@ -39,7 +39,7 @@ composer ci:test:php:coverage:check  # Check that report against 69% statement c
 composer docs:render            # Render Documentation/ via Docker
 ```
 
-Make targets wrap the same scripts: `make cgl`, `make cgl-fix`, `make phpstan`, `make test`, `make test-unit`, `make test-functional`. Docker-based multi-version runs: `Build/Scripts/runTests.sh`.
+Make targets wrap the same scripts: `make cgl`, `make cgl-fix`, `make phpstan`, `make test`, `make test-unit`, `make test-functional`. `Build/Scripts/runTests.sh` runs the same phpunit configurations with the host PHP; it starts no containers (`-h` lists its options).
 
 ## Project Structure
 
@@ -52,7 +52,7 @@ Resources/        # Language files, backend templates, icons - see Resources/AGE
 Build/            # phpunit configs, phpstan.neon, php-cs-fixer, rector, fractor, runTests.sh
 docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 .ddev/            # Local development environment - see .ddev/AGENTS.md
-.github/          # Workflows, CODEOWNERS, issue templates, Dependabot - see .github/workflows/AGENTS.md
+.github/          # Workflows, CODEOWNERS, issue templates, labeler - see .github/workflows/AGENTS.md
 ```
 
 ## Code Conventions

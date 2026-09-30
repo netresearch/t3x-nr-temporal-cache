@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# TYPO3 temporal_cache extension test runner based on core-testing Docker image
+# TYPO3 temporal_cache extension test runner
 #
-# Adopted from TYPO3 core testing setup
+# Adopted from TYPO3 core testing setup. Unlike the core runner it starts no
+# containers: it runs .Build/bin/phpunit with the PHP binary on the PATH, so
+# run `composer install` first.
 #
 
 # Function to write a .env file in Build/testing-docker/local directory
@@ -64,18 +66,22 @@ Options:
         Specifies which test suite to run
             - unit (default): Run unit tests
             - functional: Run functional tests
-            - acceptance: Run acceptance tests
+            - acceptance: not implemented, exits with status 1
 
     -d <mysql|mariadb|postgres|sqlite>
-        Only with -s functional|acceptance
-        Specifies which database type to use
-            - mysql (default): Use MySQL
-            - mariadb: Use MariaDB
-            - postgres: Use PostgreSQL
-            - sqlite: Use SQLite
+        Only with -s functional
+        Sets typo3DatabaseDriver (mysqli, pdo_pgsql or pdo_sqlite).
+        No database server is started: for mysql, mariadb and postgres
+        export typo3DatabaseHost, typo3DatabaseName, typo3DatabaseUsername
+        and typo3DatabasePassword first. sqlite needs nothing else.
+            - mysql (default)
+            - mariadb
+            - postgres
+            - sqlite
 
     -p <8.1|8.2|8.3>
-        Specifies PHP version to use
+        Only validated and printed. The tests run with the PHP binary
+        on the PATH, whatever its version.
             - 8.1
             - 8.2 (default)
             - 8.3
@@ -90,11 +96,8 @@ Examples:
     # Run unit tests
     ./Build/Scripts/runTests.sh -s unit
 
-    # Run functional tests with MariaDB
-    ./Build/Scripts/runTests.sh -s functional -d mariadb
-
-    # Run functional tests with PostgreSQL on PHP 8.3
-    ./Build/Scripts/runTests.sh -s functional -d postgres -p 8.3
+    # Run functional tests with SQLite
+    ./Build/Scripts/runTests.sh -s functional -d sqlite
 
     # Run specific unit test
     ./Build/Scripts/runTests.sh -s unit Tests/Unit/EventListener/TemporalCacheLifetimeTest.php
