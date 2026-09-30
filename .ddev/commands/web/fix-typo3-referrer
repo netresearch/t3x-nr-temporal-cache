@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 ## Description: Fix TYPO3 13 referrer check for DDEV development
 ## Usage: fix-typo3-referrer

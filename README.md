@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # TYPO3 Temporal Cache Management
 
 [![CI](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml/badge.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml)
@@ -389,8 +391,8 @@ composer ci:test:php:rector   # dry-run
 ```
 
 ### Test Suites
-- **Unit**: `Tests/Unit`, 27 test classes with stubbed/mocked dependencies (`Build/phpunit/UnitTests.xml`)
-- **Functional**: `Build/phpunit/FunctionalTests.xml` runs `Tests/Functional` and `Tests/Integration`, 11 test classes against a real database (event listener, scheduler task, scoping/timing strategies, harmonization persistence, backend controller)
+- **Unit**: `Tests/Unit`, 28 test classes with stubbed/mocked dependencies (`Build/phpunit/UnitTests.xml`)
+- **Functional**: `Build/phpunit/FunctionalTests.xml` runs `Tests/Functional` and `Tests/Integration`, 20 test classes against a real database (event listener, scheduler task, scoping/timing strategies, repository queries, harmonization persistence, the `analyze` and `harmonize` commands, backend controller)
 - **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 69% project target in [`codecov.yml`](codecov.yml). `composer ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone.
 
 ## Contributing
@@ -405,11 +407,32 @@ Contributions welcome. The conventions this repository enforces are in [`AGENTS.
 
 CI runs code style, PHPStan and Rector, plus the unit and functional suites across the version matrix above.
 
+## Governance and policies
+
+This extension follows the organisation-wide Netresearch policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles, how decisions are made and conflicts resolved.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and excluded work for the next twelve months.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): which vulnerability, licence and static-analysis findings must be fixed, by when, and how exceptions are recorded.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): where CI and release credentials are stored, who may use them, how committed secrets are detected, and when secrets are rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): the people and teams with administrative or write access to this repository.
+
+Checks that run on every pull request in this repository:
+
+- `.github/workflows/checks.yml`: Composer Audit (fails on an advisory for an installed package; `composer.json` lists the one advisory it ignores and why) and Opengrep SAST (fails a pull request as the [organisation rule](https://github.com/netresearch/.github/blob/main/SECURITY.md#static-analysis-sast) sets out), both through `typo3-ci-workflows`' `security.yml`; Dependency Review (fails on newly added dependencies with a vulnerability of severity high or higher); PHP License Audit (`license-check.yml`, fails when `composer licenses` reports a dependency licence that is exactly `SSPL` or `BSL`); CodeQL with `languages: auto`, which covers `Resources/Public/JavaScript/` (CodeQL has no PHP analysis; PHPStan and Opengrep cover the PHP code); Betterleaks secret scanning; zizmor for the workflow files; the pull request quality check (`pr-quality`); the aggregate gate `All security checks`, which fails when any of these jobs fails. The fuzz job looks for `Build/phpunit.xml`, which does not exist here, and is skipped.
+- `.github/workflows/ci.yml`: PHP lint, code style (`Build/.php-cs-fixer.php`), PHPStan (`Build/phpstan.neon`, and, advisory by default, once more against the newest PHPUnit as `PHPStan (unpinned PHPUnit)`), Rector, the unit and functional (SQLite) suites with coverage uploaded to Codecov, and the documentation rendering of `Documentation/`, across the PHP and TYPO3 matrix in [Compatibility](#compatibility), summarised by the aggregate gate `ci / All CI checks`.
+- `.github/workflows/harness-verify.yml`: `Build/Scripts/verify-harness.sh` and `Build/Scripts/verify-tailor-excludes.php`.
+- `.github/workflows/check-template-drift.yml`: the `.github/` files that the `typo3-extension` template in `netresearch/.github` manages, except those `.github/template.yaml` lists as intentional drift.
+
 ## Support & Issues
 
 - **Issues**: [GitHub Issues](https://github.com/netresearch/t3x-nr-temporal-cache/issues)
 - **Forge**: [TYPO3 Forge #14277](https://forge.typo3.org/issues/14277)
 - **Documentation**: [`Documentation/`](Documentation/) in this repository
+
+## Security
+
+What the extension protects and what it does not, its trust boundaries and the checks behind them: [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md). Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not in public issues.
 
 ## License
 

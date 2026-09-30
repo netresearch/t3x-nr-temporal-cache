@@ -1,6 +1,11 @@
 #!/usr/bin/env php
 <?php
 
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ */
+
 $settingsFile = '/var/www/html/v13/config/system/settings.php';
 
 if (!file_exists($settingsFile)) {

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Architecture
 
 Agent-facing component map. Verify claims against the referenced files before relying on them; update this file when components move.
@@ -37,7 +39,7 @@ Wiring is declared in `Configuration/Services.yaml` (no phpat architecture test 
 
 1. Frontend page render fires `ModifyCacheLifetimeForPageEvent`.
 2. `TemporalCacheLifetime` asks the configured timing strategy for a lifetime; the strategy consults the scoping strategy and `TemporalContentRepository` (through `TransitionCache`) for the next `starttime`/`endtime` transition.
-3. Dynamic: lifetime = seconds until next transition (capped). Scheduler: listener returns null, the scheduler task (`TemporalCacheSchedulerTask`) flushes the `pages` cache group when transitions pass. Hybrid: conditional mix.
+3. Dynamic: lifetime = seconds until next transition (capped). Scheduler: the strategy returns null and the listener leaves the lifetime alone; the scheduler task (`TemporalCacheSchedulerTask`) hands each passed transition to `SchedulerTimingStrategy::processTransition()`, which flushes the tags the scoping strategy returns from the `pages` cache (`pages` for global scoping, `pageId_<uid>` for per-page and per-content). Hybrid: conditional mix.
 4. Optional harmonization rounds transition timestamps into slots before they influence lifetimes/flushes.
 
 ## Key Decisions

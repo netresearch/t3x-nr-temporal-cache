@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+
 # EditorConfig for the TYPO3 ReST documentation.
 # No `root = true` here: the repository root .editorconfig keeps supplying
 # charset, end_of_line, insert_final_newline and trim_trailing_whitespace.

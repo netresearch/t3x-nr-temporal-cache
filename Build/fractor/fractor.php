@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ */
+
 use a9f\Fractor\Configuration\FractorConfiguration;
 use a9f\FractorTypo3\Set\Typo3LevelSetList;
 use a9f\FractorTypo3\Set\Typo3SetList;

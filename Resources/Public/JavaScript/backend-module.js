@@ -1,4 +1,7 @@
 /**
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ *
  * Backend module JavaScript for nr_temporal_cache
  *
  * TYPO3 v13 ES6 module for temporal cache management

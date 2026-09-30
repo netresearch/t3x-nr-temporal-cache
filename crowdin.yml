@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+
 # Crowdin configuration for TYPO3 Temporal Cache Extension
 # https://support.crowdin.com/configuration-file/
 

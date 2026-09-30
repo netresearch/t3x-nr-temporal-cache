@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ */
+
 namespace Netresearch\TemporalCache\Tests\Functional\EventListener;
 
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
@@ -218,7 +223,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $now = \time();
         $futureStarttime = $now + 3600;
 
-        // Insert hidden content element (should still be considered for cache lifetime)
+        // A hidden content element is not rendered, so its starttime must not shorten the
+        // lifetime (TemporalContentRepository::findMinTransitionForTable() filters on the
+        // TCA "disabled" column). The fixture's other transitions lie years ahead.
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', [
             'pid' => 1,
@@ -234,10 +241,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
 
         $subject->__invoke($event);
 
-        // Should still calculate lifetime based on hidden element
-        // (hidden elements may become visible, affecting cache)
-        $lifetime = $event->getCacheLifetime();
-        self::assertGreaterThan(0, $lifetime);
+        // Without a visible transition within a day the lifetime is the default maximum,
+        // not the hidden element's starttime one hour ahead.
+        self::assertSame(86400, $event->getCacheLifetime());
     }
 
     /**     */

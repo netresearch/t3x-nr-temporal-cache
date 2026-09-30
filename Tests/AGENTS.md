@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 <!-- Managed by agent: keep sections and order; edit content, not structure.
 Last updated: 2026-08-19 -->
 
@@ -15,7 +17,7 @@ PHPUnit test suites on `typo3/testing-framework`:
 
 - PHPUnit configs live in `../Build/phpunit/`: `UnitTests.xml`, `FunctionalTests.xml`
 - Functional tests need a database; CI runs them via the shared `netresearch/typo3-ci-workflows` reusable
-- Docker-based multi-version runs: `../Build/Scripts/runTests.sh`
+- `../Build/Scripts/runTests.sh` runs the same phpunit configurations with the host PHP; it starts no containers or database servers (`-h` lists its options)
 
 ## Build & Tests
 

@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ *
  * Custom bootstrap for unit tests.
  * Registers fixtures autoloader for TYPO3 stub classes.
  */

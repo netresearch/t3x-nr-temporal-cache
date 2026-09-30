@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # DDEV Development Environment for temporal_cache Extension
 
 This directory contains DDEV configuration for developing and testing the temporal_cache TYPO3 extension across multiple TYPO3 versions.

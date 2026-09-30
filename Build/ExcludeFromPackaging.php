@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ *
  * Packaging exclude list for `tailor ter:publish`, selected via the
  * TYPO3_EXCLUDE_FROM_PACKAGING environment variable.
  *
@@ -50,6 +53,12 @@ return [
         // The rendered manual is published to docs.typo3.org; shipping a copy
         // would double the artifact and go stale against it.
         'Documentation-GENERATED-temp',
+        // Agent-facing notes (docs/ARCHITECTURE.md, docs/SECURITY-ASSURANCE.md,
+        // exec plans) and developer scripts for the DDEV instance and coverage
+        // estimates. Root-anchored prefixes: "docs" does not match
+        // "Documentation".
+        'docs',
+        'scripts',
     ]),
     'files' => array_merge($tailorDefaults['files'], [
         // Agent instructions. AGENTS.md matches the scoped copies in Classes/,
@@ -72,6 +81,8 @@ return [
         'renovate.json',
         'codecov.yml',
         'fractor.php',
+        // Proposed OpenSSF Best Practices badge answers.
+        'bestpractices.json',
         // Upstream 1.7.0 knows only crowdin.yaml; this repository uses the
         // .yml spelling, which the default list therefore misses.
         'crowdin.yml',

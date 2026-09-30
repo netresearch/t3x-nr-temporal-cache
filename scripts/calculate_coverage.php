@@ -1,6 +1,11 @@
 #!/usr/bin/env php
 <?php
 
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: Netresearch DTT GmbH
+ */
+
 /**
  * Manual code coverage calculator
  * Analyzes test structure to estimate coverage percentage
