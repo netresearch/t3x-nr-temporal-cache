@@ -57,7 +57,7 @@
         "typo3/cms": {
             "extension-key": "nr_temporal_cache",
             "web-dir": ".Build/public",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "Package": {
                 "providesPackages": {
                     "netresearch/nr-temporal-cache": "nr_temporal_cache"

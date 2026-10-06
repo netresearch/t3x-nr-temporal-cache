@@ -94,7 +94,7 @@ Status
 ======
 
 .. important::
-    ``ext_emconf.php`` declares version **1.0.1** and state **stable**.
+    ``ext_emconf.php`` declares version **1.0.2** and state **stable**.
     The API covered by :ref:`api` follows Semantic Versioning from 1.0.0 onwards.
 
 The approach itself is a workaround.
