@@ -28,7 +28,7 @@ jobs:
       run-functional-tests: true
       # Both default to false, and while they are off the reusable runs the
       # suites with --no-coverage and skips the Codecov upload entirely — so
-      # nothing evaluates the 69% threshold that README.md and AGENTS.md
+      # nothing evaluates the coverage threshold that README.md and AGENTS.md
       # document. Turning them on produces the clover reports Codecov measures
       # the target in `codecov.yml` against, plus JUnit reports for Test
       # Analytics. CODECOV_TOKEN is passed under `secrets:` below.

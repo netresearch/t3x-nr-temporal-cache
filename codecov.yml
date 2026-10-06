@@ -6,14 +6,14 @@
 # `.github/workflows/ci.yml` sets `upload-coverage: true`, so the reusable
 # uploads a clover report from the unit cells (flag `unit`) and from the
 # functional cells (flag `functional`). The project status below is what makes
-# the 69% threshold documented in README.md and AGENTS.md an actual check on
+# the 90% threshold documented in README.md and AGENTS.md an actual check on
 # every pull request.
 #
-# 69% mirrors `composer ci:test:php:coverage:check`
-# (Build/scripts/check-coverage.php). The two are not measured identically: the
-# script reads statement coverage from the unit suite alone, this status reads
-# line coverage over unit and functional combined, so Codecov normally reports
-# the higher number. The local script stays the stricter of the two.
+# 90% sits below the 94.11% Codecov measured for unit and functional combined
+# on 7485182 (the v1.0.2 release commit). It is not the local
+# `composer ci:test:php:coverage:check` threshold (69%): that script reads
+# statement coverage from the unit suite alone, which measured 69.65% on the
+# same commit.
 # Hold the notification until enough uploads have merged. Each full CI run
 # produces 22 coverage sessions: 11 matrix cells (5 PHP x 3 TYPO3 minus 4
 # excludes) uploaded twice, once under the `unit` flag and once under
@@ -36,9 +36,9 @@ coverage:
   status:
     project:
       default:
-        # A floor, not a delta — no `threshold:`, so a drop below 69% fails
+        # A floor, not a delta — no `threshold:`, so a drop below 90% fails
         # regardless of what the base commit measured.
-        target: 69%
+        target: 90%
     # Codecov enables a `patch` status at target `auto` unless told otherwise,
     # which would add a second, undocumented gate on the lines a PR touches.
     # Report it, do not fail on it.

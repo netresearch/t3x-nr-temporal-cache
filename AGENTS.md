@@ -22,7 +22,7 @@ TYPO3 extension addressing Forge #14277: automatic page cache invalidation for t
 - **Strict types**: `declare(strict_types=1)` in all PHP files
 - **Standards**: TYPO3 coding standards via PHP-CS-Fixer (`Build/.php-cs-fixer.php`), PHPStan `level: max` (`Build/phpstan.neon`)
 - **Architecture**: PSR-14 events, constructor DI via `Configuration/Services.yaml`; `final` classes except where a unit test doubles them
-- **Testing**: unit + functional suites; CI uploads coverage to Codecov, which reports each PR against the 69% project target in `codecov.yml`. `ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone
+- **Testing**: unit + functional suites; CI uploads coverage to Codecov, which reports each PR against the 90% project target in `codecov.yml` (unit and functional combined). `ci:test:php:coverage:check` checks the unit suite alone against 69%
 - **Commits**: Conventional Commits; signed (`git commit -S --signoff`) — the `require-signed-commits` ruleset rejects unsigned commits at merge time and the DCO check requires the `Signed-off-by` trailer
 
 ## Commands
@@ -78,7 +78,7 @@ docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 - [ ] Unit + functional tests pass (`composer ci:test:php:unit`, `composer ci:test:php:functional`)
 - [ ] PHPStan clean (`composer ci:test:php:phpstan`)
 - [ ] Code style compliant (`composer ci:test:php:cgl`)
-- [ ] Unit coverage ≥69% (`composer ci:test:php:coverage` then `composer ci:test:php:coverage:check`); Codecov reports the same target for the combined suites
+- [ ] Unit coverage ≥69% (`composer ci:test:php:coverage` then `composer ci:test:php:coverage:check`); Codecov checks the combined suites against 90%
 - [ ] Documentation updated if behavior changed
 - [ ] No debug code (`var_dump`, `console.log`, ...)
 - [ ] Commit signed with `-S --signoff`, Conventional Commit format

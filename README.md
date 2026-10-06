@@ -392,8 +392,8 @@ composer ci:test:php:rector   # dry-run
 
 ### Test Suites
 - **Unit**: `Tests/Unit`, 28 test classes with stubbed/mocked dependencies (`Build/phpunit/UnitTests.xml`)
-- **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 69% project target in [`codecov.yml`](codecov.yml). `composer ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone.
 - **Functional**: `Build/phpunit/FunctionalTests.xml` runs `Tests/Functional` and `Tests/Integration`, 21 test classes against a real database (event listener, scheduler task, scoping/timing strategies, repository queries, harmonization persistence, the `analyze` and `harmonize` commands, backend controller)
+- **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 90% project target in [`codecov.yml`](codecov.yml) (unit and functional combined). `composer ci:test:php:coverage:check` checks the unit suite alone against 69%.
 
 ## Contributing
 
