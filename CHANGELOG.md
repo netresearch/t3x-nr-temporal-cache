@@ -12,6 +12,19 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-06
+
+### Fixed
+
+- The extension can be published to TER again. TER reads the extension title
+  from the part of the `composer.json` description before the first ` - `,
+  and the description had its only ` - ` near the end, which gave a 289-byte
+  title that TER could not store. The description now starts with
+  `Temporal Cache Management - `; the text after it is unchanged.
+- Release archives no longer contain files the installed extension does not
+  use: `docs/`, `scripts/`, `.bestpractices.json`, `codecov.yml`,
+  `Documentation/index.html` and the `AGENTS.md` and `CLAUDE.md` files.
+
 ## [1.0.1] - 2026-09-30
 
 ### Changed
@@ -132,7 +145,8 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.1...main
+[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.2...main
+[1.0.2]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0-alpha1...v0.9.0
