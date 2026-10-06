@@ -109,7 +109,7 @@ table — four with the default ``pages`` and ``tt_content``.
       AND `hidden` = 0
       AND `pid` = :pageId
       AND (`t3ver_wsid` = 0 OR `t3ver_wsid` IS NULL)
-      AND `sys_language_uid` = :language
+      AND `sys_language_uid` IN (:language, -1)
 
 Notes on that query:
 
@@ -118,6 +118,10 @@ Notes on that query:
 - The ``deleted``/``hidden`` column names come from the table's TCA ``ctrl`` section.
   Where no TCA is loaded, those clauses are simply absent.
 - The workspace clause is ``t3ver_wsid = :workspace`` for any workspace other than live.
+  It is absent for a table whose TCA does not set ``ctrl.versioningWS``.
+- The language column comes from the table's TCA ``ctrl.languageField``; records for all
+  languages (``-1``) match every language, and a table without a language field gets no
+  language clause.
 
 Indexes
 -------
@@ -241,8 +245,8 @@ The scheduler task sees only live and the default language
 ==========================================================
 
 ``TemporalCacheSchedulerTask`` calls ``findTransitionsInRange()`` without a workspace or
-language argument, so it runs with the defaults: workspace ``0`` and
-``sys_language_uid = 0``.
+language argument, so it runs with the defaults: workspace ``0`` and language ``0``
+(records with ``sys_language_uid`` ``0`` or ``-1``).
 
 Transitions on translated records are therefore not processed by ``scheduler`` or
 ``hybrid`` timing.

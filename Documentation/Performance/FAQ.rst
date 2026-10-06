@@ -225,7 +225,8 @@ Does the query cost multiply with the number of languages?
 
 No.
 One frontend request carries one language, and the language id from the Context API goes
-into the query as a single ``sys_language_uid`` condition.
+into the query as a single ``sys_language_uid`` condition (that language and ``-1``,
+"all languages").
 A ten-language site runs the same number of queries per cache write as a single-language
 site — each language just maintains its own cache entries and its own transitions.
 

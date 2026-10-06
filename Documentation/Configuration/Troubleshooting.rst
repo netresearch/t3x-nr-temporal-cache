@@ -125,7 +125,7 @@ not.
       EXPLAIN SELECT MIN(starttime) FROM pages
       WHERE starttime > UNIX_TIMESTAMP()
         AND hidden = 0 AND deleted = 0
-        AND sys_language_uid = 0;
+        AND sys_language_uid IN (0, -1);
 
    The plan should use one of the ``idx_temporalcache_*`` indexes instead of
    scanning the table.

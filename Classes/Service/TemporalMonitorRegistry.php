@@ -28,6 +28,13 @@ use TYPO3\CMS\Core\SingletonInterface;
  * ]);
  * ```
  *
+ * Only `uid`, `starttime` and `endtime` are required. For a table with TCA the
+ * repository also reads `pid` and the TCA language column when the registration
+ * does not name them. The workspace and language filters follow the table's TCA:
+ * a table without `ctrl.versioningWS` is queried without a `t3ver_wsid`
+ * condition, one without `ctrl.languageField` without a language condition, and
+ * records of the language `-1` ("all languages") count for every language.
+ *
  * Not through a Services.yaml definition: an unreferenced service is removed when the
  * container is compiled, so the registration never runs and the table is silently not
  * monitored. registerTable() returns void and cannot act as a service factory either.

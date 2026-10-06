@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Functional\EventListener;
 
 use Netresearch\TemporalCache\EventListener\TemporalCacheLifetime;
+use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -308,6 +310,88 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(200, $lifetime);
     }
 
+    public function testKeepsAShorterLifetimeThatTypo3AlreadyCalculated(): void
+    {
+        // TYPO3 hands the listener the lifetime it calculated, e.g. from
+        // config.cache_period or from a record expiring in 5 minutes. A later
+        // temporal transition must not extend it.
+        $this->insertPage(\time() + 3600, 0);
+
+        $subject = $this->get(TemporalCacheLifetime::class);
+        $event = new ModifyCacheLifetimeForPageEvent(300, 1, [], [], $this->get(Context::class));
+
+        $subject->__invoke($event);
+
+        self::assertSame(300, $event->getCacheLifetime());
+    }
+
+    public function testShortensALongerLifetimeThatTypo3Calculated(): void
+    {
+        $this->insertPage(\time() + 600, 0);
+
+        $subject = $this->get(TemporalCacheLifetime::class);
+        $event = new ModifyCacheLifetimeForPageEvent(3600, 1, [], [], $this->get(Context::class));
+
+        $subject->__invoke($event);
+
+        self::assertGreaterThan(598, $event->getCacheLifetime());
+        self::assertLessThan(602, $event->getCacheLifetime());
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function languageProvider(): iterable
+    {
+        yield 'default language' => [0];
+        yield 'translation' => [1];
+    }
+
+    #[DataProvider('languageProvider')]
+    public function testContentForAllLanguagesCapsTheLifetimeInEveryLanguage(int $languageId): void
+    {
+        $this->insertContentElement(0, \time() + 900, -1);
+
+        $context = $this->get(Context::class);
+        $context->setAspect('language', new LanguageAspect($languageId, $languageId, LanguageAspect::OVERLAYS_OFF));
+
+        $subject = $this->get(TemporalCacheLifetime::class);
+        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $context);
+
+        $subject->__invoke($event);
+
+        self::assertGreaterThan(898, $event->getCacheLifetime());
+        self::assertLessThan(902, $event->getCacheLifetime());
+    }
+
+    public function testRegisteredTableWithoutWorkspaceAndLanguageColumnsStillCapsTheLifetime(): void
+    {
+        // fe_users has starttime/endtime but is neither workspace-versioned nor
+        // localized (no t3ver_wsid, no sys_language_uid).
+        $registry = $this->get(TemporalMonitorRegistry::class);
+        $registry->registerTable('fe_users', ['uid', 'pid', 'username', 'starttime', 'endtime']);
+
+        try {
+            $this->getConnectionPool()->getConnectionForTable('fe_users')->insert('fe_users', [
+                'pid' => 1,
+                'username' => 'expiring',
+                'starttime' => 0,
+                'endtime' => \time() + 600,
+            ]);
+            $this->insertPage(\time() + 3600, 0);
+
+            $subject = $this->get(TemporalCacheLifetime::class);
+            $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+
+            $subject->__invoke($event);
+
+            self::assertGreaterThan(598, $event->getCacheLifetime());
+            self::assertLessThan(602, $event->getCacheLifetime());
+        } finally {
+            $registry->unregisterTable('fe_users');
+        }
+    }
+
     private function insertPage(int $starttime, int $endtime, int $languageUid = 0): void
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('pages');
@@ -321,7 +405,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         ]);
     }
 
-    private function insertContentElement(int $starttime, int $endtime): void
+    private function insertContentElement(int $starttime, int $endtime, int $languageUid = 0): void
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', [
@@ -330,7 +414,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
             'starttime' => $starttime,
             'endtime' => $endtime,
             'hidden' => 0,
-            'sys_language_uid' => 0,
+            'sys_language_uid' => $languageUid,
         ]);
     }
 

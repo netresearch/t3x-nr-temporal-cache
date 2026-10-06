@@ -80,7 +80,8 @@ $starttime = $qb->select('starttime')->from('pages')
         $qb->expr()->eq('hidden', 0),
         $qb->expr()->gt('starttime', $now),
         $qb->expr()->neq('starttime', 0),
-        $qb->expr()->eq('sys_language_uid', $languageId)
+        // records for all languages (-1) count for every language
+        $qb->expr()->in('sys_language_uid', $qb->createNamedParameter([$languageId, -1], Connection::PARAM_INT_ARRAY))
     )
     ->orderBy('starttime', 'ASC')->setMaxResults(1)
     ->executeQuery()->fetchOne();

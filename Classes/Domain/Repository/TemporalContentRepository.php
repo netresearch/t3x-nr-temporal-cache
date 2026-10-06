@@ -95,9 +95,12 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->removeAll()
             ->add($this->deletedRestriction);
 
-        // Select only fields that exist in the registry configuration
+        $languageField = $this->resolveLanguageField($tableName, $fields);
+        $selectFields = $this->buildSelectFields($tableName, $fields, $languageField);
+
+        // Select the registered fields (plus the language column)
         $queryBuilder
-            ->select(...$fields)
+            ->select(...$selectFields)
             ->from($tableName)
             ->where(
                 $queryBuilder->expr()->or(
@@ -106,16 +109,10 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
+        $this->applyWorkspaceRestriction($queryBuilder, $tableName, $workspaceUid);
 
-        // Add language filter if sys_language_uid field exists and language specified
-        if ($languageUid >= 0 && \in_array('sys_language_uid', $fields, true)) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($languageUid, Connection::PARAM_INT)
-                )
-            );
+        if ($languageUid >= 0 && $languageField !== null) {
+            $this->applyLanguageRestriction($queryBuilder, $tableName, $languageUid);
         }
 
         $result = $queryBuilder->executeQuery();
@@ -125,38 +122,105 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         $titleField = $this->determineTitleField($tableName, $fields);
 
         while ($row = $result->fetchAssociative()) {
-            $uid = $row['uid'];
-            \assert(\is_int($uid));
-            $title = $row[$titleField] ?? '';
-            \assert(\is_string($title));
-            $pid = $row['pid'] ?? 0;
-            \assert(\is_int($pid));
-            $starttime = $row['starttime'];
-            \assert(\is_int($starttime));
-            $endtime = $row['endtime'];
-            \assert(\is_int($endtime));
-            $languageUid = $row['sys_language_uid'] ?? 0;
-            \assert(\is_int($languageUid));
-            $hidden = $row['hidden'] ?? false;
-            \assert(\is_int($hidden));
-            $deleted = $row['deleted'] ?? false;
-            \assert(\is_int($deleted));
-
-            $records[] = new TemporalContent(
-                uid: $uid,
-                tableName: $tableName,
-                title: $title,
-                pid: $pid,
-                starttime: $starttime > 0 ? $starttime : null,
-                endtime: $endtime > 0 ? $endtime : null,
-                languageUid: $languageUid,
-                workspaceUid: $workspaceUid,
-                hidden: (bool)$hidden,
-                deleted: (bool)$deleted
-            );
+            $records[] = $this->createTemporalContent($row, $tableName, $titleField, $languageField, $workspaceUid);
         }
 
         return $records;
+    }
+
+    /**
+     * The language column a query on a registered table reads.
+     *
+     * From TCA ctrl.languageField when the table has TCA (the column exists
+     * then, whether the registration names it or not); without TCA only
+     * when the registration names sys_language_uid.
+     *
+     * @param array<string> $fields Field list from the registry
+     */
+    private function resolveLanguageField(string $tableName, array $fields): ?string
+    {
+        $languageField = $this->getLanguageField($tableName);
+        if ($languageField !== null && $this->getTcaCtrl($tableName) === null
+            && !\in_array($languageField, $fields, true)) {
+            return null;
+        }
+
+        return $languageField;
+    }
+
+    /**
+     * The columns a query on a registered table selects.
+     *
+     * The registered fields, plus pid for a table with TCA (every TCA table
+     * has it, and the scoping strategies flush the page a record sits on),
+     * plus the language column from resolveLanguageField().
+     *
+     * @param array<string> $fields Field list from the registry
+     * @return array<string>
+     */
+    private function buildSelectFields(string $tableName, array $fields, ?string $languageField): array
+    {
+        $selectFields = $fields;
+        if ($this->getTcaCtrl($tableName) !== null && !\in_array('pid', $selectFields, true)) {
+            $selectFields[] = 'pid';
+        }
+
+        if ($languageField !== null && !\in_array($languageField, $selectFields, true)) {
+            $selectFields[] = $languageField;
+        }
+
+        return $selectFields;
+    }
+
+    /**
+     * Map a row of a registered table to a TemporalContent object.
+     *
+     * Only uid, starttime and endtime are required in a registration; the
+     * other columns fall back to defaults when they were not selected.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function createTemporalContent(
+        array $row,
+        string $tableName,
+        string $titleField,
+        ?string $languageField,
+        int $workspaceUid
+    ): TemporalContent {
+        $uid = $row['uid'];
+        \assert(\is_int($uid));
+        $title = $row[$titleField] ?? '';
+        // determineTitleField() falls back to the integer uid
+        if (\is_int($title)) {
+            $title = (string)$title;
+        }
+
+        \assert(\is_string($title));
+        $pid = $row['pid'] ?? 0;
+        \assert(\is_int($pid));
+        $starttime = $row['starttime'];
+        \assert(\is_int($starttime));
+        $endtime = $row['endtime'];
+        \assert(\is_int($endtime));
+        $languageUid = $languageField !== null ? ($row[$languageField] ?? 0) : 0;
+        \assert(\is_int($languageUid));
+        $hidden = $row['hidden'] ?? 0;
+        \assert(\is_int($hidden));
+        $deleted = $row['deleted'] ?? 0;
+        \assert(\is_int($deleted));
+
+        return new TemporalContent(
+            uid: $uid,
+            tableName: $tableName,
+            title: $title,
+            pid: $pid,
+            starttime: $starttime > 0 ? $starttime : null,
+            endtime: $endtime > 0 ? $endtime : null,
+            languageUid: $languageUid,
+            workspaceUid: $workspaceUid,
+            hidden: (bool)$hidden,
+            deleted: (bool)$deleted
+        );
     }
 
     /**
@@ -481,16 +545,11 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             );
         }
 
-        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
+        $this->applyWorkspaceRestriction($queryBuilder, $tableName, $workspaceUid);
 
         // Add language filter if specified
         if ($languageUid >= 0) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($languageUid, Connection::PARAM_INT)
-                )
-            );
+            $this->applyLanguageRestriction($queryBuilder, $tableName, $languageUid);
         }
 
         $result = $queryBuilder->executeQuery()->fetchOne();
@@ -570,13 +629,77 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     }
 
     /**
+     * Restrict a query to records shown in the given language.
+     *
+     * Records with sys_language_uid = -1 ("all languages") are shown in every
+     * language, so their transitions count for each one.
+     */
+    private function applyLanguageRestriction(QueryBuilder $queryBuilder, string $tableName, int $languageUid): void
+    {
+        $languageField = $this->getLanguageField($tableName);
+        if ($languageField === null) {
+            return;
+        }
+
+        $queryBuilder->andWhere(
+            $queryBuilder->expr()->in(
+                $languageField,
+                $queryBuilder->createNamedParameter([$languageUid, -1], Connection::PARAM_INT_ARRAY)
+            )
+        );
+    }
+
+    /**
+     * The language column of a table.
+     *
+     * TCA ctrl.languageField when the table is in TCA; null when the TCA says
+     * the table is not localized; 'sys_language_uid' when TCA is unavailable
+     * (e.g. in isolated unit tests).
+     */
+    private function getLanguageField(string $tableName): ?string
+    {
+        $ctrl = $this->getTcaCtrl($tableName);
+        if ($ctrl === null) {
+            return 'sys_language_uid';
+        }
+
+        $languageField = $ctrl['languageField'] ?? null;
+
+        return \is_string($languageField) && $languageField !== '' ? $languageField : null;
+    }
+
+    /**
+     * The TCA ctrl section of a table, or null when the table has no TCA.
+     *
+     * @return array<array-key, mixed>|null
+     */
+    private function getTcaCtrl(string $tableName): ?array
+    {
+        $tableTca = $this->getTca()[$tableName] ?? null;
+        if (!\is_array($tableTca)) {
+            return null;
+        }
+
+        $ctrl = $tableTca['ctrl'] ?? null;
+
+        return \is_array($ctrl) ? $ctrl : null;
+    }
+
+    /**
      * Restrict a query to the given workspace.
      *
      * Live (workspace 0) matches records whose t3ver_wsid is 0 or NULL; any other workspace
      * matches that workspace's records exactly.
      */
-    private function applyWorkspaceRestriction(QueryBuilder $queryBuilder, int $workspaceUid): void
+    private function applyWorkspaceRestriction(QueryBuilder $queryBuilder, string $tableName, int $workspaceUid): void
     {
+        // A table that the TCA does not mark as workspace-versioned has no
+        // t3ver_wsid column; all its records are live.
+        $ctrl = $this->getTcaCtrl($tableName);
+        if ($ctrl !== null && !(bool)($ctrl['versioningWS'] ?? false)) {
+            return;
+        }
+
         if ($workspaceUid === 0) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->or(
@@ -699,13 +822,10 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                     $queryBuilder->expr()->gt('starttime', 0),
                     $queryBuilder->expr()->gt('endtime', 0)
                 ),
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($languageUid, Connection::PARAM_INT)
-                )
             );
 
-        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
+        $this->applyLanguageRestriction($queryBuilder, 'tt_content', $languageUid);
+        $this->applyWorkspaceRestriction($queryBuilder, 'tt_content', $workspaceUid);
 
         $result = $queryBuilder->executeQuery();
         $contentElements = [];
@@ -771,8 +891,11 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->removeAll()
             ->add($this->deletedRestriction);
 
+        $languageField = $this->resolveLanguageField($tableName, $fields);
+        $selectFields = $this->buildSelectFields($tableName, $fields, $languageField);
+
         $queryBuilder
-            ->select(...$fields)
+            ->select(...$selectFields)
             ->from($tableName)
             ->where(
                 $queryBuilder->expr()->eq(
@@ -781,7 +904,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 )
             );
 
-        $this->applyWorkspaceRestriction($queryBuilder, $workspaceUid);
+        $this->applyWorkspaceRestriction($queryBuilder, $tableName, $workspaceUid);
 
         $row = $queryBuilder->executeQuery()->fetchAssociative();
 
@@ -789,36 +912,12 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             return null;
         }
 
-        $titleField = $this->determineTitleField($tableName, $fields);
-
-        $uid = $row['uid'];
-        \assert(\is_int($uid));
-        $title = $row[$titleField] ?? '';
-        \assert(\is_string($title));
-        $pid = $row['pid'] ?? 0;
-        \assert(\is_int($pid));
-        $starttime = $row['starttime'];
-        \assert(\is_int($starttime));
-        $endtime = $row['endtime'];
-        \assert(\is_int($endtime));
-        $languageUid = $row['sys_language_uid'] ?? 0;
-        \assert(\is_int($languageUid));
-        $hidden = $row['hidden'] ?? false;
-        \assert(\is_int($hidden));
-        $deleted = $row['deleted'] ?? false;
-        \assert(\is_int($deleted));
-
-        return new TemporalContent(
-            uid: $uid,
-            tableName: $tableName,
-            title: $title,
-            pid: $pid,
-            starttime: $starttime > 0 ? $starttime : null,
-            endtime: $endtime > 0 ? $endtime : null,
-            languageUid: $languageUid,
-            workspaceUid: $workspaceUid,
-            hidden: (bool)$hidden,
-            deleted: (bool)$deleted
+        return $this->createTemporalContent(
+            $row,
+            $tableName,
+            $this->determineTitleField($tableName, $fields),
+            $languageField,
+            $workspaceUid
         );
     }
 }

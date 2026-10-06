@@ -97,7 +97,8 @@ Flush tags
    One ``pageId_*`` tag per page that ``sys_refindex`` reports as referencing the element,
    which covers direct placement, ``CONTENT``/``RECORDS`` embedding, mount points and
    shortcuts.
-   A page record always yields its own tag only.
+   A page record always yields its own tag only, and a record of another registered
+   table the tag of its own ``pid`` (the refindex lookup resolves ``tt_content`` only).
 
 Trade-off
    The most precise invalidation available, but only along the flush-tag path.

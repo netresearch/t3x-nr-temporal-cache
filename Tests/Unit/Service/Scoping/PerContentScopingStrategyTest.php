@@ -98,6 +98,29 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertEqualsCanonicalizing(['pageId_5', 'pageId_10', 'pageId_15'], $tags);
     }
 
+    public function testGetCacheTagsToFlushUsesTheParentPageForRecordsOfOtherRegisteredTables(): void
+    {
+        // The reference index lookup resolves tt_content uids; a record of another
+        // registered table must not be looked up as the tt_content element with its uid.
+        $content = new TemporalContent(
+            uid: 930,
+            tableName: 'fe_users',
+            title: 'Test',
+            pid: 5,
+            starttime: null,
+            endtime: null,
+            languageUid: 0,
+            workspaceUid: 0
+        );
+
+        $this->configuration->method('useRefindex')->willReturn(true);
+        $this->refindexService->expects(self::never())->method('findPagesWithContent');
+
+        $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
+
+        self::assertSame(['pageId_5'], $tags);
+    }
+
     /**     */
     public function testGetCacheTagsToFlushFallsBackToParentPageWhenRefindexDisabled(): void
     {

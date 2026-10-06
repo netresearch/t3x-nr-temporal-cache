@@ -52,6 +52,9 @@ final class TemporalCacheLifetime
      * - Return null (scheduler strategy - cache lives indefinitely)
      * - Conditionally choose based on content type (hybrid strategy)
      *
+     * The result never exceeds the lifetime TYPO3 already calculated for the
+     * page (the event's current value).
+     *
      * Respects TYPO3's cache configuration hierarchy:
      * 1. TypoScript config.cache_period (site-wide setting)
      * 2. Extension's default_max_lifetime (fallback)
@@ -68,6 +71,15 @@ final class TemporalCacheLifetime
                 $maxLifetime = $this->determineMaxLifetime($renderingInstructions);
                 $cappedLifetime = \min($lifetime, $maxLifetime);
 
+                // TYPO3 hands in the lifetime it calculated itself (records
+                // expiring earlier, config.cache_period, other listeners).
+                // A later temporal transition must never extend it; only a
+                // positive value is a limit (0 would mean "no expiry").
+                $incomingLifetime = $event->getCacheLifetime();
+                if ($incomingLifetime > 0) {
+                    $cappedLifetime = \min($cappedLifetime, $incomingLifetime);
+                }
+
                 $event->setCacheLifetime($cappedLifetime);
 
                 if ($this->extensionConfiguration->isDebugLoggingEnabled()) {
@@ -76,6 +88,7 @@ final class TemporalCacheLifetime
                         [
                             'lifetime' => $cappedLifetime,
                             'uncapped_lifetime' => $lifetime,
+                            'incoming_lifetime' => $incomingLifetime,
                             'max_lifetime' => $maxLifetime,
                             'max_from_typoscript' => $renderingInstructions['cache_period'] ?? null,
                             'max_from_extension_config' => $this->extensionConfiguration->getDefaultMaxLifetime(),
