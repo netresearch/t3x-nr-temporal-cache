@@ -48,7 +48,7 @@ on which timing strategy reads it.
       - with ``scheduler`` timing (flushes tags)
     * - ``global``
       - Every entry expires at the earliest transition site-wide.
-      - Flushes the ``pages`` tag: the entire page cache, once per transition.
+      - Empties the entire page cache, once per transition.
     * - ``per-page``
       - An entry expires at the earlier of: the next ``pages`` transition site-wide, or the
         next transition of a content element on that page.

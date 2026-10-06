@@ -17,8 +17,8 @@ use TYPO3\CMS\Core\Context\Context;
  * Global scoping strategy - flushes ALL page caches.
  *
  * This strategy provides backward compatibility with Phase 1 behavior.
- * When any temporal content transitions, it flushes the entire 'pages' cache tag,
- * causing all page caches to be invalidated.
+ * When any temporal content transitions, it asks for the whole page cache to be
+ * emptied (ScopingStrategyInterface::ALL_PAGES).
  *
  * Use case:
  * - Maximum safety (guarantees all affected pages are cleared)
@@ -41,11 +41,11 @@ class GlobalScopingStrategy implements ScopingStrategyInterface
     /**
      * {@inheritdoc}
      *
-     * Always returns ['pages'] tag, causing all page caches to be flushed.
+     * Always returns [ALL_PAGES], so the whole page cache is emptied.
      */
     public function getCacheTagsToFlush(TemporalContent $content, Context $context): array
     {
-        return ['pages'];
+        return [self::ALL_PAGES];
     }
 
     /**

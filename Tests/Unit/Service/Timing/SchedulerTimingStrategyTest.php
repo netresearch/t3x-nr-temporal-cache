@@ -120,6 +120,36 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         $this->subject->processTransition($event);
     }
 
+    public function testProcessTransitionEmptiesTheWholePageCacheForAllPages(): void
+    {
+        $event = new TransitionEvent(
+            content: new TemporalContent(
+                uid: 123,
+                tableName: 'tt_content',
+                title: 'Test',
+                pid: 5,
+                starttime: \time(),
+                endtime: null,
+                languageUid: 0,
+                workspaceUid: 0
+            ),
+            timestamp: \time(),
+            transitionType: 'start'
+        );
+
+        $this->scopingStrategy
+            ->method('getCacheTagsToFlush')
+            ->willReturn([ScopingStrategyInterface::ALL_PAGES]);
+
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->expects(self::once())->method('flush');
+        $cache->expects(self::never())->method('flushByTag');
+
+        $this->cacheManager->method('getCache')->with('pages')->willReturn($cache);
+
+        $this->subject->processTransition($event);
+    }
+
     /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {

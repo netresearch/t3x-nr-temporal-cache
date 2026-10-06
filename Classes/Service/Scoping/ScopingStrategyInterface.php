@@ -23,7 +23,18 @@ use TYPO3\CMS\Core\Context\Context;
 interface ScopingStrategyInterface extends NamedStrategyInterface
 {
     /**
+     * Pseudo tag meaning "every entry of the page cache".
+     *
+     * TYPO3 does not tag page cache entries with it (they carry pageId_<uid>
+     * and the page's own cache_tags), so it cannot be flushed by tag; the
+     * scheduler timing strategy empties the whole page cache instead.
+     */
+    public const ALL_PAGES = 'pages';
+
+    /**
      * Get cache tags to flush when temporal content transitions.
+     *
+     * Return ALL_PAGES to empty the whole page cache.
      *
      * @param TemporalContent $content The content that transitioned
      * @param Context $context TYPO3 context (workspace, language)

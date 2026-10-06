@@ -42,8 +42,9 @@ Lifetime
    expiry.
 
 Flush tags
-   ``['pages']`` — the tag every page cache entry carries, so a transition flushes the whole
-   page cache.
+   ``['pages']`` (``ScopingStrategyInterface::ALL_PAGES``). TYPO3 does not put this tag on
+   page cache entries, so the scheduler timing strategy empties the whole page cache for
+   it instead of flushing by tag.
 
 Trade-off
    Nothing to configure and nothing can be missed.

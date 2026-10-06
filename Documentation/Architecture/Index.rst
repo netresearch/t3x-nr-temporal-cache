@@ -372,7 +372,8 @@ A scoping strategy answers two separate questions, and the answers do not have t
       - ``getCacheTagsToFlush()`` returns
     * - ``global``
       - Every monitored table, site-wide. The page id is ignored.
-      - ``['pages']`` — the tag every page cache entry carries.
+      - ``['pages']`` (``ALL_PAGES``) — the scheduler empties the whole page cache for it,
+        because no page cache entry carries that tag.
     * - ``per-page``
       - The ``pages`` table site-wide, plus the content tables restricted to the rendered
         page. Falls back to the site-wide lookup when no page id is available.
@@ -589,7 +590,7 @@ No cross-page dependency detection with ``dynamic`` timing
 Scheduler timing flushes only what the scoping strategy names
    With ``per-page`` or ``per-content`` scoping a page transition flushes only that page's
    own tag, so menus on other pages are not refreshed by the scheduler run.
-   ``global`` scoping flushes the ``pages`` tag and does refresh them.
+   ``global`` scoping empties the whole page cache and does refresh them.
 
 Additional tables get no indexes
    :file:`ext_tables.sql` covers ``pages`` and ``tt_content``.

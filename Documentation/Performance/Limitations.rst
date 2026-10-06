@@ -168,7 +168,7 @@ Scheduler flushes are narrower than they look
 
 Under ``scheduler`` or ``hybrid`` timing the flush tags come from the scoping strategy:
 
-- ``global`` flushes the ``pages`` tag — everything.
+- ``global`` empties the whole page cache.
 - ``per-page`` flushes ``pageId_<uid>`` for a page and ``pageId_<pid>`` for a content
   element.
 - ``per-content`` flushes one ``pageId_*`` per refindex hit; a page record still yields only
