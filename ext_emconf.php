@@ -7,7 +7,7 @@
 
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Temporal Cache Management',
-    'description' => 'Automatic cache invalidation for time-based content (starttime/endtime), addressing Forge #14277, with three scoping and three timing strategies. Read the Performance chapter before deployment.',
+    'description' => 'Automatic cache invalidation for time-based content (starttime/endtime). The default global scoping expires all page caches on every transition; read the Performance chapter before deployment.',
     'category' => 'fe',
     'author' => 'Netresearch',
     'author_email' => '',

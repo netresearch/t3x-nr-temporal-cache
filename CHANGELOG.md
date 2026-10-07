@@ -12,6 +12,15 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+### Changed
+
+- The extension title is the same everywhere: `ext_emconf.php`, the
+  `composer.json` description, `Documentation/guides.xml`, the manual's first
+  heading and the README ("Temporal Cache Management for TYPO3"). The
+  description after the title is shorter: it drops "TYPO3", the Forge
+  reference and the strategy names, and keeps the warning that the default
+  global scoping expires all page caches on every transition.
+
 ## [1.0.2] - 2026-10-06
 
 ### Fixed

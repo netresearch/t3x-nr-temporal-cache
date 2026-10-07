@@ -1,7 +1,7 @@
 {
     "name": "netresearch/nr-temporal-cache",
     "type": "typo3-cms-extension",
-    "description": "Temporal Cache Management - Automatic cache invalidation for time-based content (starttime/endtime), addressing Forge #14277, with three scoping and three timing strategies. Read the Performance chapter before deployment.",
+    "description": "Temporal Cache Management - Automatic cache invalidation for time-based content (starttime/endtime). The default global scoping expires all page caches on every transition; read the Performance chapter before deployment.",
     "keywords": [
         "TYPO3",
         "cache",
