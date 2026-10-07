@@ -3,9 +3,9 @@
 
 .. include:: /Includes.rst.txt
 
-==========================
+=========================
 Temporal Cache Management
-==========================
+=========================
 
 :Extension key:
    nr_temporal_cache

@@ -7,7 +7,7 @@
 
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Temporal Cache Management',
-    'description' => 'Automatic TYPO3 cache invalidation for time-based content (starttime/endtime), addressing Forge #14277. Three scoping strategies (global, per-page, per-content) and three timing strategies (dynamic, scheduler, hybrid). The default global scoping expires all page caches on every transition - read the Performance chapter before deployment.',
+    'description' => 'Automatic cache invalidation for time-based content (starttime/endtime). The default global scoping expires all page caches on every transition; read the Performance chapter before deployment.',
     'category' => 'fe',
     'author' => 'Netresearch',
     'author_email' => '',
