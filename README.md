@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
-# TYPO3 Temporal Cache Management
+# Temporal Cache Management for TYPO3
 
 [![CI](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml/badge.svg)](https://github.com/netresearch/t3x-nr-temporal-cache/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/netresearch/t3x-nr-temporal-cache/graph/badge.svg)](https://codecov.io/gh/netresearch/t3x-nr-temporal-cache)
