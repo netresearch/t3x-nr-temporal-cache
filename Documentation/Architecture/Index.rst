@@ -103,6 +103,11 @@ The listener also caps the value the timing strategy already capped, because
 ``DynamicTimingStrategy`` limits its own result to ``advanced.default_max_lifetime``
 independently.
 
+The result never exceeds the lifetime TYPO3 hands in with the event
+(``ModifyCacheLifetimeForPageEvent::getCacheLifetime()``), which already reflects records
+expiring earlier, ``config.cache_period`` and other listeners: the listener takes the
+minimum of both whenever the incoming value is greater than zero.
+
 .. _architecture-registration:
 
 Registration
@@ -309,9 +314,13 @@ With the two default tables that is four queries.
   ``0``.
   When no TCA is available the query simply runs without them.
 - ``pid = :pageId`` when the caller passed a page id.
-- The workspace clause: for workspace ``0`` it matches ``t3ver_wsid = 0 OR t3ver_wsid IS
-  NULL``, otherwise ``t3ver_wsid = :workspace``.
-- ``sys_language_uid = :language`` whenever the language id is ``>= 0``.
+- The workspace clause, for tables whose TCA sets ``ctrl.versioningWS`` (and for tables
+  without TCA): for workspace ``0`` it matches ``t3ver_wsid = 0 OR t3ver_wsid IS NULL``,
+  otherwise ``t3ver_wsid = :workspace``.
+- ``<languageField> IN (:language, -1)`` whenever the language id is ``>= 0``, with the
+  column from TCA ``ctrl.languageField`` (``sys_language_uid`` without TCA, no clause for a
+  table that is not localized). Records for all languages (``-1``) count for every
+  language.
 
 .. _architecture-request-cache:
 
@@ -363,14 +372,17 @@ A scoping strategy answers two separate questions, and the answers do not have t
       - ``getCacheTagsToFlush()`` returns
     * - ``global``
       - Every monitored table, site-wide. The page id is ignored.
-      - ``['pages']`` — the tag every page cache entry carries.
+      - ``['pages']`` (``ALL_PAGES``) — the scheduler empties the whole page cache for it,
+        because no page cache entry carries that tag.
     * - ``per-page``
       - The ``pages`` table site-wide, plus the content tables restricted to the rendered
         page. Falls back to the site-wide lookup when no page id is available.
       - ``['pageId_<uid>']`` for a page, ``['pageId_<pid>']`` for a content element.
     * - ``per-content``
       - Every monitored table, site-wide — the same lookup as ``global``.
-      - One ``pageId_<uid>`` tag per page that ``sys_refindex`` reports for the element.
+      - One ``pageId_<uid>`` tag per page that ``sys_refindex`` reports for a
+        ``tt_content`` element; ``['pageId_<pid>']`` for a record of another registered
+        table.
 
 .. important::
     ``per-content`` narrows the flush tags, not the cache lifetime.
@@ -578,7 +590,7 @@ No cross-page dependency detection with ``dynamic`` timing
 Scheduler timing flushes only what the scoping strategy names
    With ``per-page`` or ``per-content`` scoping a page transition flushes only that page's
    own tag, so menus on other pages are not refreshed by the scheduler run.
-   ``global`` scoping flushes the ``pages`` tag and does refresh them.
+   ``global`` scoping empties the whole page cache and does refresh them.
 
 Additional tables get no indexes
    :file:`ext_tables.sql` covers ``pages`` and ``tt_content``.

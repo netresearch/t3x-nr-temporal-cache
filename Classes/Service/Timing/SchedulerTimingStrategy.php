@@ -98,10 +98,15 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
                 $this->context
             );
 
-            // Flush page caches for those tags
+            // Flush page caches for those tags. ALL_PAGES is no tag TYPO3
+            // puts on page cache entries, so it empties the whole cache.
             $pageCache = $this->cacheManager->getCache('pages');
-            foreach ($cacheTags as $tag) {
-                $pageCache->flushByTag($tag);
+            if (\in_array(ScopingStrategyInterface::ALL_PAGES, $cacheTags, true)) {
+                $pageCache->flush();
+            } else {
+                foreach ($cacheTags as $tag) {
+                    $pageCache->flushByTag($tag);
+                }
             }
 
             // Log successful invalidation if debug logging is enabled

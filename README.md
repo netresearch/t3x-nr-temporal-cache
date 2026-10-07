@@ -278,9 +278,9 @@ See the [configuration reference](Documentation/Configuration/Index.rst) for det
 
 ### Behaviour by Configuration
 
-| Scoping Strategy | Cache tags flushed on a transition | Timing Strategy | Per-page render cost |
-|-----------------|------------------------------------|-----------------|----------------------|
-| **Global** | `pages` | Dynamic | 2 `MIN()` queries per monitored table - 4 with the default `pages` + `tt_content` - held in a request-level cache |
+| Scoping Strategy | Flushed by the scheduler task on a transition (scheduler and hybrid timing) | Timing Strategy | Per-page render cost |
+|-----------------|------------------------------------------------------------------------------|-----------------|----------------------|
+| **Global** | the whole page cache | Dynamic | 2 `MIN()` queries per monitored table - 4 with the default `pages` + `tt_content` - held in a request-level cache |
 | **Per-Page** | `pageId_<uid>` of the affected page | Dynamic | 4 queries by default: page transitions site-wide plus content transitions on the rendered page |
 | **Per-Content** | `pageId_<uid>` for every page the element appears on | Dynamic | Same as global - the lifetime lookup is the site-wide one |
 | Any scoping | Same as above | **Scheduler** | **No queries** - the listener sets no lifetime |
@@ -392,8 +392,8 @@ composer ci:test:php:rector   # dry-run
 
 ### Test Suites
 - **Unit**: `Tests/Unit`, 28 test classes with stubbed/mocked dependencies (`Build/phpunit/UnitTests.xml`)
-- **Functional**: `Build/phpunit/FunctionalTests.xml` runs `Tests/Functional` and `Tests/Integration`, 20 test classes against a real database (event listener, scheduler task, scoping/timing strategies, repository queries, harmonization persistence, the `analyze` and `harmonize` commands, backend controller)
-- **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 69% project target in [`codecov.yml`](codecov.yml). `composer ci:test:php:coverage:check` is the local equivalent, measured on the unit suite alone.
+- **Functional**: `Build/phpunit/FunctionalTests.xml` runs `Tests/Functional` and `Tests/Integration`, 21 test classes against a real database (event listener, scheduler task, scoping/timing strategies, repository queries, harmonization persistence, the `analyze` and `harmonize` commands, backend controller)
+- **Coverage gate**: CI runs both suites with coverage and uploads them to Codecov, which reports every pull request against the 90% project target in [`codecov.yml`](codecov.yml) (unit and functional combined). `composer ci:test:php:coverage:check` checks the unit suite alone against 69%.
 
 ## Contributing
 

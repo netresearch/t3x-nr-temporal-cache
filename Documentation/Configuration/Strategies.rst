@@ -82,7 +82,8 @@ Controls which caches are invalidated when temporal transitions occur.
       Content can be referenced onto arbitrary pages, so narrowing the lifetime
       per page would risk serving stale embedded content.
       Cache tags: ``pageId_<uid>`` for a page record; for a content element,
-      one tag per page that references it, resolved through ``sys_refindex``.
+      one tag per page that references it, resolved through ``sys_refindex``;
+      ``pageId_<pid>`` for a record of another registered table.
 
    The per-content precision lives entirely in the tags, so this strategy
    changes nothing while ``timing.strategy = dynamic``.

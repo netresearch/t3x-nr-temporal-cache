@@ -63,6 +63,7 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
      * Returns cache tags for ALL pages where this content appears:
      * - For pages: ['pageId_X'] (just the page itself)
      * - For content: ['pageId_A', 'pageId_B', ...] (all pages referencing it)
+     * - For records of other registered tables: ['pageId_<pid>']
      *
      * Uses sys_refindex to find all references, including:
      * - Direct parent page (pid)
@@ -97,6 +98,13 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
      */
     private function findAffectedPages(TemporalContent $content): array
     {
+        // The reference index lookup resolves tt_content uids. A record of another
+        // registered table is flushed on its own page, not looked up as the
+        // tt_content element that happens to share its uid.
+        if (!$content->isContent()) {
+            return [$content->pid];
+        }
+
         // Check if refindex usage is enabled in configuration
         if (!$this->configuration->useRefindex()) {
             // Fallback to per-page behavior (just parent page)

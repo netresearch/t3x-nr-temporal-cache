@@ -12,6 +12,7 @@ namespace Netresearch\TemporalCache\Tests\Functional\Domain\Repository;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepository;
+use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -154,6 +155,90 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         self::assertCount(1, $records);
         self::assertSame(913, $records[0]->uid);
         self::assertSame(1, $records[0]->languageUid);
+    }
+
+    public function testRegisteredTableIsFilteredOnItsTcaLanguageFieldEvenWhenTheFieldIsNotRegistered(): void
+    {
+        $categories = $this->get(ConnectionPool::class)->getConnectionForTable('sys_category');
+        foreach ([
+            // uid, title, sys_language_uid
+            [920, 'Category in the default language', 0],
+            [921, 'Translated category', 1],
+            [922, 'Category for all languages', -1],
+        ] as [$uid, $title, $language]) {
+            $categories->insert('sys_category', [
+                'uid' => $uid,
+                'pid' => 0,
+                'title' => $title,
+                'starttime' => $this->day,
+                'sys_language_uid' => $language,
+            ]);
+        }
+
+        $registry = $this->get(TemporalMonitorRegistry::class);
+        $registry->registerTable('sys_category', ['uid', 'pid', 'title', 'starttime', 'endtime']);
+
+        try {
+            $records = \array_filter(
+                $this->getSubject()->findAllWithTemporalFields(0, 1),
+                static fn (TemporalContent $record): bool => $record->tableName === 'sys_category'
+            );
+            $translated = $this->getSubject()->findByUid(921, 'sys_category');
+        } finally {
+            $registry->unregisterTable('sys_category');
+        }
+
+        self::assertInstanceOf(TemporalContent::class, $translated);
+        self::assertSame(1, $translated->languageUid);
+
+        $languageByUid = [];
+        foreach ($records as $record) {
+            $languageByUid[$record->uid] = $record->languageUid;
+        }
+
+        \ksort($languageByUid);
+
+        self::assertSame([921 => 1, 922 => -1], $languageByUid);
+    }
+
+    public function testRegisteredTableWithOnlyTheRequiredFieldsIsListedAndHasTransitions(): void
+    {
+        $this->get(ConnectionPool::class)->getConnectionForTable('fe_users')->insert('fe_users', [
+            'uid' => 930,
+            'pid' => 5,
+            'username' => 'temporal-user',
+            'starttime' => $this->day,
+        ]);
+
+        $registry = $this->get(TemporalMonitorRegistry::class);
+        $registry->registerTable('fe_users', ['uid', 'starttime', 'endtime']);
+
+        try {
+            $records = \array_values(\array_filter(
+                $this->getSubject()->findAllWithTemporalFields(),
+                static fn (TemporalContent $record): bool => $record->tableName === 'fe_users'
+            ));
+            $transitions = \array_values(\array_filter(
+                $this->getSubject()->findTransitionsInRange($this->day - 60, $this->day + 60),
+                static fn (TransitionEvent $transition): bool => $transition->content->tableName === 'fe_users'
+            ));
+            $single = $this->getSubject()->findByUid(930, 'fe_users');
+        } finally {
+            $registry->unregisterTable('fe_users');
+        }
+
+        self::assertCount(1, $records);
+        self::assertSame(930, $records[0]->uid);
+        self::assertSame('930', $records[0]->title);
+        // pid is read from the table even when the registration does not name it,
+        // so the scoping strategies flush the page the record sits on
+        self::assertSame(5, $records[0]->pid);
+        self::assertFalse($records[0]->hidden);
+        self::assertCount(1, $transitions);
+        self::assertSame($this->day, $transitions[0]->timestamp);
+        self::assertInstanceOf(TemporalContent::class, $single);
+        self::assertSame('930', $single->title);
+        self::assertSame(5, $single->pid);
     }
 
     public function testFindByUidReturnsThePageRecord(): void

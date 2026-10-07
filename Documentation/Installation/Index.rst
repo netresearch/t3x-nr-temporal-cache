@@ -157,10 +157,16 @@ early enough for every later transition lookup to see the table.
 
 Recommended in addition, because the queries and the backend module use them:
 
-- ``pid`` — parent page id
+- ``pid`` — parent page id; for a table with TCA it is read even when the
+  registration does not name it, so the scoping strategies flush the page the
+  record sits on
 - ``hidden`` and ``deleted`` — the transition queries exclude records whose
   TCA ``delete`` and ``enablecolumns.disabled`` fields are set
-- ``sys_language_uid`` — the queries filter on the language of the context
+- ``sys_language_uid`` — the queries filter on the language of the context when the
+  table's TCA names a ``languageField`` (that column is read even when the
+  registration does not name it); tables without workspace or language support
+  (no ``ctrl.versioningWS``, no ``ctrl.languageField``) are queried without those
+  conditions
 - a label field such as ``title``, ``header`` or ``name`` for display
 
 Passing an empty field list applies the default list
