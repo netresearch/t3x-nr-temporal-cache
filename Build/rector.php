@@ -17,9 +17,15 @@ use Ssch\TYPO3Rector\TYPO314\v0\MigrateLabelReferenceToDomainSyntaxRector;
 $configure = require_once __DIR__ . '/../.Build/vendor/netresearch/typo3-ci-workflows/config/rector/rector.php';
 
 return static function (RectorConfig $rectorConfig) use ($configure): void {
-    // Shared org base config: code-quality sets, rule skips, importNames,
-    // the package's ergebnis-free phpstan-rector.neon, and phpVersion.
-    $configure($rectorConfig, __DIR__ . '/..');
+    // Shared org base config: paths (Classes/, Configuration/, Resources/,
+    // Tests/, ext_*.php), code-quality sets, rule skips, importNames, the
+    // package's ergebnis-free phpstan-rector.neon, and the TYPO3 level set for
+    // the lowest supported major (composer.json: typo3/cms-core ^12.4 ||
+    // ^13.4 || ^14.3). The `php` option is left out: it starts at 8.2.
+    $configure($rectorConfig, __DIR__ . '/..', [
+        'tests' => true,
+        'typo3' => 12,
+    ]);
 
     // The shared config targets PHP 8.2, but this extension still supports
     // php ^8.1 and CI lints every matrix version. phpVersion() replaces, so
@@ -27,15 +33,6 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
     // types) out of the tree even though the shared 8.2 level set stays
     // registered — sets() is additive and cannot be unset.
     $rectorConfig->phpVersion(80100);
-
-    // paths() REPLACES, so the shared default list is restated here plus Tests/.
-    $rectorConfig->paths([
-        __DIR__ . '/../Classes',
-        __DIR__ . '/../Configuration',
-        __DIR__ . '/../Resources',
-        __DIR__ . '/../Tests',
-        __DIR__ . '/../ext_localconf.php',
-    ]);
 
     $rectorConfig->skip([
         // This extension still supports TYPO3 v12: constant-to-enum
@@ -70,7 +67,8 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
         MigrateLabelReferenceToDomainSyntaxRector::class,
     ]);
 
-    // TYPO3 migration level: v14, the HIGHEST major this extension supports.
+    // TYPO3 migration level: v14, the HIGHEST major this extension supports,
+    // on top of the v12 set the factory adds for the lowest one.
     // An UP_TO set is cumulative — up-to-typo3-14.php itself registers
     // UP_TO_TYPO3_13 plus the v14 set — so the level tracks the newest version
     // in composer.json (^12.4 || ^13.4 || ^14.3), not the oldest; raise it when
