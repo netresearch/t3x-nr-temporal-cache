@@ -1,34 +1,26 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: Netresearch DTT GmbH
 
-# phpstan/extension-installer is disabled in composer.json, because
-# netresearch/typo3-ci-workflows drags in ergebnis/phpstan-rules and
-# phpstan-strict-rules, whose auto-registration lands 185 uncurated findings
-# on this level-max baseline. Adopting those rule sets is its own migration.
-# The two extensions this project did analyse with before are registered by
-# hand here, so the disabled installer costs no TYPO3 rule coverage.
+# The shared config of netresearch/typo3-ci-workflows sets level 10,
+# treatPhpDocTypesAsCertain, the strictness flags and the excludePaths;
+# phpstan/extension-installer registers phpstan-typo3, phpat and the other
+# PHPStan extensions. phpstan-shared.php includes it only where the package
+# is installed, see the comment there.
 includes:
-    - ../.Build/vendor/saschaegerer/phpstan-typo3/extension.neon
-    - ../.Build/vendor/bnf/phpstan-psr-container/extension.neon
+    - phpstan-shared.php
 
 parameters:
-    level: max
     paths:
         - ../Classes
-    excludePaths:
-        - ../.Build/*
     bootstrapFiles:
         - ../.Build/vendor/autoload.php
         - ../Tests/Unit/Bootstrap.php
     scanDirectories:
         - ../Tests/Unit/Fixtures
-    # PHPDoc is not evidence: without this, level max trusts an annotation over
-    # what the code can actually hold at runtime.
-    treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        # All three entries below cover ONE expression, the version-safe icon
-        # size in Classes/Controller/Backend/TemporalCacheController.php:
-        # class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL.
+        # Both entries below cover ONE expression, the version-safe icon size
+        # in Classes/Controller/Backend/TemporalCacheController.php:
+        # class_exists(IconSize::class) ? IconSize::SMALL : ICON_SIZE_SMALL_V12.
         # One half of that ternary is always wrong for the TYPO3 version the
         # matrix cell installed, and which half decides which entry fires — so
         # each carries reportUnmatched: false. reportUnmatchedIgnoredErrors
@@ -39,12 +31,6 @@ parameters:
         -
             identifier: class.notFound
             message: '#class TYPO3\\CMS\\Core\\Imaging\\IconSize#'
-            reportUnmatched: false
-        # Icon::SIZE_SMALL is gone on v14 (verified: Imaging/Icon.php in
-        # cms-core 14.3 declares no SIZE_* constant) and present on v12.
-        -
-            identifier: classConstant.notFound
-            message: '#Icon::SIZE_SMALL#'
             reportUnmatched: false
         # IconFactory::getIcon() takes an IconSize on the versions that have the
         # enum, so the v12 fallback branch is the wrong argument type there.

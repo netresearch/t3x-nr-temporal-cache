@@ -319,7 +319,7 @@ final class VerifyCommand extends Command
         // Validate slot format
         if ($slotsValid) {
             foreach ($slots as $slot) {
-                if (!\preg_match('/^\d{1,2}:\d{2}$/', $slot)) {
+                if (\preg_match('/^\d{1,2}:\d{2}$/', $slot) !== 1) {
                     $results[] = [
                         'Slot Format',
                         $slot,

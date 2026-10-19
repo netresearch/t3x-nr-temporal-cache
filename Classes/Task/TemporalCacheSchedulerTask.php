@@ -172,7 +172,7 @@ final class TemporalCacheSchedulerTask extends AbstractTask
             $now = \time();
 
             $this->logDebug('Scheduler task started', [
-                'last_run' => $lastRun ? \date('Y-m-d H:i:s', $lastRun) : 'never',
+                'last_run' => $lastRun !== null && $lastRun !== 0 ? \date('Y-m-d H:i:s', $lastRun) : 'never',
                 'current_time' => \date('Y-m-d H:i:s', $now),
                 'timing_strategy' => $this->timingStrategy->getName(),
             ]);

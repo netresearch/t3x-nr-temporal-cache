@@ -78,7 +78,7 @@ class RefindexService implements SingletonInterface
         $pageIds = \array_merge($pageIds, $shortcutPages);
 
         // Return unique page IDs
-        return \array_values(\array_unique(\array_filter($pageIds)));
+        return \array_values(\array_unique(\array_filter($pageIds, static fn (int $pageId): bool => $pageId !== 0)));
     }
 
     /**

@@ -22,13 +22,13 @@ use Throwable;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
 use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
 use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -58,6 +58,13 @@ final class TemporalCacheController extends ActionController
     private const ITEMS_PER_PAGE = 50;
 
     private const MODULE_ROUTE = 'tools_TemporalCache';
+
+    /**
+     * The value of Icon::SIZE_SMALL, the icon size IconFactory::getIcon() takes
+     * on TYPO3 v12, which has no IconSize enum. The constant is deprecated on
+     * v13 and removed on v14, so its value is used instead of the constant.
+     */
+    private const ICON_SIZE_SMALL_V12 = 'small';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -131,7 +138,6 @@ final class TemporalCacheController extends ActionController
         $filteredContent = $this->filterContent($allContent, $filter, $currentTime);
 
         // Add harmonization suggestions and pre-computed visibility status
-        /** @var array<int, array<string, mixed>> $contentWithSuggestions */
         $contentWithSuggestions = \array_map(
             function (TemporalContent $content) use ($currentTime): array {
                 $suggestion = $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content);
@@ -355,12 +361,14 @@ final class TemporalCacheController extends ActionController
             $refreshButton = GeneralUtility::makeInstance(LinkButton::class)
                 ->setHref($this->buildModuleUri($currentAction))
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-                ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : self::ICON_SIZE_SMALL_V12))
                 ->setShowLabelText(false);
             $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
-            // Shortcut button (all actions)
-            $shortcutButton = $buttonBar->makeShortcutButton()
+            // Shortcut button (all actions). Built like the LinkButton above:
+            // ButtonBar::makeShortcutButton() does nothing else on v12/v13 and
+            // is deprecated on v14.
+            $shortcutButton = GeneralUtility::makeInstance(ShortcutButton::class)
                 ->setRouteIdentifier(self::MODULE_ROUTE)
                 ->setDisplayName($displayName)
                 ->setArguments(['action' => $currentAction]);
@@ -374,7 +382,7 @@ final class TemporalCacheController extends ActionController
                 $contentButton = GeneralUtility::makeInstance(LinkButton::class)
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
-                    ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                    ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : self::ICON_SIZE_SMALL_V12))
                     ->setShowLabelText(true);
                 $buttonBar->addButton($contentButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
                 break;

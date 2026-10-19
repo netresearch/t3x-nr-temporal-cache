@@ -106,7 +106,7 @@ class HarmonizationService implements SingletonInterface
      */
     private function parseTimeSlot(string $slotString): ?int
     {
-        if (!\preg_match('/^(\d{1,2}):(\d{2})$/', \trim($slotString), $matches)) {
+        if (\preg_match('/^(\d{1,2}):(\d{2})$/', \trim($slotString), $matches) !== 1) {
             return null;
         }
 
