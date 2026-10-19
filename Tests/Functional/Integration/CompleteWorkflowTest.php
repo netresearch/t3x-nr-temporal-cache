@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Integration;
 
@@ -16,8 +16,10 @@ use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyFactory;
 use Netresearch\TemporalCache\Service\Timing\TimingStrategyFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
+use function time;
+
 /**
- * Complete workflow integration tests
+ * Complete workflow integration tests.
  *
  * Tests the complete flow from configuration to cache invalidation
  */
@@ -33,32 +35,31 @@ final class CompleteWorkflowTest extends FunctionalTestCase
         'EXTENSIONS' => [
             'nr_temporal_cache' => [
                 'scoping' => [
-                    'strategy' => 'per-content',
+                    'strategy'     => 'per-content',
                     'use_refindex' => true,
                 ],
                 'timing' => [
                     'strategy' => 'dynamic',
                 ],
                 'harmonization' => [
-                    'enabled' => true,
-                    'slots' => '00:00,06:00,12:00,18:00',
+                    'enabled'   => true,
+                    'slots'     => '00:00,06:00,12:00,18:00',
                     'tolerance' => 3600,
                 ],
             ],
         ],
     ];
 
-    /**     */
     public function testCompleteWorkflowWorksEndToEnd(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
 
-        $configuration = $this->get(ExtensionConfiguration::class);
+        $configuration  = $this->get(ExtensionConfiguration::class);
         $scopingFactory = $this->get(ScopingStrategyFactory::class);
-        $timingFactory = $this->get(TimingStrategyFactory::class);
-        $repository = $this->get(TemporalContentRepository::class);
-        $harmonization = $this->get(HarmonizationService::class);
+        $timingFactory  = $this->get(TimingStrategyFactory::class);
+        $repository     = $this->get(TemporalContentRepository::class);
+        $harmonization  = $this->get(HarmonizationService::class);
 
         // Verify configuration loaded correctly
         self::assertSame('per-content', $configuration->getScopingStrategy());
@@ -67,7 +68,7 @@ final class CompleteWorkflowTest extends FunctionalTestCase
 
         // Verify strategies can be instantiated
         $scopingStrategy = $scopingFactory->getActiveStrategy();
-        $timingStrategy = $timingFactory->getActiveStrategy();
+        $timingStrategy  = $timingFactory->getActiveStrategy();
 
         self::assertSame('per-content', $scopingStrategy->getName());
         self::assertSame('dynamic', $timingStrategy->getName());
@@ -77,16 +78,15 @@ final class CompleteWorkflowTest extends FunctionalTestCase
         self::assertIsArray($allContent);
 
         // Verify harmonization works
-        $harmonized = $harmonization->harmonizeTimestamp(\time());
+        $harmonized = $harmonization->harmonizeTimestamp(time());
         self::assertIsInt($harmonized);
     }
 
-    /**     */
     public function testBackwardCompatibilityWithDefaultConfiguration(): void
     {
         self::markTestSkipped(
-            'This test requires a separate test class without custom configuration. ' .
-            'The class-level configuration overrides defaults and cannot be changed after setUp().'
+            'This test requires a separate test class without custom configuration. '
+            . 'The class-level configuration overrides defaults and cannot be changed after setUp().',
         );
     }
 }

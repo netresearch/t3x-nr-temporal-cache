@@ -1,11 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
- *
+ */
+
+declare(strict_types=1);
+
+/*
  * Custom bootstrap for unit tests.
  * Registers fixtures autoloader for TYPO3 stub classes.
  */
@@ -23,7 +25,7 @@ require_once __DIR__ . '/../../.Build/vendor/autoload.php';
 
     // Convert namespace to file path
     $relativePath = \str_replace('\\', '/', $class);
-    $filePath = __DIR__ . '/Fixtures/' . $relativePath . '.php';
+    $filePath     = __DIR__ . '/Fixtures/' . $relativePath . '.php';
 
     if (\file_exists($filePath)) {
         require_once $filePath;

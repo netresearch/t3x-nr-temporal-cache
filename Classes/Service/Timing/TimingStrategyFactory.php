@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
@@ -29,19 +29,19 @@ class TimingStrategyFactory implements TimingStrategyInterface
     private readonly TimingStrategyInterface $activeStrategy;
 
     /**
-     * @param iterable<array-key, TimingStrategyInterface> $strategies All services tagged 'nr_temporal_cache.timing_strategy'
-     * @param ExtensionConfiguration $extensionConfiguration Extension configuration
+     * @param iterable<array-key, TimingStrategyInterface> $strategies             All services tagged 'nr_temporal_cache.timing_strategy'
+     * @param ExtensionConfiguration                       $extensionConfiguration Extension configuration
      */
     public function __construct(
         iterable $strategies,
-        ExtensionConfiguration $extensionConfiguration
+        ExtensionConfiguration $extensionConfiguration,
     ) {
         // The fallback is the first tagged service, i.e. the highest tag priority;
         // DynamicTimingStrategy carries priority 100 to stay the default.
         $this->activeStrategy = $this->selectNamedStrategy(
             $strategies,
             $extensionConfiguration->getTimingStrategy(),
-            'No timing strategies registered'
+            'No timing strategies registered',
         );
     }
 

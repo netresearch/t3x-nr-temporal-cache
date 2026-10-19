@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Command;
 
@@ -21,6 +21,8 @@ use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(AnalyzeCommand::class)]
 #[UsesClass(TemporalContent::class)]
@@ -42,26 +44,24 @@ final class AnalyzeCommandTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->repository           = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->configuration        = $this->createStub(ExtensionConfiguration::class);
         $this->harmonizationService = $this->createStub(HarmonizationService::class);
-        $this->input = $this->createStub(InputInterface::class);
-        $this->output = $this->createStub(OutputInterface::class);
+        $this->input                = $this->createStub(InputInterface::class);
+        $this->output               = $this->createStub(OutputInterface::class);
 
         $this->subject = new AnalyzeCommand(
             $this->repository,
             $this->configuration,
-            $this->harmonizationService
+            $this->harmonizationService,
         );
     }
 
-    /**     */
     public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:analyze', $this->subject->getName());
     }
 
-    /**     */
     public function testExecuteWithNoTemporalContentReturnsSuccessWithWarning(): void
     {
         $this->setupInputDefaults();
@@ -71,18 +71,17 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $this->runCommand());
     }
 
-    /**     */
     public function testExecuteWithTemporalContentDisplaysStatistics(): void
     {
         $this->setupInputDefaults();
         $this->setupOutput();
         $this->stubStatistics([
-            'total' => 50,
-            'pages' => 30,
-            'content' => 20,
+            'total'     => 50,
+            'pages'     => 30,
+            'content'   => 20,
             'withStart' => 15,
-            'withEnd' => 10,
-            'withBoth' => 25,
+            'withEnd'   => 10,
+            'withBoth'  => 25,
         ]);
         $this->stubTransitions();
         $this->stubHarmonizationEnabled(false);
@@ -90,73 +89,70 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $this->runCommand());
     }
 
-    /**     */
     public function testExecuteWithUpcomingTransitionsDisplaysPeakDays(): void
     {
         $this->setupInputDefaults();
         $this->setupOutput();
         $this->stubStatistics([
-            'total' => 10,
-            'pages' => 5,
-            'content' => 5,
+            'total'     => 10,
+            'pages'     => 5,
+            'content'   => 5,
             'withStart' => 5,
-            'withEnd' => 5,
-            'withBoth' => 0,
+            'withEnd'   => 5,
+            'withBoth'  => 0,
         ]);
 
         $content = $this->createTemporalContent('Test Page');
         $this->stubTransitions([
-            new TransitionEvent($content, \time() + 3600, 'start'),
-            new TransitionEvent($content, \time() + 7200, 'start'),
+            new TransitionEvent($content, time() + 3600, 'start'),
+            new TransitionEvent($content, time() + 7200, 'start'),
         ]);
         $this->stubHarmonizationEnabled(false);
 
         self::assertSame(0, $this->runCommand());
     }
 
-    /**     */
     public function testExecuteWithHarmonizationEnabledDisplaysImpactAnalysis(): void
     {
         $this->setupInputDefaults();
         $this->setupOutput();
         $this->stubStatistics([
-            'total' => 10,
-            'pages' => 10,
-            'content' => 0,
+            'total'     => 10,
+            'pages'     => 10,
+            'content'   => 0,
             'withStart' => 10,
-            'withEnd' => 0,
-            'withBoth' => 0,
+            'withEnd'   => 0,
+            'withBoth'  => 0,
         ]);
 
         $content = $this->createTemporalContent('Test');
         $this->stubTransitions([
-            new TransitionEvent($content, \time() + 3600, 'start'),
+            new TransitionEvent($content, time() + 3600, 'start'),
         ]);
         $this->stubHarmonizationEnabled(true);
 
         $this->harmonizationService
             ->method('calculateHarmonizationImpact')
             ->willReturn([
-                'original' => 100,
+                'original'   => 100,
                 'harmonized' => 65,
-                'reduction' => 35.0,
+                'reduction'  => 35.0,
             ]);
 
         self::assertSame(0, $this->runCommand());
     }
 
-    /**     */
     public function testExecuteWithVerboseModeDisplaysConfigurationSummary(): void
     {
         $this->setupInputDefaults();
         $this->setupOutput(OutputInterface::VERBOSITY_VERBOSE);
         $this->stubStatistics([
-            'total' => 5,
-            'pages' => 5,
-            'content' => 0,
+            'total'     => 5,
+            'pages'     => 5,
+            'content'   => 0,
             'withStart' => 5,
-            'withEnd' => 0,
-            'withBoth' => 0,
+            'withEnd'   => 0,
+            'withBoth'  => 0,
         ]);
         $this->stubTransitions();
         $this->stubHarmonizationEnabled(false);
@@ -184,7 +180,6 @@ final class AnalyzeCommandTest extends UnitTestCase
         self::assertSame(0, $this->runCommand());
     }
 
-    /**     */
     public function testExecuteWithCustomWorkspaceAndLanguagePassesCorrectly(): void
     {
         $this->setupInputDefaults([
@@ -235,12 +230,12 @@ final class AnalyzeCommandTest extends UnitTestCase
      * @param array<string, int> $statistics
      */
     private function stubStatistics(array $statistics = [
-        'total' => 0,
-        'pages' => 0,
-        'content' => 0,
+        'total'     => 0,
+        'pages'     => 0,
+        'content'   => 0,
         'withStart' => 0,
-        'withEnd' => 0,
-        'withBoth' => 0,
+        'withEnd'   => 0,
+        'withBoth'  => 0,
     ]): void
     {
         $this->repository
@@ -272,10 +267,10 @@ final class AnalyzeCommandTest extends UnitTestCase
             tableName: 'pages',
             title: $title,
             pid: 0,
-            starttime: \time() + 3600,
+            starttime: time() + 3600,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
     }
 

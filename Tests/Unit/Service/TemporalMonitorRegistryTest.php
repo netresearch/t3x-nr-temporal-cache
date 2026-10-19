@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
@@ -13,6 +13,8 @@ use InvalidArgumentException;
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function count;
 
 #[CoversClass(TemporalMonitorRegistry::class)]
 final class TemporalMonitorRegistryTest extends UnitTestCase
@@ -25,42 +27,36 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject = new TemporalMonitorRegistry();
     }
 
-    /**     */
     public function testDefaultTablesAreRegistered(): void
     {
         self::assertTrue($this->subject->isRegistered('pages'));
         self::assertTrue($this->subject->isRegistered('tt_content'));
     }
 
-    /**     */
     public function testGetAllTablesIncludesDefaultTables(): void
     {
         $tables = $this->subject->getAllTables();
 
         self::assertArrayHasKey('pages', $tables);
         self::assertArrayHasKey('tt_content', $tables);
-        self::assertSame(2, \count($tables)); // Only defaults initially
+        self::assertSame(2, count($tables)); // Only defaults initially
     }
 
-    /**     */
     public function testGetTotalTableCountIncludesDefaults(): void
     {
         self::assertSame(2, $this->subject->getTotalTableCount());
     }
 
-    /**     */
     public function testGetCustomTableCountIsZeroInitially(): void
     {
         self::assertSame(0, $this->subject->getCustomTableCount());
     }
 
-    /**     */
     public function testGetCustomTablesIsEmptyInitially(): void
     {
         self::assertEmpty($this->subject->getCustomTables());
     }
 
-    /**     */
     public function testRegisterTableAddsCustomTable(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -70,7 +66,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertSame(3, $this->subject->getTotalTableCount());
     }
 
-    /**     */
     public function testRegisterTableWithDefaultFieldsUsesDefaults(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -83,7 +78,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertContains('endtime', $fields);
     }
 
-    /**     */
     public function testRegisterTableWithCustomFieldsUsesCustom(): void
     {
         $customFields = ['uid', 'starttime', 'endtime', 'custom_field'];
@@ -95,7 +89,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertSame($customFields, $fields);
     }
 
-    /**     */
     public function testRegisterTableThrowsExceptionForEmptyTableName(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -104,7 +97,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject->registerTable('');
     }
 
-    /**     */
     public function testRegisterTableThrowsExceptionForDefaultTable(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -113,7 +105,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject->registerTable('pages');
     }
 
-    /**     */
     public function testRegisterTableThrowsExceptionWhenMissingUid(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -122,7 +113,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject->registerTable('tx_news_domain_model_news', ['starttime', 'endtime']);
     }
 
-    /**     */
     public function testRegisterTableThrowsExceptionWhenMissingStarttime(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -131,7 +121,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject->registerTable('tx_news_domain_model_news', ['uid', 'endtime']);
     }
 
-    /**     */
     public function testRegisterTableThrowsExceptionWhenMissingEndtime(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -140,7 +129,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         $this->subject->registerTable('tx_news_domain_model_news', ['uid', 'starttime']);
     }
 
-    /**     */
     public function testUnregisterTableRemovesCustomTable(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -153,7 +141,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertSame(0, $this->subject->getCustomTableCount());
     }
 
-    /**     */
     public function testUnregisterTableDoesNotAffectDefaultTables(): void
     {
         // Attempting to unregister default table should not cause error
@@ -163,7 +150,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertTrue($this->subject->isRegistered('pages'));
     }
 
-    /**     */
     public function testUnregisterNonExistentTableDoesNotCauseError(): void
     {
         $this->subject->unregisterTable('non_existent_table');
@@ -171,13 +157,11 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertFalse($this->subject->isRegistered('non_existent_table'));
     }
 
-    /**     */
     public function testIsRegisteredReturnsFalseForUnregisteredTable(): void
     {
         self::assertFalse($this->subject->isRegistered('tx_news_domain_model_news'));
     }
 
-    /**     */
     public function testGetAllTablesIncludesCustomTables(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -192,7 +176,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertArrayHasKey('tx_events_domain_model_event', $tables);
     }
 
-    /**     */
     public function testGetCustomTablesReturnsOnlyCustomTables(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -207,7 +190,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertArrayNotHasKey('tt_content', $customTables);
     }
 
-    /**     */
     public function testGetTableFieldsReturnsDefaultFields(): void
     {
         $fields = $this->subject->getTableFields('pages');
@@ -219,7 +201,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertContains('endtime', $fields);
     }
 
-    /**     */
     public function testGetTableFieldsReturnsCustomFields(): void
     {
         $customFields = ['uid', 'starttime', 'endtime', 'custom_field'];
@@ -231,7 +212,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertSame($customFields, $fields);
     }
 
-    /**     */
     public function testGetTableFieldsReturnsNullForUnregisteredTable(): void
     {
         $fields = $this->subject->getTableFields('non_existent_table');
@@ -239,7 +219,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertNull($fields);
     }
 
-    /**     */
     public function testClearCustomTablesClearsOnlyCustomTables(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');
@@ -256,7 +235,6 @@ final class TemporalMonitorRegistryTest extends UnitTestCase
         self::assertFalse($this->subject->isRegistered('tx_events_domain_model_event'));
     }
 
-    /**     */
     public function testMultipleRegistrationsCombineCorrectly(): void
     {
         $this->subject->registerTable('tx_news_domain_model_news');

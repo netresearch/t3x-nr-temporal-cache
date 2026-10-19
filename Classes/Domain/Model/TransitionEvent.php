@@ -1,15 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Domain\Model;
 
 use InvalidArgumentException;
+
+use function date;
+use function in_array;
+use function sprintf;
 
 /**
  * Value object representing a temporal transition event.
@@ -26,9 +30,9 @@ final class TransitionEvent
         public readonly int $timestamp,
         public readonly string $transitionType,
         public readonly int $workspaceId = 0,
-        public readonly int $languageId = 0
+        public readonly int $languageId = 0,
     ) {
-        if (!\in_array($this->transitionType, ['start', 'end', 'unknown'], true)) {
+        if (!in_array($this->transitionType, ['start', 'end', 'unknown'], true)) {
             throw new InvalidArgumentException('TransitionType must be "start", "end", or "unknown"');
         }
     }
@@ -45,16 +49,15 @@ final class TransitionEvent
 
     public function getLogMessage(): string
     {
-        return \sprintf(
+        return sprintf(
             'Transition: %s #%d (%s) - %s at %s (workspace=%d, language=%d)',
             $this->content->tableName,
             $this->content->uid,
             $this->content->title,
             $this->transitionType,
-            \date('Y-m-d H:i:s', $this->timestamp),
+            date('Y-m-d H:i:s', $this->timestamp),
             $this->workspaceId,
-            $this->languageId
+            $this->languageId,
         );
     }
-
 }

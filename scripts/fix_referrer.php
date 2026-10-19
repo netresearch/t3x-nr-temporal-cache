@@ -6,6 +6,8 @@
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 $settingsFile = '/var/www/html/v13/config/system/settings.php';
 
 if (!file_exists($settingsFile)) {
@@ -32,7 +34,7 @@ if (!isset($settings['BE'])) {
 }
 
 // Add reverse proxy configuration for DDEV
-$settings['SYS']['reverseProxyIP'] = '*';
+$settings['SYS']['reverseProxyIP']               = '*';
 $settings['SYS']['reverseProxyHeaderMultiValue'] = 'first';
 
 file_put_contents($settingsFile, "<?php\nreturn " . var_export($settings, true) . ";\n");

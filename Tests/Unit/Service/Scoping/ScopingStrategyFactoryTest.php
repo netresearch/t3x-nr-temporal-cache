@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
@@ -20,8 +20,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- */
 #[CoversClass(ScopingStrategyFactory::class)]
 final class ScopingStrategyFactoryTest extends UnitTestCase
 {
@@ -58,11 +56,10 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
                 $this->perPageStrategy,
                 $this->perContentStrategy,
             ],
-            $this->configuration
+            $this->configuration,
         );
     }
 
-    /**     */
     public function testGetReturnsGlobalStrategy(): void
     {
         $this->configuration
@@ -76,7 +73,6 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->globalStrategy, $result);
     }
 
-    /**     */
     public function testGetReturnsPerPageStrategy(): void
     {
         $this->configuration
@@ -90,7 +86,6 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->perPageStrategy, $result);
     }
 
-    /**     */
     public function testGetReturnsPerContentStrategy(): void
     {
         $this->configuration
@@ -104,7 +99,6 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->perContentStrategy, $result);
     }
 
-    /**     */
     public function testGetThrowsExceptionForUnknownStrategy(): void
     {
         $this->configuration
@@ -139,9 +133,9 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
                 $this->globalStrategy,
                 $this->perPageStrategy,
                 $this->perContentStrategy,
-                $taggedStrategy
+                $taggedStrategy,
             ),
-            $this->configuration
+            $this->configuration,
         );
 
         self::assertSame($taggedStrategy, $this->subject->getActiveStrategy());
@@ -160,9 +154,9 @@ final class ScopingStrategyFactoryTest extends UnitTestCase
             $this->yieldStrategies(
                 $this->globalStrategy,
                 $this->perPageStrategy,
-                $this->perContentStrategy
+                $this->perContentStrategy,
             ),
-            $this->configuration
+            $this->configuration,
         );
 
         self::assertSame($this->globalStrategy, $this->subject->getActiveStrategy());

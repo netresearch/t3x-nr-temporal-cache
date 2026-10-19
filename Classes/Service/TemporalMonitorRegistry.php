@@ -1,16 +1,21 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Service;
 
 use InvalidArgumentException;
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function array_merge;
+use function count;
+use function in_array;
+use function sprintf;
 
 /**
  * Registry for custom tables to monitor for temporal content.
@@ -47,7 +52,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      * Default tables monitored by the extension.
      */
     private const DEFAULT_TABLES = [
-        'pages' => ['uid', 'title', 'pid', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'],
+        'pages'      => ['uid', 'title', 'pid', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'],
         'tt_content' => ['uid', 'pid', 'header', 'starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'],
     ];
 
@@ -61,8 +66,9 @@ final class TemporalMonitorRegistry implements SingletonInterface
     /**
      * Register a custom table for temporal monitoring.
      *
-     * @param string $tableName Name of the table to monitor
-     * @param array<string> $fields Fields to select from the table (must include starttime, endtime)
+     * @param string        $tableName Name of the table to monitor
+     * @param array<string> $fields    Fields to select from the table (must include starttime, endtime)
+     *
      * @throws InvalidArgumentException If table name is empty or reserved, or required fields are missing
      */
     public function registerTable(string $tableName, array $fields = []): void
@@ -73,8 +79,8 @@ final class TemporalMonitorRegistry implements SingletonInterface
 
         if (isset(self::DEFAULT_TABLES[$tableName])) {
             throw new InvalidArgumentException(
-                \sprintf('Table "%s" is already monitored by default and cannot be re-registered', $tableName),
-                1730289601
+                sprintf('Table "%s" is already monitored by default and cannot be re-registered', $tableName),
+                1730289601,
             );
         }
 
@@ -86,10 +92,10 @@ final class TemporalMonitorRegistry implements SingletonInterface
         // Validate required fields
         $requiredFields = ['uid', 'starttime', 'endtime'];
         foreach ($requiredFields as $required) {
-            if (!\in_array($required, $fields, true)) {
+            if (!in_array($required, $fields, true)) {
                 throw new InvalidArgumentException(
-                    \sprintf('Table "%s" must include required field: %s', $tableName, $required),
-                    1730289602
+                    sprintf('Table "%s" must include required field: %s', $tableName, $required),
+                    1730289602,
                 );
             }
         }
@@ -111,6 +117,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      * Check if a table is registered.
      *
      * @param string $tableName Name of the table to check
+     *
      * @return bool True if table is registered (either default or custom)
      */
     public function isRegistered(string $tableName): bool
@@ -125,7 +132,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      */
     public function getAllTables(): array
     {
-        return \array_merge(self::DEFAULT_TABLES, $this->registeredTables);
+        return array_merge(self::DEFAULT_TABLES, $this->registeredTables);
     }
 
     /**
@@ -142,6 +149,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      * Get fields for a specific table.
      *
      * @param string $tableName Name of the table
+     *
      * @return array<string>|null Fields for the table, or null if not registered
      */
     public function getTableFields(string $tableName): ?array
@@ -166,7 +174,7 @@ final class TemporalMonitorRegistry implements SingletonInterface
      */
     public function getCustomTableCount(): int
     {
-        return \count($this->registeredTables);
+        return count($this->registeredTables);
     }
 
     /**
@@ -176,6 +184,6 @@ final class TemporalMonitorRegistry implements SingletonInterface
      */
     public function getTotalTableCount(): int
     {
-        return \count(self::DEFAULT_TABLES) + \count($this->registeredTables);
+        return count(self::DEFAULT_TABLES) + count($this->registeredTables);
     }
 }

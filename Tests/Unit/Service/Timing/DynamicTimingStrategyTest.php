@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 
@@ -20,6 +20,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(DynamicTimingStrategy::class)]
 #[UsesClass(TemporalContent::class)]
@@ -47,8 +49,8 @@ final class DynamicTimingStrategyTest extends UnitTestCase
     {
         parent::setUp();
         $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->context = $this->createStub(Context::class);
+        $this->configuration   = $this->createStub(ExtensionConfiguration::class);
+        $this->context         = $this->createStub(Context::class);
 
         $this->subject = new DynamicTimingStrategy(
             $this->scopingStrategy,
@@ -57,7 +59,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         );
     }
 
-    /**     */
     public function testHandlesContentTypeReturnsAlwaysTrue(): void
     {
         self::assertTrue($this->subject->handlesContentType('page'));
@@ -65,7 +66,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertTrue($this->subject->handlesContentType('any'));
     }
 
-    /**     */
     public function testProcessTransitionDoesNothing(): void
     {
         $content = new TemporalContent(
@@ -76,13 +76,13 @@ final class DynamicTimingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $event = new TransitionEvent(
             content: $content,
-            timestamp: \time(),
-            transitionType: 'start'
+            timestamp: time(),
+            transitionType: 'start',
         );
 
         // Dynamic timing relies on cache expiry alone, so processing a transition
@@ -98,7 +98,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         $subject->processTransition($event);
     }
 
-    /**     */
     public function testGetCacheLifetimeReturnsLifetimeUntilNextTransition(): void
     {
         $nextTransition = self::NOW + 3600;
@@ -116,7 +115,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(3600, $lifetime);
     }
 
-    /**     */
     public function testGetCacheLifetimeReturnsDefaultWhenNoTransitions(): void
     {
         $this->scopingStrategy
@@ -132,7 +130,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(86400, $lifetime);
     }
 
-    /**     */
     public function testGetCacheLifetimeCapsAtMaximum(): void
     {
         $nextTransition = self::NOW + 172800; // 2 days
@@ -150,7 +147,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(86400, $lifetime);
     }
 
-    /**     */
     public function testGetCacheLifetimeReturnsMinimumForPastTransitions(): void
     {
         $pastTransition = self::NOW - 3600;
@@ -164,7 +160,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(60, $lifetime); // Minimum 1 minute
     }
 
-    /**     */
     public function testGetCacheLifetimePassesPageIdToScopingStrategy(): void
     {
         $nextTransition = self::NOW + 1800;
@@ -186,7 +181,6 @@ final class DynamicTimingStrategyTest extends UnitTestCase
         self::assertSame(1800, $subject->getCacheLifetime($this->context, 42));
     }
 
-    /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('dynamic', $this->subject->getName());

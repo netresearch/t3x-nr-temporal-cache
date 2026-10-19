@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service;
 
@@ -28,7 +28,7 @@ trait SelectsNamedStrategy
     /**
      * @template TStrategy of NamedStrategyInterface
      *
-     * @param iterable<array-key, TStrategy> $strategies    every service tagged for this family
+     * @param iterable<array-key, TStrategy> $strategies     every service tagged for this family
      * @param string                         $configuredName getName() to activate
      * @param string                         $emptyMessage   thrown when nothing is tagged at all
      *
@@ -37,7 +37,7 @@ trait SelectsNamedStrategy
     private function selectNamedStrategy(
         iterable $strategies,
         string $configuredName,
-        string $emptyMessage
+        string $emptyMessage,
     ): NamedStrategyInterface {
         $firstStrategy = null;
 

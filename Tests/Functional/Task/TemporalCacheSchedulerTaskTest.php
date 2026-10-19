@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Task;
 
@@ -14,7 +14,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
- * Functional tests for TemporalCacheSchedulerTask
+ * Functional tests for TemporalCacheSchedulerTask.
  */
 #[CoversClass(TemporalCacheSchedulerTask::class)]
 final class TemporalCacheSchedulerTaskTest extends FunctionalTestCase
@@ -25,7 +25,6 @@ final class TemporalCacheSchedulerTaskTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    /**     */
     public function testTaskExecutesSuccessfully(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');

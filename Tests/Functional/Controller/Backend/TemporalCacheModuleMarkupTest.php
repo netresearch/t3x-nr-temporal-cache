@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
@@ -18,6 +18,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function array_keys;
+use function array_map;
+use function count;
+use function implode;
+use function preg_match_all;
+use function strpos;
+use function substr;
+use function substr_count;
 
 /**
  * Pins the markup of the backend module views to TYPO3 core conventions, so the
@@ -47,15 +56,15 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         'EXTENSIONS' => [
             'nr_temporal_cache' => [
                 'scoping' => [
-                    'strategy' => 'per-content',
+                    'strategy'     => 'per-content',
                     'use_refindex' => true,
                 ],
                 'timing' => [
                     'strategy' => 'dynamic',
                 ],
                 'harmonization' => [
-                    'enabled' => true,
-                    'slots' => '00:00,06:00,12:00,18:00',
+                    'enabled'   => true,
+                    'slots'     => '00:00,06:00,12:00,18:00',
                     'tolerance' => 3600,
                 ],
             ],
@@ -72,7 +81,7 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
         $this->setUpBackendUser(1);
-        $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
+        $GLOBALS['LANG']          = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
         $GLOBALS['TYPO3_REQUEST'] = $this->createModuleRequest('dashboard');
 
         $this->controller = $this->get(TemporalCacheController::class);
@@ -84,13 +93,13 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     public static function viewProvider(): array
     {
         return [
-            'dashboard' => ['dashboard', ''],
-            'content' => ['content', ''],
-            'wizard welcome' => ['wizard', 'welcome'],
+            'dashboard'       => ['dashboard', ''],
+            'content'         => ['content', ''],
+            'wizard welcome'  => ['wizard', 'welcome'],
             'wizard analysis' => ['wizard', 'analysis'],
-            'wizard presets' => ['wizard', 'presets'],
-            'wizard custom' => ['wizard', 'custom'],
-            'wizard summary' => ['wizard', 'summary'],
+            'wizard presets'  => ['wizard', 'presets'],
+            'wizard custom'   => ['wizard', 'custom'],
+            'wizard summary'  => ['wizard', 'summary'],
         ];
     }
 
@@ -112,8 +121,8 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     {
         return [
             'dashboard' => ['dashboard'],
-            'content' => ['content'],
-            'wizard' => ['wizard'],
+            'content'   => ['content'],
+            'wizard'    => ['wizard'],
         ];
     }
 
@@ -130,12 +139,12 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     {
         $body = $this->render($action, 'welcome');
 
-        self::assertSame(1, \substr_count($body, 'data-identifier="actions-refresh"'), 'reload buttons');
+        self::assertSame(1, substr_count($body, 'data-identifier="actions-refresh"'), 'reload buttons');
         self::assertSame(
             1,
-            \substr_count($body, 'data-dispatch-action="TYPO3.ShortcutMenu.createShortcut"')
-                + \substr_count($body, '<typo3-backend-bookmark-button '),
-            'bookmark buttons (12/13: shortcut dispatch link, 14: bookmark element)'
+            substr_count($body, 'data-dispatch-action="TYPO3.ShortcutMenu.createShortcut"')
+                + substr_count($body, '<typo3-backend-bookmark-button '),
+            'bookmark buttons (12/13: shortcut dispatch link, 14: bookmark element)',
         );
     }
 
@@ -149,7 +158,7 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         // item's title when no label is set.
         self::assertMatchesRegularExpression(
             '#<label class="form-label visually-hidden" for="temporal_cache_menu">View</label>|<span class="visually-hidden">View:</span>#',
-            $body
+            $body,
         );
     }
 
@@ -171,18 +180,18 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     #[DataProvider('viewProvider')]
     public function headingsDoNotSkipLevels(string $action, string $step): void
     {
-        $body = $this->render($action, $step);
-        $start = \strpos($body, 't3js-module-body');
+        $body  = $this->render($action, $step);
+        $start = strpos($body, 't3js-module-body');
         self::assertIsInt($start);
 
-        \preg_match_all('/<h([1-6])\b/', \substr($body, $start), $matches);
-        $levels = \array_map(intval(...), $matches[1]);
+        preg_match_all('/<h([1-6])\b/', substr($body, $start), $matches);
+        $levels = array_map(intval(...), $matches[1]);
 
-        self::assertSame(1, \count(\array_keys($levels, 1, true)), 'exactly one h1 per view');
+        self::assertSame(1, count(array_keys($levels, 1, true)), 'exactly one h1 per view');
         self::assertSame(1, $levels[0] ?? null, 'the view starts with its h1');
         $previous = 0;
         foreach ($levels as $level) {
-            self::assertLessThanOrEqual($previous + 1, $level, 'heading levels ' . \implode(',', $levels) . ' skip a level');
+            self::assertLessThanOrEqual($previous + 1, $level, 'heading levels ' . implode(',', $levels) . ' skip a level');
             $previous = $level;
         }
     }
@@ -214,10 +223,10 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
         // so the seed is built in UTC too. A local 06:20 misses every slot in most
         // other timezones: Europe/Berlin in summer puts it at 04:20 UTC.
         $this->getConnectionPool()->getConnectionForTable('tt_content')->insert('tt_content', [
-            'uid' => 9100,
-            'pid' => 1,
-            'header' => 'Harmonizable teaser',
-            'CType' => 'text',
+            'uid'       => 9100,
+            'pid'       => 1,
+            'header'    => 'Harmonizable teaser',
+            'CType'     => 'text',
             'starttime' => (new DateTimeImmutable('tomorrow 06:20', new DateTimeZone('UTC')))->getTimestamp(),
         ]);
 
@@ -225,7 +234,7 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
 
         self::assertMatchesRegularExpression(
             '#<div class="callout callout-info">(?:(?!<div class="callout ).)*can be harmonized#s',
-            $body
+            $body,
         );
     }
 
@@ -236,8 +245,8 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
     {
         return [
             'welcome statistics' => ['welcome', 'callout callout-info'],
-            'custom note' => ['custom', 'callout callout-warning'],
-            'summary' => ['summary', 'callout callout-success'],
+            'custom note'        => ['custom', 'callout callout-warning'],
+            'summary'            => ['summary', 'callout callout-success'],
         ];
     }
 
@@ -260,15 +269,15 @@ final class TemporalCacheModuleMarkupTest extends FunctionalTestCase
 
     private function render(string $action, string $step): string
     {
-        $request = $this->createModuleRequest('dashboard');
+        $request  = $this->createModuleRequest('dashboard');
         $response = match ($action) {
             'dashboard' => $this->controller->dashboardAction($request),
-            'content' => $this->controller->contentAction($request),
-            'wizard' => $this->controller->wizardAction($request, $step),
-            default => throw new InvalidArgumentException($action, 1790000001),
+            'content'   => $this->controller->contentAction($request),
+            'wizard'    => $this->controller->wizardAction($request, $step),
+            default     => throw new InvalidArgumentException($action, 1790000001),
         };
         self::assertSame(200, $response->getStatusCode());
 
-        return (string)$response->getBody();
+        return (string) $response->getBody();
     }
 }

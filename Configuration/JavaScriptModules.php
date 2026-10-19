@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 /**
  * ES module import map for nr_temporal_cache.
@@ -16,7 +16,7 @@ declare(strict_types=1);
  */
 return [
     'dependencies' => ['backend'],
-    'imports' => [
+    'imports'      => [
         '@netresearch/nr-temporal-cache/' => 'EXT:nr_temporal_cache/Resources/Public/JavaScript/',
     ],
 ];

@@ -1,17 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Cache;
 
 use Netresearch\TemporalCache\Service\Cache\TransitionCache;
 use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(TransitionCache::class)]
 final class TransitionCacheTest extends UnitTestCase
@@ -24,7 +26,6 @@ final class TransitionCacheTest extends UnitTestCase
         $this->subject = new TransitionCache();
     }
 
-    /**     */
     public function testGetNextTransitionReturnsNullWhenNotCached(): void
     {
         $result = $this->subject->getNextTransition(1000, 0, 0);
@@ -32,7 +33,6 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertNull($result);
     }
 
-    /**     */
     public function testHasNextTransitionReturnsFalseWhenNotCached(): void
     {
         $result = $this->subject->hasNextTransition(1000, 0, 0);
@@ -40,10 +40,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testSetNextTransitionStoresValue(): void
     {
-        $timestamp = \time();
+        $timestamp  = time();
         $transition = $timestamp + 3600;
 
         $this->subject->setNextTransition($timestamp, 0, 0, $transition);
@@ -52,10 +51,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertSame($transition, $this->subject->getNextTransition($timestamp, 0, 0));
     }
 
-    /**     */
     public function testSetNextTransitionCanStoreNull(): void
     {
-        $timestamp = \time();
+        $timestamp = time();
 
         $this->subject->setNextTransition($timestamp, 0, 0, null);
 
@@ -63,10 +61,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertNull($this->subject->getNextTransition($timestamp, 0, 0));
     }
 
-    /**     */
     public function testCacheKeyIncludesCurrentTimestamp(): void
     {
-        $transition = \time() + 3600;
+        $transition = time() + 3600;
 
         $this->subject->setNextTransition(1000, 0, 0, $transition);
         $this->subject->setNextTransition(2000, 0, 0, $transition + 1000);
@@ -75,10 +72,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertSame($transition + 1000, $this->subject->getNextTransition(2000, 0, 0));
     }
 
-    /**     */
     public function testCacheKeyIncludesWorkspaceUid(): void
     {
-        $transition = \time() + 3600;
+        $transition = time() + 3600;
 
         $this->subject->setNextTransition(1000, 0, 0, $transition);
         $this->subject->setNextTransition(1000, 1, 0, $transition + 1000);
@@ -87,10 +83,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertSame($transition + 1000, $this->subject->getNextTransition(1000, 1, 0));
     }
 
-    /**     */
     public function testCacheKeyIncludesLanguageUid(): void
     {
-        $transition = \time() + 3600;
+        $transition = time() + 3600;
 
         $this->subject->setNextTransition(1000, 0, 0, $transition);
         $this->subject->setNextTransition(1000, 0, 1, $transition + 1000);
@@ -99,10 +94,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertSame($transition + 1000, $this->subject->getNextTransition(1000, 0, 1));
     }
 
-    /**     */
     public function testClearRemovesAllCachedValues(): void
     {
-        $timestamp = \time();
+        $timestamp = time();
 
         $this->subject->setNextTransition($timestamp, 0, 0, $timestamp + 3600);
         $this->subject->setNextTransition($timestamp, 1, 0, $timestamp + 7200);
@@ -119,7 +113,6 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertFalse($this->subject->hasNextTransition($timestamp, 0, 1));
     }
 
-    /**     */
     public function testGetStatsReturnsZeroEntriesWhenEmpty(): void
     {
         $stats = $this->subject->getStats();
@@ -128,10 +121,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertGreaterThan(0, $stats['memory']); // Empty array still has serialization overhead
     }
 
-    /**     */
     public function testGetStatsReturnsCorrectEntryCount(): void
     {
-        $timestamp = \time();
+        $timestamp = time();
 
         $this->subject->setNextTransition($timestamp, 0, 0, $timestamp + 3600);
         $this->subject->setNextTransition($timestamp, 1, 0, $timestamp + 7200);
@@ -143,10 +135,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertGreaterThan(0, $stats['memory']);
     }
 
-    /**     */
     public function testGetStatsMemoryIncreasesWithMoreEntries(): void
     {
-        $timestamp = \time();
+        $timestamp = time();
 
         $this->subject->setNextTransition($timestamp, 0, 0, $timestamp + 3600);
         $statsWithOneEntry = $this->subject->getStats();
@@ -159,11 +150,10 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertGreaterThan($statsWithOneEntry['memory'], $statsWithThreeEntries['memory']);
     }
 
-    /**     */
     public function testOverwritingCachedValueWorks(): void
     {
-        $timestamp = \time();
-        $firstValue = $timestamp + 3600;
+        $timestamp   = time();
+        $firstValue  = $timestamp + 3600;
         $secondValue = $timestamp + 7200;
 
         $this->subject->setNextTransition($timestamp, 0, 0, $firstValue);
@@ -173,10 +163,9 @@ final class TransitionCacheTest extends UnitTestCase
         self::assertSame($secondValue, $this->subject->getNextTransition($timestamp, 0, 0));
     }
 
-    /**     */
     public function testOverwritingWithNullWorks(): void
     {
-        $timestamp = \time();
+        $timestamp  = time();
         $firstValue = $timestamp + 3600;
 
         $this->subject->setNextTransition($timestamp, 0, 0, $firstValue);

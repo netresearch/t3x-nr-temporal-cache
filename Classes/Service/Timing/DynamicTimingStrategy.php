@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
@@ -14,6 +14,8 @@ use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TransitionEvent;
 use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use TYPO3\CMS\Core\Context\Context;
+
+use function time;
 
 /**
  * Dynamic timing strategy - event-based cache lifetime calculation.
@@ -49,15 +51,15 @@ class DynamicTimingStrategy implements TimingStrategyInterface
 
     /**
      * @param Closure():int|null $clock Source of the current Unix time. Defaults to
-     *                                      \time(); tests pass a fixed value so the lifetime
-     *                                      does not depend on the second the test runs in.
+     *                                  \time(); tests pass a fixed value so the lifetime
+     *                                  does not depend on the second the test runs in.
      */
     public function __construct(
         private readonly ScopingStrategyInterface $scopingStrategy,
         private readonly ExtensionConfiguration $configuration,
         ?Closure $clock = null,
     ) {
-        $this->clock = $clock ?? \time(...);
+        $this->clock = $clock ?? time(...);
     }
 
     /**

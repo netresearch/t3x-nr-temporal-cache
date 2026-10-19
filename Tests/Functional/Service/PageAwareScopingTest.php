@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Service;
 
@@ -16,6 +16,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function time;
 
 /**
  * Proves that per-page scoping narrows the dynamic cache lifetime to the page being rendered:
@@ -39,9 +41,9 @@ final class PageAwareScopingTest extends FunctionalTestCase
         parent::setUp();
         // Base on the real clock: the scoping strategies call time() internally, so the
         // inserted records must be comfortably in the future (offsets >= 500s).
-        $this->now = \time();
+        $this->now = time();
 
-        $pages = $this->get(ConnectionPool::class)->getConnectionForTable('pages');
+        $pages   = $this->get(ConnectionPool::class)->getConnectionForTable('pages');
         $content = $this->get(ConnectionPool::class)->getConnectionForTable('tt_content');
 
         // Two pages with their own (page) transitions.
@@ -57,7 +59,6 @@ final class PageAwareScopingTest extends FunctionalTestCase
         $content->insert('tt_content', ['uid' => 112, 'pid' => 10, 'header' => 'hidden', 'starttime' => $this->now + 200, 'endtime' => 0, 'sys_language_uid' => 0, 'hidden' => 1]);
     }
 
-    /**     */
     public function testGetNextPageTransitionIgnoresContentElements(): void
     {
         $repository = $this->get(TemporalContentRepository::class);
@@ -66,7 +67,6 @@ final class PageAwareScopingTest extends FunctionalTestCase
         self::assertSame($this->now + 3000, $repository->getNextPageTransition($this->now, 0, 0));
     }
 
-    /**     */
     public function testGetNextContentTransitionIsScopedToPageAndExcludesDeletedHidden(): void
     {
         $repository = $this->get(TemporalContentRepository::class);
@@ -78,12 +78,11 @@ final class PageAwareScopingTest extends FunctionalTestCase
         self::assertSame($this->now + 500, $repository->getNextContentTransitionForPage(20, $this->now, 0, 0));
     }
 
-    /**     */
     public function testPerPageScopingNarrowsTransitionPerPage(): void
     {
         $repository = $this->get(TemporalContentRepository::class);
-        $context = new Context();
-        $strategy = new PerPageScopingStrategy($repository);
+        $context    = new Context();
+        $strategy   = new PerPageScopingStrategy($repository);
 
         // Page 10: min(next page transition +3000, content on 10 +1000) = +1000.
         // Crucially NOT the +500 content that lives on page 20.
@@ -93,12 +92,11 @@ final class PageAwareScopingTest extends FunctionalTestCase
         self::assertSame($this->now + 500, $strategy->getNextTransition($context, 20));
     }
 
-    /**     */
     public function testGlobalScopingReturnsEarliestTransitionRegardlessOfPage(): void
     {
         $repository = $this->get(TemporalContentRepository::class);
-        $context = new Context();
-        $strategy = new GlobalScopingStrategy($repository);
+        $context    = new Context();
+        $strategy   = new GlobalScopingStrategy($repository);
 
         // Global ignores the page id: earliest visible transition site-wide is +500.
         self::assertSame($this->now + 500, $strategy->getNextTransition($context, 10));

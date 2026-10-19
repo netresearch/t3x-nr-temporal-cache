@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Service;
 
@@ -53,7 +53,7 @@ final class TemporalMonitorRegistryRecipeTest extends FunctionalTestCase
         self::assertTrue(
             $fromContainer->isRegistered(self::TABLE),
             'The table registered the documented way is not visible to the container-'
-            . 'resolved registry, so the extension would never query it.'
+            . 'resolved registry, so the extension would never query it.',
         );
         self::assertArrayHasKey(self::TABLE, $fromContainer->getAllTables());
         self::assertSame($fields, $fromContainer->getTableFields(self::TABLE));

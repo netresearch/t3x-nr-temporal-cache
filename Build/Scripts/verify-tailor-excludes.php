@@ -1,11 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
- *
+ */
+
+declare(strict_types=1);
+
+/*
  * Checks the TER packaging exclude list against tailor's own.
  *
  * Build/ExcludeFromPackaging.php REPLACES tailor's conf/ExcludeFromPackaging.php
@@ -33,7 +35,7 @@ declare(strict_types=1);
  * skipped, and a check that skips is a check that passes for the wrong reason.
  */
 
-$ours = __DIR__ . '/../ExcludeFromPackaging.php';
+$ours     = __DIR__ . '/../ExcludeFromPackaging.php';
 $snapshot = __DIR__ . '/../TailorDefaults-1.7.0.php';
 
 // An explicit argument always wins, including "" and "0", which a truthiness
@@ -53,7 +55,7 @@ if ($baseline !== null && !is_file($baseline)) {
     exit(1);
 }
 
-$mine = require $ours;
+$mine   = require $ours;
 $pinned = require $snapshot;
 
 foreach (['ours' => $mine, 'snapshot' => $pinned] as $label => $config) {
@@ -75,7 +77,7 @@ foreach (['directories', 'files'] as $key) {
             . "These ship in the TER zip until restored.\n\n",
             count($missing),
             $key,
-            implode("\n  ", $missing)
+            implode("\n  ", $missing),
         ));
     }
 }
@@ -98,7 +100,7 @@ if ($baseline !== null) {
                 . "Refresh Build/TailorDefaults-1.7.0.php; these currently ship.\n\n",
                 count($added),
                 $key,
-                implode("\n  ", $added)
+                implode("\n  ", $added),
             ));
         }
 
@@ -110,7 +112,7 @@ if ($baseline !== null) {
                 . "Refresh the snapshot; we currently exclude files that should ship.\n\n",
                 count($removed),
                 $key,
-                implode("\n  ", $removed)
+                implode("\n  ", $removed),
             ));
         }
     }
@@ -127,7 +129,7 @@ if ($exit === 0) {
         count($mine['directories']),
         count($pinned['files']),
         count($mine['files']) - count($pinned['files']),
-        count($mine['files'])
+        count($mine['files']),
     );
 }
 

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
@@ -17,6 +17,20 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+
+use function array_map;
+use function array_slice;
+use function assert;
+use function count;
+use function implode;
+use function in_array;
+use function is_array;
+use function is_object;
+use function is_string;
+use function method_exists;
+use function preg_match;
+use function spl_object_id;
+use function strtolower;
 
 /**
  * CLI Command: Verify database indexes and configuration.
@@ -43,11 +57,11 @@ final class VerifyCommand extends Command
     private const REQUIRED_INDEXES = [
         'pages' => [
             'starttime' => ['starttime'],
-            'endtime' => ['endtime'],
+            'endtime'   => ['endtime'],
         ],
         'tt_content' => [
             'starttime' => ['starttime'],
-            'endtime' => ['endtime'],
+            'endtime'   => ['endtime'],
         ],
     ];
 
@@ -56,12 +70,12 @@ final class VerifyCommand extends Command
      */
     private const REQUIRED_CONFIG = [
         'scopingStrategy' => ['global', 'per-page', 'per-content'],
-        'timingStrategy' => ['dynamic', 'scheduler', 'hybrid'],
+        'timingStrategy'  => ['dynamic', 'scheduler', 'hybrid'],
     ];
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
-        private readonly ExtensionConfiguration $configuration
+        private readonly ExtensionConfiguration $configuration,
     ) {
         parent::__construct('temporalcache:verify');
     }
@@ -95,7 +109,7 @@ final class VerifyCommand extends Command
                 <info>After fixing issues:</info>
                   Run database compare to create missing indexes:
                   <comment>vendor/bin/typo3 extension:setup</comment>
-                HELP
+                HELP,
         );
     }
 
@@ -132,10 +146,12 @@ final class VerifyCommand extends Command
         $io->newLine();
         if ($allChecksPassed) {
             $io->success('All verification checks passed! System is properly configured.');
+
             return Command::SUCCESS;
         }
 
         $io->error('Some verification checks failed. Please review the issues above and fix them.');
+
         return Command::FAILURE;
     }
 
@@ -147,21 +163,22 @@ final class VerifyCommand extends Command
         $io->section('Database Index Verification');
 
         $allIndexesExist = true;
-        $results = [];
-        $schemas = [];
+        $results         = [];
+        $schemas         = [];
 
         foreach (self::REQUIRED_INDEXES as $tableName => $indexes) {
-            $connection = $this->connectionPool->getConnectionForTable($tableName);
+            $connection    = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
                 // introspectSchema() and Table::getIndexes() exist in DBAL 3
                 // (TYPO3 v12) and in DBAL 4.4 (TYPO3 v13/v14) without a
                 // deprecation; listTableIndexes() is deprecated in DBAL 4.4.
-                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $schema       = $schemas[spl_object_id($connection)] ??= $schemaManager->introspectSchema();
                 $tableIndexes = $schema->hasTable($tableName) ? $schema->getTable($tableName)->getIndexes() : [];
             } catch (Exception $e) {
                 $io->error("Failed to check indexes for table '{$tableName}': " . $e->getMessage());
+
                 return false;
             }
 
@@ -170,7 +187,7 @@ final class VerifyCommand extends Command
 
                 $results[] = [
                     $tableName,
-                    \implode(', ', $columns),
+                    implode(', ', $columns),
                     $indexExists ? '<fg=green>OK</>' : '<fg=red>MISSING</>',
                 ];
 
@@ -188,8 +205,8 @@ final class VerifyCommand extends Command
 
         if (!$allIndexesExist) {
             $io->warning(
-                'Missing indexes detected! This will severely impact performance.' . PHP_EOL .
-                'Run "vendor/bin/typo3 extension:setup" to create missing indexes.'
+                'Missing indexes detected! This will severely impact performance.' . PHP_EOL
+                . 'Run "vendor/bin/typo3 extension:setup" to create missing indexes.',
             );
         }
 
@@ -199,39 +216,40 @@ final class VerifyCommand extends Command
     /**
      * Check if an index exists for the specified columns.
      *
-     * @param array<mixed> $tableIndexes
+     * @param array<mixed>  $tableIndexes
      * @param array<string> $columns
      */
     private function checkIndexExists(array $tableIndexes, array $columns): bool
     {
         foreach ($tableIndexes as $index) {
             // Type guard: ensure $index has getColumns method
-            if (!\is_object($index)) {
+            if (!is_object($index)) {
                 continue;
             }
 
-            if (!\method_exists($index, 'getColumns')) {
+            if (!method_exists($index, 'getColumns')) {
                 continue;
             }
 
             $columns_data = $index->getColumns();
-            \assert(\is_array($columns_data));
-            $indexColumns = \array_map(
+            assert(is_array($columns_data));
+            $indexColumns = array_map(
                 function ($col): string {
-                    \assert(\is_string($col));
-                    return \strtolower($col);
+                    assert(is_string($col));
+
+                    return strtolower($col);
                 },
-                $columns_data
+                $columns_data,
             );
 
-            $searchColumns = \array_map(
-                \strtolower(...),
-                $columns
+            $searchColumns = array_map(
+                strtolower(...),
+                $columns,
             );
 
             // Check if this index covers our columns (exact match or starts with our columns)
-            if ($indexColumns === $searchColumns ||
-                \array_slice($indexColumns, 0, \count($searchColumns)) === $searchColumns) {
+            if ($indexColumns === $searchColumns
+                || array_slice($indexColumns, 0, count($searchColumns)) === $searchColumns) {
                 return true;
             }
         }
@@ -247,12 +265,12 @@ final class VerifyCommand extends Command
         $io->section('Extension Configuration Verification');
 
         $allConfigValid = true;
-        $results = [];
+        $results        = [];
 
         // Check scoping strategy
         $scopingStrategy = $this->configuration->getScopingStrategy();
-        $scopingValid = \in_array($scopingStrategy, self::REQUIRED_CONFIG['scopingStrategy'], true);
-        $results[] = [
+        $scopingValid    = in_array($scopingStrategy, self::REQUIRED_CONFIG['scopingStrategy'], true);
+        $results[]       = [
             'Scoping Strategy',
             $scopingStrategy,
             $scopingValid ? '<fg=green>VALID</>' : '<fg=red>INVALID</>',
@@ -263,8 +281,8 @@ final class VerifyCommand extends Command
 
         // Check timing strategy
         $timingStrategy = $this->configuration->getTimingStrategy();
-        $timingValid = \in_array($timingStrategy, self::REQUIRED_CONFIG['timingStrategy'], true);
-        $results[] = [
+        $timingValid    = in_array($timingStrategy, self::REQUIRED_CONFIG['timingStrategy'], true);
+        $results[]      = [
             'Timing Strategy',
             $timingStrategy,
             $timingValid ? '<fg=green>VALID</>' : '<fg=red>INVALID</>',
@@ -275,7 +293,7 @@ final class VerifyCommand extends Command
 
         // Check harmonization enabled
         $harmonizationEnabled = $this->configuration->isHarmonizationEnabled();
-        $results[] = [
+        $results[]            = [
             'Harmonization',
             $harmonizationEnabled ? 'Enabled' : 'Disabled',
             '<fg=green>OK</>',
@@ -302,14 +320,14 @@ final class VerifyCommand extends Command
         $io->section('Harmonization Configuration Verification');
 
         $allValid = true;
-        $results = [];
+        $results  = [];
 
         // Check slots configuration
-        $slots = $this->configuration->getHarmonizationSlots();
+        $slots      = $this->configuration->getHarmonizationSlots();
         $slotsValid = $slots !== [];
-        $results[] = [
+        $results[]  = [
             'Time Slots',
-            $slots === [] ? 'Not configured' : \implode(', ', $slots),
+            $slots === [] ? 'Not configured' : implode(', ', $slots),
             $slotsValid ? '<fg=green>OK</>' : '<fg=red>MISSING</>',
         ];
         if (!$slotsValid) {
@@ -319,7 +337,7 @@ final class VerifyCommand extends Command
         // Validate slot format
         if ($slotsValid) {
             foreach ($slots as $slot) {
-                if (\preg_match('/^\d{1,2}:\d{2}$/', $slot) !== 1) {
+                if (preg_match('/^\d{1,2}:\d{2}$/', $slot) !== 1) {
                     $results[] = [
                         'Slot Format',
                         $slot,
@@ -335,15 +353,15 @@ final class VerifyCommand extends Command
         // exceeds the tolerance, so a tolerance of 0 moves nothing and switches rounding
         // off. Reporting that INVALID contradicted the manual and failed the whole
         // command over a working configuration.
-        $tolerance = $this->configuration->getHarmonizationTolerance();
+        $tolerance      = $this->configuration->getHarmonizationTolerance();
         $toleranceValid = $tolerance >= 0 && $tolerance <= 86400; // Max 1 day
-        $results[] = [
+        $results[]      = [
             'Tolerance',
-            $tolerance . ' seconds (' . (int)($tolerance / 60) . ' minutes)',
+            $tolerance . ' seconds (' . (int) ($tolerance / 60) . ' minutes)',
             match (true) {
                 !$toleranceValid => '<fg=red>INVALID</>',
                 $tolerance === 0 => '<fg=yellow>ROUNDING OFF</>',
-                default => '<fg=green>OK</>',
+                default          => '<fg=green>OK</>',
             },
         ];
         if (!$toleranceValid) {
@@ -380,28 +398,28 @@ final class VerifyCommand extends Command
         $io->section('Database Schema Verification');
 
         $requiredFields = [
-            'pages' => ['starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'],
+            'pages'      => ['starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid'],
             'tt_content' => ['starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid', 'pid'],
         ];
 
         $allFieldsExist = true;
-        $results = [];
-        $schemas = [];
+        $results        = [];
+        $schemas        = [];
 
         foreach ($requiredFields as $tableName => $fields) {
-            $connection = $this->connectionPool->getConnectionForTable($tableName);
+            $connection    = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
                 // See verifyDatabaseIndexes(): listTableColumns() is deprecated
                 // in DBAL 4.4. Table::hasColumn() compares case-insensitively,
                 // as the lowercased column list did.
-                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $schema      = $schemas[spl_object_id($connection)] ??= $schemaManager->introspectSchema();
                 $tableExists = $schema->hasTable($tableName);
 
                 foreach ($fields as $field) {
                     $fieldExists = $tableExists && $schema->getTable($tableName)->hasColumn($field);
-                    $results[] = [
+                    $results[]   = [
                         $tableName,
                         $field,
                         $fieldExists ? '<fg=green>OK</>' : '<fg=red>MISSING</>',
@@ -413,6 +431,7 @@ final class VerifyCommand extends Command
                 }
             } catch (Exception $e) {
                 $io->error("Failed to check schema for table '{$tableName}': " . $e->getMessage());
+
                 return false;
             }
         }

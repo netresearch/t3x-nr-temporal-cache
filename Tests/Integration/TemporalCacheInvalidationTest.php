@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Integration;
 
@@ -16,6 +16,8 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function time;
 
 /**
  * Integration test validating the core claim:
@@ -34,11 +36,9 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-
     private TemporalContentRepository $repository;
 
     private TemporalCacheLifetime $eventListener;
-
 
     private Context $context;
 
@@ -48,13 +48,13 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
 
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/tt_content.csv');
-        $this->repository = $this->get(TemporalContentRepository::class);
+        $this->repository    = $this->get(TemporalContentRepository::class);
         $this->eventListener = $this->get(TemporalCacheLifetime::class);
-        $this->context = $this->get(Context::class);
+        $this->context       = $this->get(Context::class);
     }
 
     /**
-     * Test Scenario 1: Future content (starttime not yet reached)
+     * Test Scenario 1: Future content (starttime not yet reached).
      *
      * GIVEN: Content with starttime 1 hour in future
      * WHEN: Page is rendered now
@@ -65,17 +65,17 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     #[Test]
     public function cacheLifetimeLimitedWhenFutureContentExists(): void
     {
-        $now = \time();
+        $now          = time();
         $oneHourLater = $now + 3600;
 
         // Create future content
         $this->insertContentElement([
-            'uid' => 999,
-            'pid' => 1,
-            'header' => 'Future Content',
+            'uid'       => 999,
+            'pid'       => 1,
+            'header'    => 'Future Content',
             'starttime' => $oneHourLater,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         // Calculate cache lifetime for page
@@ -84,7 +84,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
             pageId: 1,
             pageRecord: ['uid' => 1],
             renderingInstructions: [],
-            context: $this->context
+            context: $this->context,
         );
 
         $this->eventListener->__invoke($event);
@@ -95,17 +95,17 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         self::assertLessThanOrEqual(
             3600,
             $actualLifetime,
-            'Cache lifetime should be limited to when future content becomes visible'
+            'Cache lifetime should be limited to when future content becomes visible',
         );
         self::assertGreaterThan(
             3500,
             $actualLifetime,
-            'Cache lifetime should be close to 1 hour'
+            'Cache lifetime should be close to 1 hour',
         );
     }
 
     /**
-     * Test Scenario 2: Expiring content (endtime approaching)
+     * Test Scenario 2: Expiring content (endtime approaching).
      *
      * GIVEN: Content with endtime 30 minutes in future
      * WHEN: Page is rendered now
@@ -116,17 +116,17 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     #[Test]
     public function cacheLifetimeLimitedWhenContentWillExpire(): void
     {
-        $now = \time();
+        $now                = time();
         $thirtyMinutesLater = $now + 1800;
 
         // Create expiring content
         $this->insertContentElement([
-            'uid' => 998,
-            'pid' => 1,
-            'header' => 'Expiring Content',
+            'uid'       => 998,
+            'pid'       => 1,
+            'header'    => 'Expiring Content',
             'starttime' => 0,
-            'endtime' => $thirtyMinutesLater,
-            'hidden' => 0,
+            'endtime'   => $thirtyMinutesLater,
+            'hidden'    => 0,
         ]);
 
         // Calculate cache lifetime for page
@@ -135,7 +135,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
             pageId: 1,
             pageRecord: ['uid' => 1],
             renderingInstructions: [],
-            context: $this->context
+            context: $this->context,
         );
 
         $this->eventListener->__invoke($event);
@@ -146,17 +146,17 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         self::assertLessThanOrEqual(
             1800,
             $actualLifetime,
-            'Cache lifetime should be limited to when content expires'
+            'Cache lifetime should be limited to when content expires',
         );
         self::assertGreaterThan(
             1700,
             $actualLifetime,
-            'Cache lifetime should be close to 30 minutes'
+            'Cache lifetime should be close to 30 minutes',
         );
     }
 
     /**
-     * Test Scenario 3: Multiple transitions
+     * Test Scenario 3: Multiple transitions.
      *
      * GIVEN: Multiple content elements with different start/end times
      * WHEN: Page is rendered
@@ -167,26 +167,26 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     #[Test]
     public function cacheLifetimeLimitedToEarliestTransition(): void
     {
-        $now = \time();
+        $now = time();
 
         // Content expiring in 15 minutes (earliest transition)
         $this->insertContentElement([
-            'uid' => 997,
-            'pid' => 1,
-            'header' => 'Content A',
+            'uid'       => 997,
+            'pid'       => 1,
+            'header'    => 'Content A',
             'starttime' => 0,
-            'endtime' => $now + 900, // 15 minutes
-            'hidden' => 0,
+            'endtime'   => $now + 900, // 15 minutes
+            'hidden'    => 0,
         ]);
 
         // Content appearing in 45 minutes
         $this->insertContentElement([
-            'uid' => 996,
-            'pid' => 1,
-            'header' => 'Content B',
+            'uid'       => 996,
+            'pid'       => 1,
+            'header'    => 'Content B',
             'starttime' => $now + 2700, // 45 minutes
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $event = new ModifyCacheLifetimeForPageEvent(
@@ -194,7 +194,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
             pageId: 1,
             pageRecord: ['uid' => 1],
             renderingInstructions: [],
-            context: $this->context
+            context: $this->context,
         );
 
         $this->eventListener->__invoke($event);
@@ -205,17 +205,17 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         self::assertLessThanOrEqual(
             900,
             $actualLifetime,
-            'Cache lifetime should be limited to earliest transition'
+            'Cache lifetime should be limited to earliest transition',
         );
         self::assertGreaterThan(
             800,
             $actualLifetime,
-            'Cache lifetime should be close to 15 minutes'
+            'Cache lifetime should be close to 15 minutes',
         );
     }
 
     /**
-     * Test Scenario 4: No temporal content
+     * Test Scenario 4: No temporal content.
      *
      * GIVEN: Page with no temporal content (no starttime/endtime)
      * WHEN: Page is rendered
@@ -228,12 +228,12 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     {
         // All content visible without time restrictions
         $this->insertContentElement([
-            'uid' => 995,
-            'pid' => 1,
-            'header' => 'Regular Content',
+            'uid'       => 995,
+            'pid'       => 1,
+            'header'    => 'Regular Content',
             'starttime' => 0,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $event = new ModifyCacheLifetimeForPageEvent(
@@ -241,7 +241,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
             pageId: 1,
             pageRecord: ['uid' => 1],
             renderingInstructions: [],
-            context: $this->context
+            context: $this->context,
         );
 
         $this->eventListener->__invoke($event);
@@ -252,12 +252,12 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         self::assertSame(
             86400,
             $actualLifetime,
-            'Cache lifetime should not change when no temporal content exists'
+            'Cache lifetime should not change when no temporal content exists',
         );
     }
 
     /**
-     * Test Scenario 5: Verify repository finds temporal content
+     * Test Scenario 5: Verify repository finds temporal content.
      *
      * GIVEN: Content with various time configurations
      * WHEN: Repository queries for temporal content
@@ -268,27 +268,27 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     #[Test]
     public function repositoryFindsTemporalContentCorrectly(): void
     {
-        $now = \time();
+        $now           = time();
         $twoHoursLater = $now + 7200;
 
         // Insert future content
         $this->insertContentElement([
-            'uid' => 994,
-            'pid' => 1,
-            'header' => 'Future Content',
+            'uid'       => 994,
+            'pid'       => 1,
+            'header'    => 'Future Content',
             'starttime' => $twoHoursLater,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         // Insert normal content
         $this->insertContentElement([
-            'uid' => 993,
-            'pid' => 1,
-            'header' => 'Normal Content',
+            'uid'       => 993,
+            'pid'       => 1,
+            'header'    => 'Normal Content',
             'starttime' => 0,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         // Find all temporal content
@@ -309,7 +309,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     }
 
     /**
-     * Test Scenario 6: Global scoping strategy
+     * Test Scenario 6: Global scoping strategy.
      *
      * GIVEN: Multiple pages with temporal content
      * WHEN: Using global scoping strategy
@@ -320,26 +320,26 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
     #[Test]
     public function globalScopingAffectsAllPages(): void
     {
-        $now = \time();
+        $now = time();
 
         // Content on page 1 expiring in 1 hour
         $this->insertContentElement([
-            'uid' => 993,
-            'pid' => 1,
-            'header' => 'Page 1 Content',
+            'uid'       => 993,
+            'pid'       => 1,
+            'header'    => 'Page 1 Content',
             'starttime' => 0,
-            'endtime' => $now + 3600,
-            'hidden' => 0,
+            'endtime'   => $now + 3600,
+            'hidden'    => 0,
         ]);
 
         // Content on page 2 expiring in 2 hours
         $this->insertContentElement([
-            'uid' => 992,
-            'pid' => 2,
-            'header' => 'Page 2 Content',
+            'uid'       => 992,
+            'pid'       => 2,
+            'header'    => 'Page 2 Content',
             'starttime' => 0,
-            'endtime' => $now + 7200,
-            'hidden' => 0,
+            'endtime'   => $now + 7200,
+            'hidden'    => 0,
         ]);
 
         // Calculate cache lifetime for page 2 with global scoping
@@ -348,7 +348,7 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
             pageId: 2,
             pageRecord: ['uid' => 1],
             renderingInstructions: [],
-            context: $this->context
+            context: $this->context,
         );
 
         $this->eventListener->__invoke($event);
@@ -360,12 +360,12 @@ final class TemporalCacheInvalidationTest extends FunctionalTestCase
         self::assertLessThanOrEqual(
             7200,
             $actualLifetime,
-            'Cache lifetime should consider global temporal content'
+            'Cache lifetime should consider global temporal content',
         );
     }
 
     /**
-     * Helper: Insert content element into database
+     * Helper: Insert content element into database.
      *
      * @param array<string, mixed> $data
      */

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
@@ -18,6 +18,20 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+
+use function array_map;
+use function array_slice;
+use function arsort;
+use function assert;
+use function count;
+use function date;
+use function implode;
+use function is_int;
+use function is_string;
+use function mb_substr;
+use function sprintf;
+use function time;
+use function ucfirst;
 
 /**
  * CLI Command: Analyze temporal content and provide statistics.
@@ -45,7 +59,7 @@ final class AnalyzeCommand extends Command
     public function __construct(
         private readonly TemporalContentRepositoryInterface $repository,
         private readonly ExtensionConfiguration $configuration,
-        private readonly HarmonizationService $harmonizationService
+        private readonly HarmonizationService $harmonizationService,
     ) {
         parent::__construct('temporalcache:analyze');
     }
@@ -78,7 +92,7 @@ final class AnalyzeCommand extends Command
                   - Upcoming transitions timeline
                   - Harmonization impact analysis
                   - Peak transition days
-                HELP
+                HELP,
         );
 
         $this->addOption(
@@ -86,7 +100,7 @@ final class AnalyzeCommand extends Command
             'w',
             InputOption::VALUE_REQUIRED,
             'Workspace UID to analyze (0 = live workspace)',
-            '0'
+            '0',
         );
 
         $this->addOption(
@@ -94,7 +108,7 @@ final class AnalyzeCommand extends Command
             'l',
             InputOption::VALUE_REQUIRED,
             'Language UID to analyze (-1 = all languages, 0 = default)',
-            '0'
+            '0',
         );
 
         $this->addOption(
@@ -102,24 +116,24 @@ final class AnalyzeCommand extends Command
             'd',
             InputOption::VALUE_REQUIRED,
             'Number of days to analyze for upcoming transitions',
-            '30'
+            '30',
         );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
+        $io              = new SymfonyStyle($input, $output);
         $workspaceOption = $input->getOption('workspace');
-        $languageOption = $input->getOption('language');
-        $daysOption = $input->getOption('days');
+        $languageOption  = $input->getOption('language');
+        $daysOption      = $input->getOption('days');
 
-        \assert(\is_string($workspaceOption) || \is_int($workspaceOption));
-        \assert(\is_string($languageOption) || \is_int($languageOption));
-        \assert(\is_string($daysOption) || \is_int($daysOption));
+        assert(is_string($workspaceOption) || is_int($workspaceOption));
+        assert(is_string($languageOption) || is_int($languageOption));
+        assert(is_string($daysOption) || is_int($daysOption));
 
-        $workspaceUid = (int)$workspaceOption;
-        $languageUid = (int)$languageOption;
-        $days = (int)$daysOption;
+        $workspaceUid = (int) $workspaceOption;
+        $languageUid  = (int) $languageOption;
+        $days         = (int) $daysOption;
 
         $io->title('Temporal Cache Analysis');
 
@@ -131,8 +145,8 @@ final class AnalyzeCommand extends Command
                 ['Workspace', $workspaceUid === 0 ? 'Live (0)' : "Workspace {$workspaceUid}"],
                 ['Language', $languageUid === -1 ? 'All languages' : "Language {$languageUid}"],
                 ['Analysis Period', "{$days} days from now"],
-                ['Current Time', \date('Y-m-d H:i:s')],
-            ]
+                ['Current Time', date('Y-m-d H:i:s')],
+            ],
         );
 
         // Get basic statistics
@@ -149,11 +163,12 @@ final class AnalyzeCommand extends Command
                 ['With Start Time Only', $stats['withStart']],
                 ['With End Time Only', $stats['withEnd']],
                 ['With Both Start & End', $stats['withBoth']],
-            ]
+            ],
         );
 
         if ($stats['total'] === 0) {
             $io->warning('No temporal content found in the system.');
+
             return Command::SUCCESS;
         }
 
@@ -184,39 +199,40 @@ final class AnalyzeCommand extends Command
         SymfonyStyle $io,
         int $workspaceUid,
         int $languageUid,
-        int $days
+        int $days,
     ): void {
         $io->section('Upcoming Transitions');
 
-        $now = \time();
+        $now     = time();
         $endTime = $now + ($days * 86400);
 
         $transitions = $this->repository->findTransitionsInRange(
             $now,
             $endTime,
             $workspaceUid,
-            $languageUid
+            $languageUid,
         );
 
         if ($transitions === []) {
             $io->note("No transitions in the next {$days} days.");
+
             return;
         }
 
-        $io->writeln(\sprintf('<info>Found %d transitions</info>', \count($transitions)));
+        $io->writeln(sprintf('<info>Found %d transitions</info>', count($transitions)));
 
         // Group transitions by day
         $transitionsPerDay = [];
         foreach ($transitions as $transition) {
-            $date = \date('Y-m-d', $transition->timestamp);
+            $date = date('Y-m-d', $transition->timestamp);
             $transitionsPerDay[$date] ??= 0;
 
-            $transitionsPerDay[$date]++;
+            ++$transitionsPerDay[$date];
         }
 
         // Find peak days
-        \arsort($transitionsPerDay);
-        $peakDays = \array_slice($transitionsPerDay, 0, 5, true);
+        arsort($transitionsPerDay);
+        $peakDays = array_slice($transitionsPerDay, 0, 5, true);
 
         $io->writeln("\n<comment>Peak Transition Days:</comment>");
         $table = new Table($io);
@@ -242,21 +258,21 @@ final class AnalyzeCommand extends Command
                 }
 
                 $table->addRow([
-                    \date('Y-m-d H:i', $transition->timestamp),
-                    \ucfirst($transition->transitionType),
+                    date('Y-m-d H:i', $transition->timestamp),
+                    ucfirst($transition->transitionType),
                     $transition->content->tableName,
-                    \mb_substr($transition->content->title, 0, 40),
+                    mb_substr($transition->content->title, 0, 40),
                 ]);
 
-                $displayed++;
+                ++$displayed;
             }
 
             $table->render();
 
-            if (\count($transitions) > 10) {
-                $io->writeln(\sprintf(
+            if (count($transitions) > 10) {
+                $io->writeln(sprintf(
                     "\n<info>... and %d more transitions</info>",
-                    \count($transitions) - 10
+                    count($transitions) - 10,
                 ));
             }
         }
@@ -269,18 +285,18 @@ final class AnalyzeCommand extends Command
         SymfonyStyle $io,
         int $workspaceUid,
         int $languageUid,
-        int $days
+        int $days,
     ): void {
         $io->section('Harmonization Impact Analysis');
 
-        $now = \time();
+        $now     = time();
         $endTime = $now + ($days * 86400);
 
         $transitions = $this->repository->findTransitionsInRange(
             $now,
             $endTime,
             $workspaceUid,
-            $languageUid
+            $languageUid,
         );
 
         if ($transitions === []) {
@@ -288,9 +304,9 @@ final class AnalyzeCommand extends Command
         }
 
         // Extract timestamps
-        $timestamps = \array_map(
+        $timestamps = array_map(
             fn ($transition) => $transition->timestamp,
-            $transitions
+            $transitions,
         );
 
         // Calculate harmonization impact
@@ -303,13 +319,13 @@ final class AnalyzeCommand extends Command
                 ['After Harmonization', $impact['harmonized']],
                 ['Reduction', $impact['reduction'] . '%'],
                 ['Cache Invalidations Saved', $impact['original'] - $impact['harmonized']],
-            ]
+            ],
         );
 
         if ($impact['reduction'] > 0) {
-            $io->success(\sprintf(
+            $io->success(sprintf(
                 'Harmonization reduces cache invalidations by %.1f%%!',
-                $impact['reduction']
+                $impact['reduction'],
             ));
         } else {
             $io->note('Current configuration shows no harmonization benefit. Consider adjusting slot configuration.');
@@ -322,10 +338,10 @@ final class AnalyzeCommand extends Command
             $io->listing($slots);
 
             $tolerance = $this->configuration->getHarmonizationTolerance();
-            $io->writeln(\sprintf(
+            $io->writeln(sprintf(
                 "<info>Tolerance: %d seconds (%d minutes)</info>\n",
                 $tolerance,
-                (int)($tolerance / 60)
+                (int) ($tolerance / 60),
             ));
         }
     }
@@ -343,10 +359,10 @@ final class AnalyzeCommand extends Command
                 ['Scoping Strategy', $this->configuration->getScopingStrategy()],
                 ['Timing Strategy', $this->configuration->getTimingStrategy()],
                 ['Harmonization Enabled', $this->configuration->isHarmonizationEnabled() ? 'Yes' : 'No'],
-                ['Harmonization Slots', \implode(', ', $this->configuration->getHarmonizationSlots())],
+                ['Harmonization Slots', implode(', ', $this->configuration->getHarmonizationSlots())],
                 ['Harmonization Tolerance', $this->configuration->getHarmonizationTolerance() . ' seconds'],
                 ['Auto-round Enabled', $this->configuration->isAutoRoundEnabled() ? 'Yes' : 'No'],
-            ]
+            ],
         );
     }
 

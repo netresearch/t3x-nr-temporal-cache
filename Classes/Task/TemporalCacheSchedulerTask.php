@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Task;
 
@@ -20,6 +20,17 @@ use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
+
+use function array_diff;
+use function array_keys;
+use function array_values;
+use function assert;
+use function count;
+use function date;
+use function get_object_vars;
+use function implode;
+use function is_int;
+use function time;
 
 /**
  * Scheduler task for processing temporal content transitions.
@@ -112,8 +123,8 @@ final class TemporalCacheSchedulerTask extends AbstractTask
      */
     public function __sleep(): array
     {
-        return \array_values(
-            \array_diff(\array_keys(\get_object_vars($this)), self::TRANSIENT_PROPERTIES)
+        return array_values(
+            array_diff(array_keys(get_object_vars($this)), self::TRANSIENT_PROPERTIES),
         );
     }
 
@@ -157,23 +168,24 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         // Validate dependencies were injected
         if (!$this->validateDependencies()) {
             $this->logError('Missing required dependencies - check DI configuration');
+
             return false;
         }
 
         try {
             // After validation, properties are guaranteed non-null
-            \assert($this->repository instanceof TemporalContentRepository);
-            \assert($this->timingStrategy instanceof TimingStrategyInterface);
-            \assert($this->extensionConfiguration instanceof ExtensionConfiguration);
-            \assert($this->context instanceof Context);
-            \assert($this->registry instanceof Registry);
+            assert($this->repository instanceof TemporalContentRepository);
+            assert($this->timingStrategy instanceof TimingStrategyInterface);
+            assert($this->extensionConfiguration instanceof ExtensionConfiguration);
+            assert($this->context instanceof Context);
+            assert($this->registry instanceof Registry);
 
             $lastRun = $this->getLastRunTimestamp();
-            $now = \time();
+            $now     = time();
 
             $this->logDebug('Scheduler task started', [
-                'last_run' => $lastRun !== null && $lastRun !== 0 ? \date('Y-m-d H:i:s', $lastRun) : 'never',
-                'current_time' => \date('Y-m-d H:i:s', $now),
+                'last_run'        => $lastRun !== null && $lastRun !== 0 ? date('Y-m-d H:i:s', $lastRun) : 'never',
+                'current_time'    => date('Y-m-d H:i:s', $now),
                 'timing_strategy' => $this->timingStrategy->getName(),
             ]);
 
@@ -187,12 +199,13 @@ final class TemporalCacheSchedulerTask extends AbstractTask
             if ($transitions === []) {
                 $this->logDebug('No transitions found in time range');
                 $this->setLastRunTimestamp($now);
+
                 return true;
             }
 
             // Process each transition through timing strategy
             $processedCount = 0;
-            $errorCount = 0;
+            $errorCount     = 0;
 
             foreach ($transitions as $event) {
                 try {
@@ -201,21 +214,21 @@ final class TemporalCacheSchedulerTask extends AbstractTask
                     }
 
                     $this->timingStrategy->processTransition($event);
-                    $processedCount++;
+                    ++$processedCount;
                 } catch (Throwable $e) {
-                    $errorCount++;
+                    ++$errorCount;
                     $this->logError('Failed to process transition', [
                         'content_uid' => $event->content->uid,
-                        'table' => $event->content->tableName,
-                        'exception' => $e->getMessage(),
+                        'table'       => $event->content->tableName,
+                        'exception'   => $e->getMessage(),
                     ]);
                 }
             }
 
             $this->logInfo('Scheduler task completed', [
-                'transitions_found' => \count($transitions),
+                'transitions_found'     => count($transitions),
                 'transitions_processed' => $processedCount,
-                'errors' => $errorCount,
+                'errors'                => $errorCount,
             ]);
 
             // Update last run timestamp on success
@@ -226,8 +239,9 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         } catch (Throwable $e) {
             $this->logError('Scheduler task failed', [
                 'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace'     => $e->getTraceAsString(),
             ]);
+
             return false;
         }
     }
@@ -254,7 +268,8 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         }
 
         $lastRun = $this->registry->get(self::REGISTRY_NAMESPACE, self::REGISTRY_KEY_LAST_RUN);
-        return \is_int($lastRun) ? $lastRun : null;
+
+        return is_int($lastRun) ? $lastRun : null;
     }
 
     /**
@@ -281,10 +296,10 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         }
 
         // After validation, properties are guaranteed non-null
-        \assert($this->timingStrategy instanceof TimingStrategyInterface);
-        \assert($this->registry instanceof Registry);
+        assert($this->timingStrategy instanceof TimingStrategyInterface);
+        assert($this->registry instanceof Registry);
 
-        $lastRun = $this->getLastRunTimestamp();
+        $lastRun  = $this->getLastRunTimestamp();
         $strategy = $this->timingStrategy->getName();
 
         $info = [
@@ -292,12 +307,12 @@ final class TemporalCacheSchedulerTask extends AbstractTask
         ];
 
         if ($lastRun !== null) {
-            $info[] = 'Last Run: ' . \date('Y-m-d H:i:s', $lastRun);
+            $info[] = 'Last Run: ' . date('Y-m-d H:i:s', $lastRun);
         } else {
             $info[] = 'Last Run: Never';
         }
 
-        return \implode(' | ', $info);
+        return implode(' | ', $info);
     }
 
     /**

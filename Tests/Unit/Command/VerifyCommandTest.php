@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Command;
 
@@ -22,6 +22,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function in_array;
+use function strtolower;
 
 #[CoversClass(VerifyCommand::class)]
 final class VerifyCommandTest extends UnitTestCase
@@ -40,23 +43,21 @@ final class VerifyCommandTest extends UnitTestCase
     {
         parent::setUp();
         $this->connectionPool = $this->createStub(ConnectionPool::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->input = $this->createStub(InputInterface::class);
-        $this->output = $this->createStub(OutputInterface::class);
+        $this->configuration  = $this->createStub(ExtensionConfiguration::class);
+        $this->input          = $this->createStub(InputInterface::class);
+        $this->output         = $this->createStub(OutputInterface::class);
 
         $this->subject = new VerifyCommand(
             $this->connectionPool,
-            $this->configuration
+            $this->configuration,
         );
     }
 
-    /**     */
     public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:verify', $this->subject->getName());
     }
 
-    /**     */
     public function testExecuteWithAllChecksPassingReturnsSuccess(): void
     {
         $this->setupInputDefaults();
@@ -75,7 +76,6 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(0, $this->runSubject());
     }
 
-    /**     */
     public function testExecuteWithInvalidConfigurationReturnsFailure(): void
     {
         $this->setupInputDefaults();
@@ -95,7 +95,6 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(1, $this->runSubject());
     }
 
-    /**     */
     public function testExecuteWithMissingIndexesReturnsFailure(): void
     {
         $this->setupInputDefaults();
@@ -119,7 +118,6 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(1, $this->runSubject());
     }
 
-    /**     */
     public function testExecuteWithHarmonizationEnabledVerifiesHarmonizationConfig(): void
     {
         $this->setupInputDefaults();
@@ -216,7 +214,6 @@ final class VerifyCommandTest extends UnitTestCase
         self::assertSame(1, $this->runSubject());
     }
 
-    /**     */
     public function testExecuteWithInvalidHarmonizationSlotsReturnsFailure(): void
     {
         $this->setupInputDefaults();
@@ -280,10 +277,10 @@ final class VerifyCommandTest extends UnitTestCase
      */
     private function mockSchemaTable(): Table&Stub
     {
-        $connection = $this->createStub(Connection::class);
+        $connection    = $this->createStub(Connection::class);
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
-        $schema = $this->createStub(Schema::class);
-        $table = $this->createStub(Table::class);
+        $schema        = $this->createStub(Schema::class);
+        $table         = $this->createStub(Table::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -333,7 +330,7 @@ final class VerifyCommandTest extends UnitTestCase
 
         $table
             ->method('hasColumn')
-            ->willReturnCallback(static fn (string $name): bool => \in_array(\strtolower($name), $columns, true));
+            ->willReturnCallback(static fn (string $name): bool => in_array(strtolower($name), $columns, true));
     }
 
     /**

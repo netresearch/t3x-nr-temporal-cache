@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Command;
 
@@ -16,6 +16,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function str_contains;
 
 /**
  * temporalcache:verify against a real database schema: the index and field
@@ -33,8 +35,8 @@ final class VerifyCommandTest extends FunctionalTestCase
 
     public function testDatabaseChecksPassOnTheInstalledSchema(): void
     {
-        $tester = $this->createTester();
-        $status = $tester->execute([], ['verbosity' => OutputInterface::VERBOSITY_VERBOSE]);
+        $tester  = $this->createTester();
+        $status  = $tester->execute([], ['verbosity' => OutputInterface::VERBOSITY_VERBOSE]);
         $display = $tester->getDisplay();
 
         self::assertSame(0, $status, $display);
@@ -45,11 +47,11 @@ final class VerifyCommandTest extends FunctionalTestCase
 
     public function testDroppedIndexIsReportedMissing(): void
     {
-        $connection = $this->get(ConnectionPool::class)->getConnectionForTable('pages');
+        $connection    = $this->get(ConnectionPool::class)->getConnectionForTable('pages');
         $schemaManager = $connection->createSchemaManager();
-        $dropped = [];
+        $dropped       = [];
         foreach ($schemaManager->introspectSchema()->getTable('pages')->getIndexes() as $name => $index) {
-            if (\str_contains((string)$name, 'temporalcache_starttime')) {
+            if (str_contains((string) $name, 'temporalcache_starttime')) {
                 $schemaManager->dropIndex($name, 'pages');
                 $dropped[] = $index;
             }

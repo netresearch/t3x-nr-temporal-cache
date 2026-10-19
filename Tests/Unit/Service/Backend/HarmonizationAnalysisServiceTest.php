@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
@@ -17,6 +17,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function array_values;
+use function time;
 
 #[CoversClass(HarmonizationAnalysisService::class)]
 #[UsesClass(TemporalContent::class)]
@@ -31,16 +34,15 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->harmonizationService   = $this->createStub(HarmonizationService::class);
         $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
 
         $this->subject = new HarmonizationAnalysisService(
             $this->harmonizationService,
-            $this->extensionConfiguration
+            $this->extensionConfiguration,
         );
     }
 
-    /**     */
     public function testIsHarmonizableReturnsFalseWhenHarmonizationDisabled(): void
     {
         $this->extensionConfiguration
@@ -52,10 +54,10 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             tableName: 'pages',
             title: 'Test',
             pid: 0,
-            starttime: \time(),
+            starttime: time(),
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->isHarmonizable($content);
@@ -63,7 +65,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testIsHarmonizableReturnsFalseWhenNoTemporalFields(): void
     {
         $this->extensionConfiguration
@@ -78,7 +79,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->isHarmonizable($content);
@@ -86,10 +87,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testIsHarmonizableReturnsTrueWhenStarttimeCanBeHarmonized(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -107,7 +107,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->isHarmonizable($content);
@@ -115,10 +115,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testIsHarmonizableReturnsTrueWhenEndtimeCanBeHarmonized(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -142,7 +141,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: null,
             endtime: $currentTime,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->isHarmonizable($content);
@@ -150,10 +149,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testIsHarmonizableReturnsFalseWhenAlreadyHarmonized(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -171,7 +169,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->isHarmonizable($content);
@@ -179,10 +177,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testGenerateHarmonizationSuggestionIncludesStarttimeWhenHarmonizable(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -196,7 +193,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->generateHarmonizationSuggestion($content);
@@ -209,10 +206,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame(600, $result['suggestions']['starttime']['diff']);
     }
 
-    /**     */
     public function testGenerateHarmonizationSuggestionIncludesEndtimeWhenHarmonizable(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -226,7 +222,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: null,
             endtime: $currentTime,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->generateHarmonizationSuggestion($content);
@@ -237,10 +233,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame($currentTime + 600, $result['suggestions']['endtime']['suggested']);
     }
 
-    /**     */
     public function testGenerateHarmonizationSuggestionReturnsNoChangesWhenAlreadyHarmonized(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -254,7 +249,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->generateHarmonizationSuggestion($content);
@@ -263,7 +258,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result['suggestions']);
     }
 
-    /**     */
     public function testAnalyzeHarmonizableCandidatesReturnsZeroWhenDisabled(): void
     {
         $this->extensionConfiguration
@@ -275,10 +269,10 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             tableName: 'pages',
             title: 'Test',
             pid: 0,
-            starttime: \time(),
+            starttime: time(),
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->analyzeHarmonizableCandidates([$content]);
@@ -291,10 +285,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result['harmonizableItems']);
     }
 
-    /**     */
     public function testAnalyzeHarmonizableCandidatesCountsHarmonizableItems(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -312,7 +305,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $content2 = new TemporalContent(
@@ -323,7 +316,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->analyzeHarmonizableCandidates([$content1, $content2]);
@@ -335,10 +328,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertCount(2, $result['harmonizableItems']);
     }
 
-    /**     */
     public function testAnalyzeHarmonizableCandidatesCalculatesAverageShift(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -358,7 +350,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: $currentTime + 1000,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->analyzeHarmonizableCandidates([$content]);
@@ -368,7 +360,6 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame(1, $result['endtimeChanges']);
     }
 
-    /**     */
     public function testFilterHarmonizableContentReturnsEmptyWhenDisabled(): void
     {
         $this->extensionConfiguration
@@ -380,10 +371,10 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             tableName: 'pages',
             title: 'Test',
             pid: 0,
-            starttime: \time(),
+            starttime: time(),
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->filterHarmonizableContent([$content]);
@@ -391,10 +382,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**     */
     public function testFilterHarmonizableContentFiltersCorrectly(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->extensionConfiguration
             ->method('isHarmonizationEnabled')
@@ -419,7 +409,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $notHarmonizable = new TemporalContent(
@@ -430,20 +420,19 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime + 1000,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->filterHarmonizableContent([$harmonizable, $notHarmonizable]);
 
         self::assertCount(1, $result);
-        self::assertSame($harmonizable, \array_values($result)[0]);
+        self::assertSame($harmonizable, array_values($result)[0]);
     }
 
-    /**     */
     public function testCalculateHarmonizationImpactReturnsLowPriorityForSmallShifts(): void
     {
-        $currentTime = \time();
-        $futureTime = $currentTime + 86400; // 1 day in future
+        $currentTime = time();
+        $futureTime  = $currentTime + 86400; // 1 day in future
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -457,7 +446,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $futureTime, // Future content, not currently visible
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->calculateHarmonizationImpact($content, $currentTime);
@@ -467,11 +456,10 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('low', $result['priority']);
     }
 
-    /**     */
     public function testCalculateHarmonizationImpactReturnsMediumPriorityForModerateShifts(): void
     {
-        $currentTime = \time();
-        $futureTime = $currentTime + 86400; // 1 day in future
+        $currentTime = time();
+        $futureTime  = $currentTime + 86400; // 1 day in future
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -485,7 +473,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $futureTime, // Future content, not currently visible
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->calculateHarmonizationImpact($content, $currentTime);
@@ -494,10 +482,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('medium', $result['priority']);
     }
 
-    /**     */
     public function testCalculateHarmonizationImpactReturnsHighPriorityForLargeShifts(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
@@ -511,7 +498,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->calculateHarmonizationImpact($content, $currentTime);
@@ -520,10 +507,9 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
         self::assertSame('high', $result['priority']);
     }
 
-    /**     */
     public function testCalculateHarmonizationImpactDetectsVisibilityAffection(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         // Content currently visible (starttime in past)
         // Harmonization will move starttime to future (making it invisible)
@@ -539,7 +525,7 @@ final class HarmonizationAnalysisServiceTest extends UnitTestCase
             starttime: $currentTime - 100, // Currently visible
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $result = $this->subject->calculateHarmonizationImpact($content, $currentTime);

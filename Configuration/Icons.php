@@ -1,17 +1,17 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 use TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider;
 use TYPO3\CMS\Core\Information\Typo3Version;
 
 /**
- * Icon configuration for nr_temporal_cache extension
+ * Icon configuration for nr_temporal_cache extension.
  *
  * TYPO3 13 LTS standard: Icons are registered via Configuration/Icons.php
  * instead of ext_localconf.php to avoid deprecation warnings.
@@ -27,6 +27,6 @@ $moduleIcon = (new Typo3Version())->getMajorVersion() >= 14
 return [
     'temporal-cache-module' => [
         'provider' => SvgIconProvider::class,
-        'source' => $moduleIcon,
+        'source'   => $moduleIcon,
     ],
 ];

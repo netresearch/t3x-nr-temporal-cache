@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Integration;
 
@@ -29,6 +29,12 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function array_filter;
+use function count;
+use function is_int;
+use function strtotime;
+use function time;
 
 /**
  * Integration tests for complete workflows proving extension works end-to-end.
@@ -55,25 +61,25 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         'EXTENSIONS' => [
             'nr_temporal_cache' => [  // CRITICAL: Extension key is nr_temporal_cache not temporal_cache!
                 'scoping' => [
-                    'strategy' => 'global',
+                    'strategy'     => 'global',
                     'use_refindex' => 1,
                 ],
                 'timing' => [
                     'strategy' => 'dynamic',
-                    'hybrid' => [
-                        'pages' => 'dynamic',
+                    'hybrid'   => [
+                        'pages'   => 'dynamic',
                         'content' => 'scheduler',
                     ],
                 ],
                 'harmonization' => [
-                    'enabled' => 1,  // Use integer 1 instead of boolean true
-                    'slots' => '00:00,06:00,12:00,18:00',
-                    'tolerance' => 3600,
+                    'enabled'    => 1,  // Use integer 1 instead of boolean true
+                    'slots'      => '00:00,06:00,12:00,18:00',
+                    'tolerance'  => 3600,
                     'auto_round' => 0,
                 ],
                 'advanced' => [
                     'default_max_lifetime' => 86400,
-                    'debug_logging' => 0,
+                    'debug_logging'        => 0,
                 ],
             ],
         ],
@@ -100,13 +106,13 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/tt_content.csv');
 
-        $this->configuration = $this->get(ExtensionConfiguration::class);
-        $this->repository = $this->get(TemporalContentRepository::class);
-        $this->harmonizationService = $this->get(HarmonizationService::class);
+        $this->configuration                = $this->get(ExtensionConfiguration::class);
+        $this->repository                   = $this->get(TemporalContentRepository::class);
+        $this->harmonizationService         = $this->get(HarmonizationService::class);
         $this->harmonizationAnalysisService = $this->get(HarmonizationAnalysisService::class);
-        $this->cacheManager = $this->get(CacheManager::class);
-        $this->context = $this->get(Context::class);
-        $this->registry = $this->get(Registry::class);
+        $this->cacheManager                 = $this->get(CacheManager::class);
+        $this->context                      = $this->get(Context::class);
+        $this->registry                     = $this->get(Registry::class);
     }
 
     // =========================================================================
@@ -114,7 +120,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     // =========================================================================
 
     /**
-     * Test complete harmonization workflow end-to-end
+     * Test complete harmonization workflow end-to-end.
      *
      * SCENARIO: Content with scattered temporal boundaries gets aligned to time slots
      * PROOF: Harmonization reduces cache transitions and improves hit ratio
@@ -132,37 +138,37 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
 
         // Create content with times that should harmonize to 12:00 UTC slot
         $this->insertContentElement([
-            'uid' => 1001,
-            'pid' => 1,
-            'header' => 'Content A',
+            'uid'       => 1001,
+            'pid'       => 1,
+            'header'    => 'Content A',
             'starttime' => $baseDate + (11 * 3600) + (13 * 60), // Tomorrow 11:13 UTC
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $this->insertContentElement([
-            'uid' => 1002,
-            'pid' => 1,
-            'header' => 'Content B',
+            'uid'       => 1002,
+            'pid'       => 1,
+            'header'    => 'Content B',
             'starttime' => $baseDate + (11 * 3600) + (27 * 60), // Tomorrow 11:27 UTC
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $this->insertContentElement([
-            'uid' => 1003,
-            'pid' => 1,
-            'header' => 'Content C',
+            'uid'       => 1003,
+            'pid'       => 1,
+            'header'    => 'Content C',
             'starttime' => $baseDate + (11 * 3600) + (42 * 60), // Tomorrow 11:42 UTC
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         // Find harmonizable content
         $allContent = $this->repository->findAllWithTemporalFields();
 
         // Find harmonizable content
-        $harmonizable = \array_filter($allContent, $this->harmonizationAnalysisService->isHarmonizable(...));
+        $harmonizable = array_filter($allContent, $this->harmonizationAnalysisService->isHarmonizable(...));
 
         self::assertCount(3, $harmonizable, 'Should find 3 harmonizable content elements');
 
@@ -187,19 +193,19 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         self::assertSame(
             $harmonizedTimestamps[0],
             $harmonizedTimestamps[1],
-            'Content A and B should harmonize to same timestamp'
+            'Content A and B should harmonize to same timestamp',
         );
         self::assertSame(
             $harmonizedTimestamps[1],
             $harmonizedTimestamps[2],
-            'Content B and C should harmonize to same timestamp'
+            'Content B and C should harmonize to same timestamp',
         );
 
         // Verify harmonized time is aligned to slot (00:00, 06:00, 12:00, or 18:00)
         $harmonizedTime = $harmonizedTimestamps[0];
-        $dt = new DateTime('@' . $harmonizedTime);
-        $hour = (int)$dt->format('H');
-        $minute = (int)$dt->format('i');
+        $dt             = new DateTime('@' . $harmonizedTime);
+        $hour           = (int) $dt->format('H');
+        $minute         = (int) $dt->format('i');
 
         self::assertContains($hour, [0, 6, 12, 18], 'Should be aligned to configured slot hour');
         self::assertSame(0, $minute, 'Should be aligned to slot minute (00)');
@@ -210,7 +216,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     // =========================================================================
 
     /**
-     * Test scheduler task processes transitions correctly
+     * Test scheduler task processes transitions correctly.
      *
      * SCENARIO: Scheduler task finds and processes content transitions
      * PROOF: Batch processing works for high-traffic scenarios
@@ -218,27 +224,27 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     #[Test]
     public function schedulerTaskProcessesTransitionsCorrectly(): void
     {
-        $now = \time();
-        $oneMinuteAgo = $now - 60;
+        $now           = time();
+        $oneMinuteAgo  = $now - 60;
         $twoMinutesAgo = $now - 120;
 
         // Create content that transitioned in the past
         $this->insertContentElement([
-            'uid' => 2001,
-            'pid' => 1,
-            'header' => 'Recently Appeared',
+            'uid'       => 2001,
+            'pid'       => 1,
+            'header'    => 'Recently Appeared',
             'starttime' => $twoMinutesAgo,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $this->insertContentElement([
-            'uid' => 2002,
-            'pid' => 1,
-            'header' => 'Recently Expired',
+            'uid'       => 2002,
+            'pid'       => 1,
+            'header'    => 'Recently Expired',
             'starttime' => 0,
-            'endtime' => $oneMinuteAgo,
-            'hidden' => 0,
+            'endtime'   => $oneMinuteAgo,
+            'hidden'    => 0,
         ]);
 
         // Initialize scheduler task
@@ -261,8 +267,8 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $transitions = $this->repository->findTransitionsInRange($now - 300, $now);
         self::assertGreaterThanOrEqual(
             2,
-            \count($transitions),
-            'Should find at least 2 transitions (appeared + expired)'
+            count($transitions),
+            'Should find at least 2 transitions (appeared + expired)',
         );
 
         // Verify last run timestamp was updated
@@ -275,7 +281,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     // =========================================================================
 
     /**
-     * Test global scoping strategy generates correct cache tags
+     * Test global scoping strategy generates correct cache tags.
      *
      * PROOF: Global scoping invalidates all pages when any temporal content changes
      */
@@ -283,16 +289,16 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     public function globalScopingStrategyGeneratesGlobalCacheTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
-        $baseDate = \strtotime('tomorrow');
+        $baseDate = strtotime('tomorrow');
 
         // Insert test content
         $this->insertContentElement([
-            'uid' => 4001,
-            'pid' => 1,
-            'header' => 'Test Content',
+            'uid'       => 4001,
+            'pid'       => 1,
+            'header'    => 'Test Content',
             'starttime' => $baseDate + (11 * 3600) + (30 * 60), // Tomorrow 11:30
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $scopingStrategy = $this->get(GlobalScopingStrategy::class);
@@ -307,7 +313,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     }
 
     /**
-     * Test per-page scoping strategy generates page-specific cache tags
+     * Test per-page scoping strategy generates page-specific cache tags.
      *
      * PROOF: Per-page scoping only invalidates affected page
      */
@@ -315,16 +321,16 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     public function perPageScopingStrategyGeneratesPageSpecificTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
-        $baseDate = \strtotime('tomorrow');
+        $baseDate = strtotime('tomorrow');
 
         // Insert test content
         $this->insertContentElement([
-            'uid' => 4002,
-            'pid' => 1,
-            'header' => 'Test Content',
+            'uid'       => 4002,
+            'pid'       => 1,
+            'header'    => 'Test Content',
             'starttime' => $baseDate + (11 * 3600) + (35 * 60), // Tomorrow 11:35
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $scopingStrategy = $this->get(PerPageScopingStrategy::class);
@@ -339,7 +345,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     }
 
     /**
-     * Test per-content scoping strategy generates content-specific cache tags
+     * Test per-content scoping strategy generates content-specific cache tags.
      *
      * PROOF: Per-content scoping only invalidates pages containing the content
      */
@@ -347,16 +353,16 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     public function perContentScopingStrategyGeneratesContentSpecificTags(): void
     {
         // Create absolute timestamp within tolerance of 12:00 slot
-        $baseDate = \strtotime('tomorrow');
+        $baseDate = strtotime('tomorrow');
 
         // Insert test content
         $this->insertContentElement([
-            'uid' => 4003,
-            'pid' => 1,
-            'header' => 'Test Content',
+            'uid'       => 4003,
+            'pid'       => 1,
+            'header'    => 'Test Content',
             'starttime' => $baseDate + (11 * 3600) + (45 * 60), // Tomorrow 11:45
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $scopingStrategy = $this->get(PerContentScopingStrategy::class);
@@ -379,28 +385,28 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     // =========================================================================
 
     /**
-     * Test dynamic timing strategy calculates lifetime correctly
+     * Test dynamic timing strategy calculates lifetime correctly.
      *
      * PROOF: Dynamic strategy provides exact cache lifetime
      */
     #[Test]
     public function dynamicTimingStrategyCalculatesLifetimeCorrectly(): void
     {
-        $now = \time();
+        $now           = time();
         $twoHoursLater = $now + 7200;
 
         // Insert future content
         $this->insertContentElement([
-            'uid' => 3001,
-            'pid' => 1,
-            'header' => 'Future Content',
+            'uid'       => 3001,
+            'pid'       => 1,
+            'header'    => 'Future Content',
             'starttime' => $twoHoursLater,
-            'endtime' => 0,
-            'hidden' => 0,
+            'endtime'   => 0,
+            'hidden'    => 0,
         ]);
 
         $timingStrategy = $this->get(DynamicTimingStrategy::class);
-        $lifetime = $timingStrategy->getCacheLifetime($this->context);
+        $lifetime       = $timingStrategy->getCacheLifetime($this->context);
 
         self::assertNotNull($lifetime, 'Dynamic strategy should return lifetime');
         self::assertLessThanOrEqual(7200, $lifetime, 'Lifetime should be ≤ 2 hours');
@@ -408,7 +414,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     }
 
     /**
-     * Test scheduler timing strategy returns null (infinite cache)
+     * Test scheduler timing strategy returns null (infinite cache).
      *
      * PROOF: Scheduler strategy relies on batch invalidation
      */
@@ -416,13 +422,13 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     public function schedulerTimingStrategyReturnsNullForInfiniteCache(): void
     {
         $timingStrategy = $this->get(SchedulerTimingStrategy::class);
-        $lifetime = $timingStrategy->getCacheLifetime($this->context);
+        $lifetime       = $timingStrategy->getCacheLifetime($this->context);
 
         self::assertNull($lifetime, 'Scheduler strategy should return null (infinite cache)');
     }
 
     /**
-     * Test hybrid timing strategy chooses appropriate mode
+     * Test hybrid timing strategy chooses appropriate mode.
      *
      * PROOF: Hybrid strategy optimizes based on content type
      */
@@ -430,12 +436,12 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     public function hybridTimingStrategyChoosesAppropriateMode(): void
     {
         $timingStrategy = $this->get(HybridTimingStrategy::class);
-        $lifetime = $timingStrategy->getCacheLifetime($this->context);
+        $lifetime       = $timingStrategy->getCacheLifetime($this->context);
 
         // Should return either a lifetime (dynamic mode) or null (scheduler mode)
         self::assertTrue(
-            $lifetime === null || \is_int($lifetime),
-            'Hybrid strategy should return int or null'
+            $lifetime === null || is_int($lifetime),
+            'Hybrid strategy should return int or null',
         );
     }
 
@@ -444,7 +450,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     // =========================================================================
 
     /**
-     * Test cache tags are generated and flushed correctly
+     * Test cache tags are generated and flushed correctly.
      *
      * PROOF: Cache invalidation actually happens
      */
@@ -458,9 +464,9 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
         $cache->flush();
 
         // Store test entry with tags
-        $cacheIdentifier = 'test_page_1_' . \time();
-        $cacheData = 'test data';
-        $cacheTags = ['pageId_1'];
+        $cacheIdentifier = 'test_page_1_' . time();
+        $cacheData       = 'test data';
+        $cacheTags       = ['pageId_1'];
 
         try {
             $cache->set($cacheIdentifier, $cacheData, $cacheTags, 86400);
@@ -484,7 +490,7 @@ final class CompleteWorkflowIntegrationTest extends FunctionalTestCase
     }
 
     /**
-     * Helper: Insert content element into database
+     * Helper: Insert content element into database.
      *
      * @param array<string, mixed> $data
      */

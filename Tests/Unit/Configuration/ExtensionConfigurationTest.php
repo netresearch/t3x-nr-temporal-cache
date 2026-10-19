@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Configuration;
 
@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfigu
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * Unit tests for ExtensionConfiguration
+ * Unit tests for ExtensionConfiguration.
  */
 #[CoversClass(ExtensionConfiguration::class)]
 #[UsesClass(TemporalContent::class)]
@@ -34,12 +34,11 @@ final class ExtensionConfigurationTest extends UnitTestCase
         $this->typo3ExtensionConfiguration = $this->createStub(Typo3ExtensionConfiguration::class);
     }
 
-    /**     */
     public function testConstructorLoadsConfiguration(): void
     {
         $config = [
             'scoping' => ['strategy' => 'per-content'],
-            'timing' => ['strategy' => 'scheduler'],
+            'timing'  => ['strategy' => 'scheduler'],
         ];
 
         /** @var Typo3ExtensionConfiguration&MockObject $typo3ExtensionConfiguration */
@@ -56,7 +55,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('scheduler', $subject->getTimingStrategy());
     }
 
-    /**     */
     public function testConstructorHandlesEmptyConfiguration(): void
     {
         $this->typo3ExtensionConfiguration
@@ -85,13 +83,12 @@ final class ExtensionConfigurationTest extends UnitTestCase
     public static function scopingStrategyDataProvider(): array
     {
         return [
-            'global' => ['global'],
-            'per-page' => ['per-page'],
+            'global'      => ['global'],
+            'per-page'    => ['per-page'],
             'per-content' => ['per-content'],
         ];
     }
 
-    /**     */
     public function testGetScopingStrategyReturnsDefaultWhenNotConfigured(): void
     {
         $this->typo3ExtensionConfiguration
@@ -118,16 +115,15 @@ final class ExtensionConfigurationTest extends UnitTestCase
     public static function booleanDataProvider(): array
     {
         return [
-            'true' => [true, true],
-            'false' => [false, false],
-            '1' => [1, true],
-            '0' => [0, false],
-            'string true' => ['1', true],
+            'true'         => [true, true],
+            'false'        => [false, false],
+            '1'            => [1, true],
+            '0'            => [0, false],
+            'string true'  => ['1', true],
             'string false' => ['0', false],
         ];
     }
 
-    /**     */
     public function testUseRefindexReturnsTrueByDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -154,13 +150,12 @@ final class ExtensionConfigurationTest extends UnitTestCase
     public static function timingStrategyDataProvider(): array
     {
         return [
-            'dynamic' => ['dynamic'],
+            'dynamic'   => ['dynamic'],
             'scheduler' => ['scheduler'],
-            'hybrid' => ['hybrid'],
+            'hybrid'    => ['hybrid'],
         ];
     }
 
-    /**     */
     public function testGetTimingStrategyReturnsDefaultWhenNotConfigured(): void
     {
         $this->typo3ExtensionConfiguration
@@ -172,7 +167,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $subject->getTimingStrategy());
     }
 
-    /**     */
     public function testGetTimingRulesReturnsConfiguredValues(): void
     {
         $this->typo3ExtensionConfiguration
@@ -180,14 +174,14 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn([
                 'timing' => [
                     'hybrid' => [
-                        'pages' => 'dynamic',
+                        'pages'   => 'dynamic',
                         'content' => 'scheduler',
                     ],
                 ],
             ]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $rules = $subject->getTimingRules();
+        $rules   = $subject->getTimingRules();
 
         self::assertSame('dynamic', $rules['page']);
         self::assertSame('scheduler', $rules['content']);
@@ -207,16 +201,16 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn([
                 'timing' => [
                     'hybrid' => [
-                        'pages' => 'scheduler',
+                        'pages'   => 'scheduler',
                         'content' => 'dynamic',
                     ],
                 ],
             ]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $rules = $subject->getTimingRules();
+        $rules   = $subject->getTimingRules();
 
-        $page = new TemporalContent(1, 'pages', 'A page', 0, null, null, 0, 0);
+        $page    = new TemporalContent(1, 'pages', 'A page', 0, null, null, 0, 0);
         $content = new TemporalContent(2, 'tt_content', 'An element', 1, null, null, 0, 0);
 
         self::assertArrayHasKey($page->getContentType(), $rules);
@@ -225,7 +219,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame('dynamic', $rules[$content->getContentType()]);
     }
 
-    /**     */
     public function testGetTimingRulesReturnsDefaults(): void
     {
         $this->typo3ExtensionConfiguration
@@ -233,13 +226,12 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn([]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $rules = $subject->getTimingRules();
+        $rules   = $subject->getTimingRules();
 
         self::assertSame('dynamic', $rules['page']);
         self::assertSame('scheduler', $rules['content']);
     }
 
-    /**     */
     public function testIsHarmonizationEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
@@ -251,7 +243,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isHarmonizationEnabled());
     }
 
-    /**     */
     public function testIsHarmonizationEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -263,7 +254,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isHarmonizationEnabled());
     }
 
-    /**     */
     public function testGetHarmonizationSlotsReturnsConfiguredValues(): void
     {
         $this->typo3ExtensionConfiguration
@@ -271,12 +261,11 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn(['harmonization' => ['slots' => '00:00,08:00,16:00']]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $slots = $subject->getHarmonizationSlots();
+        $slots   = $subject->getHarmonizationSlots();
 
         self::assertSame(['00:00', '08:00', '16:00'], $slots);
     }
 
-    /**     */
     public function testGetHarmonizationSlotsReturnsDefaults(): void
     {
         $this->typo3ExtensionConfiguration
@@ -284,12 +273,11 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn([]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $slots = $subject->getHarmonizationSlots();
+        $slots   = $subject->getHarmonizationSlots();
 
         self::assertSame(['00:00', '06:00', '12:00', '18:00'], $slots);
     }
 
-    /**     */
     public function testGetHarmonizationSlotsTrimsWhitespace(): void
     {
         $this->typo3ExtensionConfiguration
@@ -297,12 +285,11 @@ final class ExtensionConfigurationTest extends UnitTestCase
             ->willReturn(['harmonization' => ['slots' => ' 00:00 , 12:00 , 18:00 ']]);
 
         $subject = new ExtensionConfiguration($this->typo3ExtensionConfiguration);
-        $slots = $subject->getHarmonizationSlots();
+        $slots   = $subject->getHarmonizationSlots();
 
         self::assertSame(['00:00', '12:00', '18:00'], $slots);
     }
 
-    /**     */
     public function testGetHarmonizationToleranceReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
@@ -314,7 +301,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(7200, $subject->getHarmonizationTolerance());
     }
 
-    /**     */
     public function testGetHarmonizationToleranceReturnsDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -326,7 +312,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(3600, $subject->getHarmonizationTolerance());
     }
 
-    /**     */
     public function testIsAutoRoundEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
@@ -338,7 +323,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isAutoRoundEnabled());
     }
 
-    /**     */
     public function testIsAutoRoundEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -350,7 +334,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertFalse($subject->isAutoRoundEnabled());
     }
 
-    /**     */
     public function testGetDefaultMaxLifetimeReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
@@ -362,7 +345,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(172800, $subject->getDefaultMaxLifetime());
     }
 
-    /**     */
     public function testGetDefaultMaxLifetimeReturnsDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -374,7 +356,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertSame(86400, $subject->getDefaultMaxLifetime());
     }
 
-    /**     */
     public function testIsDebugLoggingEnabledReturnsConfiguredValue(): void
     {
         $this->typo3ExtensionConfiguration
@@ -386,7 +367,6 @@ final class ExtensionConfigurationTest extends UnitTestCase
         self::assertTrue($subject->isDebugLoggingEnabled());
     }
 
-    /**     */
     public function testIsDebugLoggingEnabledReturnsFalseByDefault(): void
     {
         $this->typo3ExtensionConfiguration
@@ -413,23 +393,22 @@ final class ExtensionConfigurationTest extends UnitTestCase
     public static function convenienceMethodDataProvider(): array
     {
         return [
-            'isPerContentScoping true' => ['isPerContentScoping', 'scoping', 'per-content', true],
+            'isPerContentScoping true'  => ['isPerContentScoping', 'scoping', 'per-content', true],
             'isPerContentScoping false' => ['isPerContentScoping', 'scoping', 'global', false],
-            'isSchedulerTiming true' => ['isSchedulerTiming', 'timing', 'scheduler', true],
-            'isSchedulerTiming false' => ['isSchedulerTiming', 'timing', 'dynamic', false],
-            'isHybridTiming true' => ['isHybridTiming', 'timing', 'hybrid', true],
-            'isHybridTiming false' => ['isHybridTiming', 'timing', 'scheduler', false],
-            'isDynamicTiming true' => ['isDynamicTiming', 'timing', 'dynamic', true],
-            'isDynamicTiming false' => ['isDynamicTiming', 'timing', 'hybrid', false],
+            'isSchedulerTiming true'    => ['isSchedulerTiming', 'timing', 'scheduler', true],
+            'isSchedulerTiming false'   => ['isSchedulerTiming', 'timing', 'dynamic', false],
+            'isHybridTiming true'       => ['isHybridTiming', 'timing', 'hybrid', true],
+            'isHybridTiming false'      => ['isHybridTiming', 'timing', 'scheduler', false],
+            'isDynamicTiming true'      => ['isDynamicTiming', 'timing', 'dynamic', true],
+            'isDynamicTiming false'     => ['isDynamicTiming', 'timing', 'hybrid', false],
         ];
     }
 
-    /**     */
     public function testGetAllReturnsCompleteConfiguration(): void
     {
         $config = [
-            'scoping' => ['strategy' => 'per-content'],
-            'timing' => ['strategy' => 'scheduler'],
+            'scoping'       => ['strategy' => 'per-content'],
+            'timing'        => ['strategy' => 'scheduler'],
             'harmonization' => ['enabled' => true],
         ];
 

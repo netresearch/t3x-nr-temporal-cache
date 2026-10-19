@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
@@ -17,6 +17,9 @@ use ReflectionClass;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function count;
+use function time;
 
 /**
  * Functional tests for TemporalCacheController business logic.
@@ -52,8 +55,8 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
                     'strategy' => 'dynamic',
                 ],
                 'harmonization' => [
-                    'enabled' => true,
-                    'slots' => '00:00,06:00,12:00,18:00',
+                    'enabled'   => true,
+                    'slots'     => '00:00,06:00,12:00,18:00',
                     'tolerance' => 3600,
                 ],
             ],
@@ -63,9 +66,6 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     private TemporalCacheController $controller;
 
     private TemporalContentRepository $repository;
-
-
-
 
     protected function setUp(): void
     {
@@ -84,27 +84,27 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test filterContent method with 'all' filter
+     * Test filterContent method with 'all' filter.
      */
     #[Test]
     public function filterContentWithAllFilterReturnsAllContent(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
 
-        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'all', \time()]);
+        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'all', time()]);
 
-        self::assertCount(\count($allContent), $filtered, 'All filter should return all content');
+        self::assertCount(count($allContent), $filtered, 'All filter should return all content');
     }
 
     /**
-     * Test filterContent method with 'pages' filter
+     * Test filterContent method with 'pages' filter.
      */
     #[Test]
     public function filterContentWithPagesFilterReturnsOnlyPages(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
 
-        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'pages', \time()]);
+        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'pages', time()]);
 
         foreach ($filtered as $item) {
             self::assertTrue($item->isPage(), 'Filtered content should only include pages');
@@ -112,14 +112,14 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test filterContent method with 'content' filter
+     * Test filterContent method with 'content' filter.
      */
     #[Test]
     public function filterContentWithContentFilterReturnsOnlyContentElements(): void
     {
         $allContent = $this->repository->findAllWithTemporalFields();
 
-        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'content', \time()]);
+        $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'content', time()]);
 
         foreach ($filtered as $item) {
             self::assertTrue($item->isContent(), 'Filtered content should only include content elements');
@@ -127,12 +127,12 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test filterContent method with 'active' filter
+     * Test filterContent method with 'active' filter.
      */
     #[Test]
     public function filterContentWithActiveFilterReturnsVisibleContent(): void
     {
-        $now = \time();
+        $now        = time();
         $allContent = $this->repository->findAllWithTemporalFields();
 
         $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'active', $now]);
@@ -143,12 +143,12 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test filterContent method with 'scheduled' filter
+     * Test filterContent method with 'scheduled' filter.
      */
     #[Test]
     public function filterContentWithScheduledFilterReturnsFutureContent(): void
     {
-        $now = \time();
+        $now        = time();
         $allContent = $this->repository->findAllWithTemporalFields();
 
         $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'scheduled', $now]);
@@ -160,12 +160,12 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test filterContent method with 'expired' filter
+     * Test filterContent method with 'expired' filter.
      */
     #[Test]
     public function filterContentWithExpiredFilterReturnsExpiredContent(): void
     {
-        $now = \time();
+        $now        = time();
         $allContent = $this->repository->findAllWithTemporalFields();
 
         $filtered = $this->invokePrivateMethod('filterContent', [$allContent, 'expired', $now]);
@@ -180,7 +180,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test getFilterOptions method returns all expected filters
+     * Test getFilterOptions method returns all expected filters.
      */
     #[Test]
     public function getFilterOptionsReturnsAllFilters(): void
@@ -195,7 +195,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test getConfigurationPresets returns expected presets
+     * Test getConfigurationPresets returns expected presets.
      */
     #[Test]
     public function getConfigurationPresetsReturnsThreePresets(): void
@@ -209,7 +209,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test simple preset configuration
+     * Test simple preset configuration.
      */
     #[Test]
     public function simplePresetHasExpectedConfiguration(): void
@@ -224,7 +224,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test balanced preset configuration
+     * Test balanced preset configuration.
      */
     #[Test]
     public function balancedPresetHasExpectedConfiguration(): void
@@ -239,7 +239,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test aggressive preset configuration
+     * Test aggressive preset configuration.
      */
     #[Test]
     public function aggressivePresetHasExpectedConfiguration(): void
@@ -254,7 +254,7 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Test analyzeConfiguration returns array of recommendations
+     * Test analyzeConfiguration returns array of recommendations.
      */
     #[Test]
     public function analyzeConfigurationReturnsRecommendationsArray(): void
@@ -273,14 +273,14 @@ final class TemporalCacheControllerBusinessLogicTest extends FunctionalTestCase
     }
 
     /**
-     * Helper method to invoke private/protected methods using reflection
+     * Helper method to invoke private/protected methods using reflection.
      *
      * @param array<int, mixed> $args
      */
     private function invokePrivateMethod(string $methodName, array $args = []): mixed
     {
         $reflection = new ReflectionClass($this->controller);
-        $method = $reflection->getMethod($methodName);
+        $method     = $reflection->getMethod($methodName);
 
         return $method->invoke($this->controller, ...$args);
     }

@@ -1,17 +1,23 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Backend;
 
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Service\HarmonizationService;
+
+use function abs;
+use function array_filter;
+use function count;
+use function max;
+use function round;
 
 /**
  * Service for analyzing harmonization opportunities in temporal content.
@@ -40,9 +46,8 @@ final class HarmonizationAnalysisService
 {
     public function __construct(
         private readonly HarmonizationService $harmonizationService,
-        private readonly ExtensionConfiguration $extensionConfiguration
-    ) {
-    }
+        private readonly ExtensionConfiguration $extensionConfiguration,
+    ) {}
 
     /**
      * Check if a content item is harmonizable.
@@ -61,6 +66,7 @@ final class HarmonizationAnalysisService
      * analyzeHarmonizableCandidates() which provides batch analysis.
      *
      * @param TemporalContent $content Content to analyze
+     *
      * @return bool True if content can benefit from harmonization
      */
     public function isHarmonizable(TemporalContent $content): bool
@@ -117,6 +123,7 @@ final class HarmonizationAnalysisService
      * ```
      *
      * @param TemporalContent $content Content to analyze
+     *
      * @return array{
      *     content: TemporalContent,
      *     suggestions: array<string, array{current: int, suggested: int, diff: int}>,
@@ -131,12 +138,12 @@ final class HarmonizationAnalysisService
         if ($content->starttime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->starttime);
             if ($harmonized !== $content->starttime) {
-                $diff = $harmonized - $content->starttime;
+                $diff                     = $harmonized - $content->starttime;
                 $suggestions['starttime'] = [
-                    'current' => $content->starttime,
-                    'suggested' => $harmonized,
-                    'diff' => $diff,
-                    'diffMinutes' => (int) \round($diff / 60),
+                    'current'     => $content->starttime,
+                    'suggested'   => $harmonized,
+                    'diff'        => $diff,
+                    'diffMinutes' => (int) round($diff / 60),
                 ];
             }
         }
@@ -145,20 +152,20 @@ final class HarmonizationAnalysisService
         if ($content->endtime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->endtime);
             if ($harmonized !== $content->endtime) {
-                $diff = $harmonized - $content->endtime;
+                $diff                   = $harmonized - $content->endtime;
                 $suggestions['endtime'] = [
-                    'current' => $content->endtime,
-                    'suggested' => $harmonized,
-                    'diff' => $diff,
-                    'diffMinutes' => (int) \round($diff / 60),
+                    'current'     => $content->endtime,
+                    'suggested'   => $harmonized,
+                    'diff'        => $diff,
+                    'diffMinutes' => (int) round($diff / 60),
                 ];
             }
         }
 
         return [
-            'content' => $content,
+            'content'     => $content,
             'suggestions' => $suggestions,
-            'hasChanges' => $suggestions !== [],
+            'hasChanges'  => $suggestions !== [],
         ];
     }
 
@@ -180,6 +187,7 @@ final class HarmonizationAnalysisService
      * - Impact assessment before enabling harmonization
      *
      * @param array<TemporalContent> $contentList Content items to analyze
+     *
      * @return array{
      *     harmonizableCount: int,
      *     totalCount: int,
@@ -193,33 +201,33 @@ final class HarmonizationAnalysisService
     {
         if (!$this->extensionConfiguration->isHarmonizationEnabled()) {
             return [
-                'harmonizableCount' => 0,
-                'totalCount' => \count($contentList),
+                'harmonizableCount'   => 0,
+                'totalCount'          => count($contentList),
                 'averageShiftSeconds' => 0.0,
-                'starttimeChanges' => 0,
-                'endtimeChanges' => 0,
-                'harmonizableItems' => [],
+                'starttimeChanges'    => 0,
+                'endtimeChanges'      => 0,
+                'harmonizableItems'   => [],
             ];
         }
 
         $harmonizableItems = [];
-        $totalShift = 0;
-        $shiftCount = 0;
-        $starttimeChanges = 0;
-        $endtimeChanges = 0;
+        $totalShift        = 0;
+        $shiftCount        = 0;
+        $starttimeChanges  = 0;
+        $endtimeChanges    = 0;
 
         foreach ($contentList as $content) {
             $hasStartChange = false;
-            $hasEndChange = false;
+            $hasEndChange   = false;
 
             // Check starttime
             if ($content->starttime !== null) {
                 $harmonized = $this->harmonizationService->harmonizeTimestamp($content->starttime);
                 if ($harmonized !== $content->starttime) {
                     $hasStartChange = true;
-                    $starttimeChanges++;
-                    $totalShift += \abs($harmonized - $content->starttime);
-                    $shiftCount++;
+                    ++$starttimeChanges;
+                    $totalShift += abs($harmonized - $content->starttime);
+                    ++$shiftCount;
                 }
             }
 
@@ -228,9 +236,9 @@ final class HarmonizationAnalysisService
                 $harmonized = $this->harmonizationService->harmonizeTimestamp($content->endtime);
                 if ($harmonized !== $content->endtime) {
                     $hasEndChange = true;
-                    $endtimeChanges++;
-                    $totalShift += \abs($harmonized - $content->endtime);
-                    $shiftCount++;
+                    ++$endtimeChanges;
+                    $totalShift += abs($harmonized - $content->endtime);
+                    ++$shiftCount;
                 }
             }
 
@@ -241,12 +249,12 @@ final class HarmonizationAnalysisService
         }
 
         return [
-            'harmonizableCount' => \count($harmonizableItems),
-            'totalCount' => \count($contentList),
+            'harmonizableCount'   => count($harmonizableItems),
+            'totalCount'          => count($contentList),
             'averageShiftSeconds' => $shiftCount > 0 ? $totalShift / $shiftCount : 0.0,
-            'starttimeChanges' => $starttimeChanges,
-            'endtimeChanges' => $endtimeChanges,
-            'harmonizableItems' => $harmonizableItems,
+            'starttimeChanges'    => $starttimeChanges,
+            'endtimeChanges'      => $endtimeChanges,
+            'harmonizableItems'   => $harmonizableItems,
         ];
     }
 
@@ -258,6 +266,7 @@ final class HarmonizationAnalysisService
      * uses early returns and optimized logic.
      *
      * @param array<TemporalContent> $contentList Content items to filter
+     *
      * @return array<TemporalContent> Filtered list containing only harmonizable items
      */
     public function filterHarmonizableContent(array $contentList): array
@@ -266,7 +275,7 @@ final class HarmonizationAnalysisService
             return [];
         }
 
-        return \array_filter($contentList, $this->isHarmonizable(...));
+        return array_filter($contentList, $this->isHarmonizable(...));
     }
 
     /**
@@ -282,8 +291,9 @@ final class HarmonizationAnalysisService
      * - MEDIUM: Changes > 15 minutes
      * - LOW: Changes <= 15 minutes
      *
-     * @param TemporalContent $content Content to analyze
-     * @param int $currentTime Current timestamp for visibility analysis
+     * @param TemporalContent $content     Content to analyze
+     * @param int             $currentTime Current timestamp for visibility analysis
+     *
      * @return array{
      *     maxShiftSeconds: int,
      *     affectsVisibility: bool,
@@ -292,14 +302,14 @@ final class HarmonizationAnalysisService
      */
     public function calculateHarmonizationImpact(TemporalContent $content, int $currentTime): array
     {
-        $maxShift = 0;
+        $maxShift          = 0;
         $affectsVisibility = false;
 
         // Analyze starttime impact
         if ($content->starttime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->starttime);
-            $shift = \abs($harmonized - $content->starttime);
-            $maxShift = \max($maxShift, $shift);
+            $shift      = abs($harmonized - $content->starttime);
+            $maxShift   = max($maxShift, $shift);
 
             // Check if this affects current visibility
             if ($content->starttime <= $currentTime && $harmonized > $currentTime) {
@@ -312,8 +322,8 @@ final class HarmonizationAnalysisService
         // Analyze endtime impact
         if ($content->endtime !== null) {
             $harmonized = $this->harmonizationService->harmonizeTimestamp($content->endtime);
-            $shift = \abs($harmonized - $content->endtime);
-            $maxShift = \max($maxShift, $shift);
+            $shift      = abs($harmonized - $content->endtime);
+            $maxShift   = max($maxShift, $shift);
 
             // Check if this affects current visibility
             if ($content->endtime <= $currentTime && $harmonized > $currentTime) {
@@ -332,9 +342,9 @@ final class HarmonizationAnalysisService
         }
 
         return [
-            'maxShiftSeconds' => $maxShift,
+            'maxShiftSeconds'   => $maxShift,
             'affectsVisibility' => $affectsVisibility,
-            'priority' => $priority,
+            'priority'          => $priority,
         ];
     }
 }

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 use Rector\Privatization\Rector\Property\PrivatizeFinalClassPropertyRector;

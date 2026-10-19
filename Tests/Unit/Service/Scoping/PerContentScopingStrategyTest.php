@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
@@ -42,18 +42,17 @@ final class PerContentScopingStrategyTest extends UnitTestCase
     {
         parent::setUp();
         $this->refindexService = $this->createMock(RefindexService::class);
-        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->context = $this->createStub(Context::class);
+        $this->repository      = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->configuration   = $this->createStub(ExtensionConfiguration::class);
+        $this->context         = $this->createStub(Context::class);
 
         $this->subject = new PerContentScopingStrategy(
             $this->refindexService,
             $this->repository,
-            $this->configuration
+            $this->configuration,
         );
     }
 
-    /**     */
     public function testGetCacheTagsToFlushReturnsPageTagForPages(): void
     {
         $content = new TemporalContent(
@@ -64,7 +63,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
@@ -72,7 +71,6 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushUsesRefindexForContent(): void
     {
         $content = new TemporalContent(
@@ -83,7 +81,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $this->configuration->method('useRefindex')->willReturn(true);
@@ -110,7 +108,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $this->configuration->method('useRefindex')->willReturn(true);
@@ -121,7 +119,6 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushFallsBackToParentPageWhenRefindexDisabled(): void
     {
         $content = new TemporalContent(
@@ -132,7 +129,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $this->configuration->method('useRefindex')->willReturn(false);
@@ -142,7 +139,6 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushFallsBackToParentPageOnRefindexFailure(): void
     {
         $content = new TemporalContent(
@@ -153,7 +149,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $this->configuration->method('useRefindex')->willReturn(true);
@@ -166,7 +162,6 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushFallsBackWhenRefindexReturnsEmpty(): void
     {
         $content = new TemporalContent(
@@ -177,7 +172,7 @@ final class PerContentScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $this->configuration->method('useRefindex')->willReturn(true);
@@ -190,7 +185,6 @@ final class PerContentScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('per-content', $this->subject->getName());

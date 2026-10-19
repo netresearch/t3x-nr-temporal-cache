@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
@@ -37,7 +37,8 @@ interface ScopingStrategyInterface extends NamedStrategyInterface
      * Return ALL_PAGES to empty the whole page cache.
      *
      * @param TemporalContent $content The content that transitioned
-     * @param Context $context TYPO3 context (workspace, language)
+     * @param Context         $context TYPO3 context (workspace, language)
+     *
      * @return array<string> Array of cache tags to flush
      */
     public function getCacheTagsToFlush(TemporalContent $content, Context $context): array;
@@ -49,8 +50,9 @@ interface ScopingStrategyInterface extends NamedStrategyInterface
      * rendered (e.g. per-page scoping only watches content on that page plus all page
      * transitions). When null, the strategy returns a site-wide transition.
      *
-     * @param Context $context TYPO3 context
-     * @param int|null $pageId The page currently being rendered, or null for a site-wide value
+     * @param Context  $context TYPO3 context
+     * @param int|null $pageId  The page currently being rendered, or null for a site-wide value
+     *
      * @return int|null Timestamp of next transition or null if none
      */
     public function getNextTransition(Context $context, ?int $pageId = null): ?int;

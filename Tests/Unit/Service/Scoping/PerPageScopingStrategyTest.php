@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
@@ -32,11 +32,10 @@ final class PerPageScopingStrategyTest extends UnitTestCase
     {
         parent::setUp();
         $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->context = $this->createStub(Context::class);
-        $this->subject = new PerPageScopingStrategy($this->repository);
+        $this->context    = $this->createStub(Context::class);
+        $this->subject    = new PerPageScopingStrategy($this->repository);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushReturnsPageTagForPages(): void
     {
         $content = new TemporalContent(
@@ -47,7 +46,7 @@ final class PerPageScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
@@ -55,7 +54,6 @@ final class PerPageScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushReturnsParentPageTagForContent(): void
     {
         $content = new TemporalContent(
@@ -66,7 +64,7 @@ final class PerPageScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
@@ -74,7 +72,6 @@ final class PerPageScopingStrategyTest extends UnitTestCase
         self::assertSame(['pageId_5'], $tags);
     }
 
-    /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('per-page', $this->subject->getName());

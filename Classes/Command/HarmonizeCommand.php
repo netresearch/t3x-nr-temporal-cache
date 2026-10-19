@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Command;
 
@@ -26,6 +26,19 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+use function array_column;
+use function array_filter;
+use function array_unique;
+use function assert;
+use function count;
+use function date;
+use function implode;
+use function in_array;
+use function is_bool;
+use function is_int;
+use function is_string;
+use function sprintf;
 
 /**
  * CLI Command: Perform harmonization of temporal fields.
@@ -60,7 +73,7 @@ final class HarmonizeCommand extends Command
         private readonly HarmonizationService $harmonizationService,
         private readonly ExtensionConfiguration $configuration,
         private readonly ConnectionPool $connectionPool,
-        private readonly LoggerInterface $logger = new NullLogger()
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         parent::__construct('temporalcache:harmonize');
     }
@@ -107,14 +120,14 @@ final class HarmonizeCommand extends Command
                   - Harmonization must be enabled in extension configuration
                   - Time slots must be configured
                   - Tolerance must be set appropriately
-                HELP
+                HELP,
         );
 
         $this->addOption(
             'dry-run',
             null,
             InputOption::VALUE_NONE,
-            'Preview changes without modifying database'
+            'Preview changes without modifying database',
         );
 
         $this->addOption(
@@ -122,7 +135,7 @@ final class HarmonizeCommand extends Command
             'w',
             InputOption::VALUE_REQUIRED,
             'Workspace UID to harmonize (0 = live workspace)',
-            '0'
+            '0',
         );
 
         $this->addOption(
@@ -130,32 +143,32 @@ final class HarmonizeCommand extends Command
             'l',
             InputOption::VALUE_REQUIRED,
             'Language UID to harmonize (0 = default)',
-            '0'
+            '0',
         );
 
         $this->addOption(
             'table',
             't',
             InputOption::VALUE_REQUIRED,
-            'Limit to specific table (pages or tt_content)'
+            'Limit to specific table (pages or tt_content)',
         );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-        $dryRunOption = $input->getOption('dry-run');
+        $io              = new SymfonyStyle($input, $output);
+        $dryRunOption    = $input->getOption('dry-run');
         $workspaceOption = $input->getOption('workspace');
-        $languageOption = $input->getOption('language');
-        $tableFilter = $input->getOption('table');
+        $languageOption  = $input->getOption('language');
+        $tableFilter     = $input->getOption('table');
 
-        \assert(\is_bool($dryRunOption) || \is_string($dryRunOption) || \is_int($dryRunOption) || $dryRunOption === null);
-        \assert(\is_string($workspaceOption) || \is_int($workspaceOption));
-        \assert(\is_string($languageOption) || \is_int($languageOption));
+        assert(is_bool($dryRunOption) || is_string($dryRunOption) || is_int($dryRunOption) || $dryRunOption === null);
+        assert(is_string($workspaceOption) || is_int($workspaceOption));
+        assert(is_string($languageOption) || is_int($languageOption));
 
-        $dryRun = (bool)$dryRunOption;
-        $workspaceUid = (int)$workspaceOption;
-        $languageUid = (int)$languageOption;
+        $dryRun       = (bool) $dryRunOption;
+        $workspaceUid = (int) $workspaceOption;
+        $languageUid  = (int) $languageOption;
 
         $io->title('Temporal Field Harmonization');
 
@@ -163,14 +176,16 @@ final class HarmonizeCommand extends Command
         if (!$this->configuration->isHarmonizationEnabled()) {
             $io->error('Harmonization is not enabled in extension configuration!');
             $io->note('Enable harmonization in the TYPO3 backend: Settings > Extension Configuration > temporal_cache');
+
             return Command::FAILURE;
         }
 
         // Validate table filter
         if ($tableFilter !== null) {
-            \assert(\is_string($tableFilter));
-            if (!\in_array($tableFilter, ['pages', 'tt_content'], true)) {
+            assert(is_string($tableFilter));
+            if (!in_array($tableFilter, ['pages', 'tt_content'], true)) {
                 $io->error("Invalid table name: {$tableFilter}. Must be 'pages' or 'tt_content'.");
+
                 return Command::FAILURE;
             }
         }
@@ -191,9 +206,9 @@ final class HarmonizeCommand extends Command
                 ['Workspace', $workspaceUid === 0 ? 'Live (0)' : "Workspace {$workspaceUid}"],
                 ['Language', "Language {$languageUid}"],
                 ['Table Filter', $tableFilter ?? 'All tables'],
-                ['Time Slots', \implode(', ', $this->configuration->getHarmonizationSlots())],
+                ['Time Slots', implode(', ', $this->configuration->getHarmonizationSlots())],
                 ['Tolerance', $this->configuration->getHarmonizationTolerance() . ' seconds'],
-            ]
+            ],
         );
 
         // Load temporal content
@@ -203,18 +218,19 @@ final class HarmonizeCommand extends Command
 
         if ($allContent === []) {
             $io->warning('No temporal content found to harmonize.');
+
             return Command::SUCCESS;
         }
 
-        $io->writeln(\sprintf('Found <info>%d</info> temporal records', \count($allContent)));
+        $io->writeln(sprintf('Found <info>%d</info> temporal records', count($allContent)));
 
         // Filter by table if specified
         if ($tableFilter !== null) {
-            $allContent = \array_filter(
+            $allContent = array_filter(
                 $allContent,
-                fn ($content): bool => $content->tableName === $tableFilter
+                fn ($content): bool => $content->tableName === $tableFilter,
             );
-            $io->writeln(\sprintf('Filtered to <info>%d</info> records from table: %s', \count($allContent), $tableFilter));
+            $io->writeln(sprintf('Filtered to <info>%d</info> records from table: %s', count($allContent), $tableFilter));
         }
 
         // Analyze and harmonize
@@ -224,6 +240,7 @@ final class HarmonizeCommand extends Command
 
         if ($changes === []) {
             $io->success('No records need harmonization. All timestamps already aligned with configured slots.');
+
             return Command::SUCCESS;
         }
 
@@ -234,6 +251,7 @@ final class HarmonizeCommand extends Command
         if (!$dryRun) {
             if (!$io->confirm('Proceed with harmonization?', false)) {
                 $io->note('Harmonization cancelled by user.');
+
                 return Command::SUCCESS;
             }
 
@@ -260,6 +278,7 @@ final class HarmonizeCommand extends Command
      * Analyze which records need harmonization.
      *
      * @param array<TemporalContent> $content
+     *
      * @return array<array{table: string, uid: int, field: string, old: int, new: int}>
      */
     private function analyzeHarmonization(array $content): array
@@ -273,10 +292,10 @@ final class HarmonizeCommand extends Command
                 if ($harmonized !== $item->starttime) {
                     $changes[] = [
                         'table' => $item->tableName,
-                        'uid' => $item->uid,
+                        'uid'   => $item->uid,
                         'field' => 'starttime',
-                        'old' => $item->starttime,
-                        'new' => $harmonized,
+                        'old'   => $item->starttime,
+                        'new'   => $harmonized,
                         'title' => $item->title,
                     ];
                 }
@@ -288,10 +307,10 @@ final class HarmonizeCommand extends Command
                 if ($harmonized !== $item->endtime) {
                     $changes[] = [
                         'table' => $item->tableName,
-                        'uid' => $item->uid,
+                        'uid'   => $item->uid,
                         'field' => 'endtime',
-                        'old' => $item->endtime,
-                        'new' => $harmonized,
+                        'old'   => $item->endtime,
+                        'new'   => $harmonized,
                         'title' => $item->title,
                     ];
                 }
@@ -308,16 +327,16 @@ final class HarmonizeCommand extends Command
      */
     private function displayChangeSummary(SymfonyStyle $io, array $changes): void
     {
-        $pageChanges = \array_filter($changes, fn (array $c): bool => $c['table'] === 'pages');
-        $contentChanges = \array_filter($changes, fn (array $c): bool => $c['table'] === 'tt_content');
+        $pageChanges    = array_filter($changes, fn (array $c): bool => $c['table'] === 'pages');
+        $contentChanges = array_filter($changes, fn (array $c): bool => $c['table'] === 'tt_content');
 
         $io->table(
             ['Table', 'Changes'],
             [
-                ['pages', \count($pageChanges)],
-                ['tt_content', \count($contentChanges)],
-                ['<info>Total</info>', '<info>' . \count($changes) . '</info>'],
-            ]
+                ['pages', count($pageChanges)],
+                ['tt_content', count($contentChanges)],
+                ['<info>Total</info>', '<info>' . count($changes) . '</info>'],
+            ],
         );
 
         // Show sample changes in verbose mode
@@ -332,25 +351,25 @@ final class HarmonizeCommand extends Command
                     break;
                 }
 
-                $shift = $change['new'] - $change['old'];
-                $shiftMin = (int)($shift / 60);
+                $shift    = $change['new'] - $change['old'];
+                $shiftMin = (int) ($shift / 60);
 
                 $table->addRow([
                     $change['table'],
                     $change['uid'],
                     $change['field'],
-                    \date('Y-m-d H:i', $change['old']),
-                    \date('Y-m-d H:i', $change['new']),
-                    \sprintf('%+d min', $shiftMin),
+                    date('Y-m-d H:i', $change['old']),
+                    date('Y-m-d H:i', $change['new']),
+                    sprintf('%+d min', $shiftMin),
                 ]);
 
-                $displayed++;
+                ++$displayed;
             }
 
             $table->render();
 
-            if (\count($changes) > 10) {
-                $io->writeln(\sprintf("\n<info>... and %d more changes</info>", \count($changes) - 10));
+            if (count($changes) > 10) {
+                $io->writeln(sprintf("\n<info>... and %d more changes</info>", count($changes) - 10));
             }
         }
     }
@@ -362,12 +381,12 @@ final class HarmonizeCommand extends Command
      */
     private function applyHarmonization(SymfonyStyle $io, array $changes, int $workspaceUid): void
     {
-        $progressBar = new ProgressBar($io, \count($changes));
+        $progressBar = new ProgressBar($io, count($changes));
         $progressBar->setFormat('verbose');
         $progressBar->start();
 
         $updated = 0;
-        $failed = 0;
+        $failed  = 0;
 
         foreach ($changes as $change) {
             try {
@@ -375,34 +394,34 @@ final class HarmonizeCommand extends Command
                 $connection->update(
                     $change['table'],
                     [$change['field'] => $change['new']],
-                    ['uid' => $change['uid']]
+                    ['uid' => $change['uid']],
                 );
-                $updated++;
+                ++$updated;
                 // Same reason HarmonizationService logs its writes: the update
                 // bypasses DataHandler, so it produces no sys_log and no
                 // sys_history entry. Without this the mutation is unrecorded.
                 $this->logger->info('Harmonized temporal timestamp', [
                     'table' => $change['table'],
-                    'uid' => $change['uid'],
+                    'uid'   => $change['uid'],
                     'field' => $change['field'],
-                    'old' => $change['old'] ?? null,
-                    'new' => $change['new'],
+                    'old'   => $change['old'] ?? null,
+                    'new'   => $change['new'],
                 ]);
             } catch (Exception $e) {
-                $failed++;
+                ++$failed;
                 $this->logger->error('Failed to harmonize temporal timestamp', [
-                    'table' => $change['table'],
-                    'uid' => $change['uid'],
-                    'field' => $change['field'],
+                    'table'     => $change['table'],
+                    'uid'       => $change['uid'],
+                    'field'     => $change['field'],
                     'exception' => $e,
                 ]);
                 if ($io->isVerbose()) {
                     $io->writeln('');
-                    $io->error(\sprintf(
+                    $io->error(sprintf(
                         'Failed to update %s:%d - %s',
                         $change['table'],
                         $change['uid'],
-                        $e->getMessage()
+                        $e->getMessage(),
                     ));
                 }
             }
@@ -419,11 +438,11 @@ final class HarmonizeCommand extends Command
             [
                 ['Updated', $updated],
                 ['Failed', $failed],
-            ]
+            ],
         );
 
         if ($failed > 0) {
-            $io->warning(\sprintf('%d records failed to update. Check error messages above.', $failed));
+            $io->warning(sprintf('%d records failed to update. Check error messages above.', $failed));
         }
     }
 
@@ -437,29 +456,29 @@ final class HarmonizeCommand extends Command
         $io->section('Impact Analysis');
 
         // Calculate unique timestamps before and after
-        $oldTimestamps = \array_unique(\array_column($changes, 'old'));
-        $newTimestamps = \array_unique(\array_column($changes, 'new'));
+        $oldTimestamps = array_unique(array_column($changes, 'old'));
+        $newTimestamps = array_unique(array_column($changes, 'new'));
 
-        $reduction = \count($oldTimestamps) > 0
-            ? (\count($oldTimestamps) - \count($newTimestamps)) / \count($oldTimestamps) * 100
+        $reduction = count($oldTimestamps) > 0
+            ? (count($oldTimestamps) - count($newTimestamps)) / count($oldTimestamps) * 100
             : 0;
 
         $io->table(
             ['Metric', 'Value'],
             [
-                ['Total Changes', \count($changes)],
-                ['Unique Timestamps (Before)', \count($oldTimestamps)],
-                ['Unique Timestamps (After)', \count($newTimestamps)],
-                ['Timestamp Reduction', \sprintf('%.1f%%', $reduction)],
-                ['Cache Invalidations Saved', \count($oldTimestamps) - \count($newTimestamps)],
-            ]
+                ['Total Changes', count($changes)],
+                ['Unique Timestamps (Before)', count($oldTimestamps)],
+                ['Unique Timestamps (After)', count($newTimestamps)],
+                ['Timestamp Reduction', sprintf('%.1f%%', $reduction)],
+                ['Cache Invalidations Saved', count($oldTimestamps) - count($newTimestamps)],
+            ],
         );
 
         if ($reduction > 0) {
-            $message = \sprintf(
+            $message = sprintf(
                 'Harmonization %s reduce cache invalidations by %.1f%%!',
                 $dryRun ? 'would' : 'will',
-                $reduction
+                $reduction,
             );
             $io->success($message);
         }

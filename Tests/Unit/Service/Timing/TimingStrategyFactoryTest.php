@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 
@@ -20,8 +20,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- */
 #[CoversClass(TimingStrategyFactory::class)]
 final class TimingStrategyFactoryTest extends UnitTestCase
 {
@@ -58,11 +56,10 @@ final class TimingStrategyFactoryTest extends UnitTestCase
                 $this->schedulerStrategy,
                 $this->hybridStrategy,
             ],
-            $this->configuration
+            $this->configuration,
         );
     }
 
-    /**     */
     public function testGetReturnsDynamicStrategy(): void
     {
         $this->configuration
@@ -76,7 +73,6 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->dynamicStrategy, $result);
     }
 
-    /**     */
     public function testGetReturnsSchedulerStrategy(): void
     {
         $this->configuration
@@ -90,7 +86,6 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->schedulerStrategy, $result);
     }
 
-    /**     */
     public function testGetReturnsHybridStrategy(): void
     {
         $this->configuration
@@ -104,7 +99,6 @@ final class TimingStrategyFactoryTest extends UnitTestCase
         self::assertSame($this->hybridStrategy, $result);
     }
 
-    /**     */
     public function testGetThrowsExceptionForUnknownStrategy(): void
     {
         $this->configuration
@@ -139,9 +133,9 @@ final class TimingStrategyFactoryTest extends UnitTestCase
                 $this->dynamicStrategy,
                 $this->schedulerStrategy,
                 $this->hybridStrategy,
-                $taggedStrategy
+                $taggedStrategy,
             ),
-            $this->configuration
+            $this->configuration,
         );
 
         self::assertSame($taggedStrategy, $this->subject->getActiveStrategy());
@@ -160,9 +154,9 @@ final class TimingStrategyFactoryTest extends UnitTestCase
             $this->yieldStrategies(
                 $this->dynamicStrategy,
                 $this->schedulerStrategy,
-                $this->hybridStrategy
+                $this->hybridStrategy,
             ),
-            $this->configuration
+            $this->configuration,
         );
 
         self::assertSame($this->dynamicStrategy, $this->subject->getActiveStrategy());

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
@@ -16,8 +16,6 @@ use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- */
 #[CoversClass(PermissionService::class)]
 final class PermissionServiceTest extends UnitTestCase
 {
@@ -32,7 +30,7 @@ final class PermissionServiceTest extends UnitTestCase
         parent::setUp();
         // Use real registry - it's a simple singleton data holder
         $this->monitorRegistry = new TemporalMonitorRegistry();
-        $this->backendUser = $this->createStub(BackendUserAuthentication::class);
+        $this->backendUser     = $this->createStub(BackendUserAuthentication::class);
 
         // Mock global backend user
         $GLOBALS['BE_USER'] = $this->backendUser;
@@ -46,7 +44,6 @@ final class PermissionServiceTest extends UnitTestCase
         parent::tearDown();
     }
 
-    /**     */
     public function testCanModifyTemporalContentReturnsTrueForAdminUser(): void
     {
         $this->backendUser
@@ -58,10 +55,9 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testCanModifyTemporalContentChecksSpecificTableWhenProvided(): void
     {
-        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser        = $this->createMock(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUser;
 
         $backendUser
@@ -79,7 +75,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testCanModifyTemporalContentChecksAllTablesWhenNoTableProvided(): void
     {
         $this->backendUser
@@ -99,7 +94,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testCanModifyTemporalContentReturnsFalseIfAnyTableNotModifiable(): void
     {
         $this->backendUser
@@ -119,7 +113,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testCanAccessModuleReturnsTrueForAdminUser(): void
     {
         $this->backendUser
@@ -131,7 +124,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testCanAccessModuleReturnsTrueWhenModuleNotHidden(): void
     {
         $this->backendUser
@@ -151,7 +143,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testCanAccessModuleReturnsFalseWhenModuleHidden(): void
     {
         $this->backendUser
@@ -171,7 +162,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testCanAccessModuleReturnsFalseWhenModuleInHiddenList(): void
     {
         $this->backendUser
@@ -191,7 +181,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testGetUnmodifiableTablesReturnsEmptyForAdminUser(): void
     {
         $this->backendUser
@@ -203,7 +192,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**     */
     public function testGetUnmodifiableTablesReturnsTablesWithoutPermission(): void
     {
         $this->backendUser
@@ -224,7 +212,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertContains('tt_content', $result);
     }
 
-    /**     */
     public function testIsReadOnlyReturnsTrueWhenCannotModify(): void
     {
         $this->backendUser
@@ -241,7 +228,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testIsReadOnlyReturnsFalseWhenCanModify(): void
     {
         $this->backendUser
@@ -253,7 +239,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testGetPermissionStatusReturnsCompleteStatusForAdminUser(): void
     {
         $this->backendUser
@@ -276,7 +261,6 @@ final class PermissionServiceTest extends UnitTestCase
         self::assertEmpty($result['unmodifiableTables']);
     }
 
-    /**     */
     public function testGetPermissionStatusReturnsCompleteStatusForNonAdminUser(): void
     {
         $this->backendUser

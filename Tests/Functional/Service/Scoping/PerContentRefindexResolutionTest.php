@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Service\Scoping;
 
@@ -18,6 +18,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function time;
 
 /**
  * Per-content scoping exists to flush the cache of every page a content element appears on,
@@ -48,22 +50,22 @@ final class PerContentRefindexResolutionTest extends FunctionalTestCase
         $this->get(ConnectionPool::class)
             ->getConnectionForTable('sys_refindex')
             ->insert('sys_refindex', [
-                'hash' => 'refresolution01',
-                'tablename' => 'pages',
-                'recuid' => 20,
-                'field' => 'content',
+                'hash'        => 'refresolution01',
+                'tablename'   => 'pages',
+                'recuid'      => 20,
+                'field'       => 'content',
                 'flexpointer' => '',
                 'softref_key' => '',
-                'ref_table' => 'tt_content',
-                'ref_uid' => 1,
-                'ref_string' => '',
-                'workspace' => 0,
+                'ref_table'   => 'tt_content',
+                'ref_uid'     => 1,
+                'ref_string'  => '',
+                'workspace'   => 0,
             ]);
 
         $strategy = new PerContentScopingStrategy(
             $this->get(RefindexService::class),
             $this->get(TemporalContentRepository::class),
-            $this->get(ExtensionConfiguration::class)
+            $this->get(ExtensionConfiguration::class),
         );
 
         $tags = $strategy->getCacheTagsToFlush(
@@ -72,12 +74,12 @@ final class PerContentRefindexResolutionTest extends FunctionalTestCase
                 tableName: 'tt_content',
                 title: 'Referenced content',
                 pid: 1,
-                starttime: \time() + 3600,
+                starttime: time() + 3600,
                 endtime: null,
                 languageUid: 0,
-                workspaceUid: 0
+                workspaceUid: 0,
             ),
-            $this->get(Context::class)
+            $this->get(Context::class),
         );
 
         // The parent page, which the fallback would also produce.
@@ -90,7 +92,7 @@ final class PerContentRefindexResolutionTest extends FunctionalTestCase
             $tags,
             'The page referencing the element was not flushed, so the sys_refindex lookup '
             . 'returned nothing and the strategy fell back to the parent page — per-content '
-            . 'scoping is then indistinguishable from per-page scoping.'
+            . 'scoping is then indistinguishable from per-page scoping.',
         );
     }
 }

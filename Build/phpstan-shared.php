@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 // Included by Build/phpstan.neon. CI removes netresearch/typo3-ci-workflows
 // on the TYPO3 ^12.4 cells (remove-dev-deps in .github/workflows/ci.yml),

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Service\Scoping;
 
@@ -18,8 +18,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
+use function time;
+
 /**
- * Functional integration tests for PerContentScopingStrategy with real database
+ * Functional integration tests for PerContentScopingStrategy with real database.
  */
 #[CoversClass(PerContentScopingStrategy::class)]
 final class PerContentScopingIntegrationTest extends FunctionalTestCase
@@ -30,7 +32,6 @@ final class PerContentScopingIntegrationTest extends FunctionalTestCase
         'nr_temporal_cache',
     ];
 
-    /**     */
     public function testGetCacheTagsToFlushWorksWithRealDatabase(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
@@ -38,14 +39,14 @@ final class PerContentScopingIntegrationTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_refindex.csv');
 
         $refindexService = $this->get(RefindexService::class);
-        $repository = $this->get(TemporalContentRepository::class);
-        $configuration = $this->get(ExtensionConfiguration::class);
-        $context = $this->get(Context::class);
+        $repository      = $this->get(TemporalContentRepository::class);
+        $configuration   = $this->get(ExtensionConfiguration::class);
+        $context         = $this->get(Context::class);
 
         $strategy = new PerContentScopingStrategy(
             $refindexService,
             $repository,
-            $configuration
+            $configuration,
         );
 
         $content = new TemporalContent(
@@ -53,10 +54,10 @@ final class PerContentScopingIntegrationTest extends FunctionalTestCase
             tableName: 'tt_content',
             title: 'Test Content',
             pid: 1,
-            starttime: \time() + 3600,
+            starttime: time() + 3600,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $strategy->getCacheTagsToFlush($content, $context);

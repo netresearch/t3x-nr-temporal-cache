@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 use a9f\Fractor\Configuration\FractorConfiguration;
 use a9f\FractorTypo3\Set\Typo3LevelSetList;
@@ -24,5 +24,5 @@ return FractorConfiguration::configure()
         Typo3SetList::TYPO3_13,
     ])
     ->withPhpSets(
-        phpVersion: 80100 // PHP 8.1+
+        phpVersion: 80100, // PHP 8.1+
     );

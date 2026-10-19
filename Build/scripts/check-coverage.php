@@ -1,12 +1,12 @@
 #!/usr/bin/env php
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 /**
  * Simple code coverage threshold checker for Clover XML format.
@@ -15,14 +15,13 @@ declare(strict_types=1);
  *
  * Example: php check-coverage.php .Build/logs/clover.xml 70
  */
-
 if ($argc < 3) {
     echo "Usage: php check-coverage.php <clover.xml> <threshold>\n";
     exit(1);
 }
 
 $cloverFile = $argv[1];
-$threshold = (float) $argv[2];
+$threshold  = (float) $argv[2];
 
 if (!file_exists($cloverFile)) {
     echo "Error: Clover file not found: {$cloverFile}\n";
@@ -43,7 +42,7 @@ if ($metrics === null) {
     exit(1);
 }
 
-$statements = (int) $metrics['statements'];
+$statements        = (int) $metrics['statements'];
 $coveredStatements = (int) $metrics['coveredstatements'];
 
 if ($statements === 0) {
@@ -57,7 +56,7 @@ echo sprintf(
     "Code Coverage: %.2f%% (%d/%d statements)\n",
     $coverage,
     $coveredStatements,
-    $statements
+    $statements,
 );
 echo sprintf("Threshold: %.2f%%\n", $threshold);
 
@@ -65,7 +64,7 @@ if ($coverage < $threshold) {
     echo sprintf(
         "FAIL: Coverage %.2f%% is below threshold %.2f%%\n",
         $coverage,
-        $threshold
+        $threshold,
     );
     exit(1);
 }

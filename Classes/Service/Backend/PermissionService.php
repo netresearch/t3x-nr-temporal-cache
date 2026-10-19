@@ -1,17 +1,25 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Backend;
 
 use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function array_filter;
+use function array_map;
+use function assert;
+use function explode;
+use function in_array;
+use function is_array;
+use function is_string;
 
 /**
  * Service for checking backend user permissions for temporal cache operations.
@@ -27,9 +35,8 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class PermissionService implements SingletonInterface
 {
     public function __construct(
-        private readonly TemporalMonitorRegistry $monitorRegistry
-    ) {
-    }
+        private readonly TemporalMonitorRegistry $monitorRegistry,
+    ) {}
 
     /**
      * Check if current backend user can modify temporal content.
@@ -38,6 +45,7 @@ final class PermissionService implements SingletonInterface
      * that temporal cache monitors (default: pages and tt_content).
      *
      * @param string|null $tableName Specific table to check, or null to check all registered tables
+     *
      * @return bool True if user has write access
      */
     public function canModifyTemporalContent(?string $tableName = null): bool
@@ -69,8 +77,9 @@ final class PermissionService implements SingletonInterface
      *
      * Checks TYPO3 table permissions for 'edit' and 'editcontent' operations.
      *
-     * @param string $tableName Table name to check
-     * @param BackendUserAuthentication $user Backend user
+     * @param string                    $tableName Table name to check
+     * @param BackendUserAuthentication $user      Backend user
+     *
      * @return bool True if user can modify table
      */
     private function canModifyTable(string $tableName, BackendUserAuthentication $user): bool
@@ -105,13 +114,13 @@ final class PermissionService implements SingletonInterface
 
         // Check if module is hidden via TSconfig
         $tsConfig = $user->getTSConfig();
-        $options = $tsConfig['options.'] ?? [];
-        \assert(\is_array($options));
+        $options  = $tsConfig['options.'] ?? [];
+        assert(is_array($options));
         $hiddenModules = $options['hideModules'] ?? '';
-        \assert(\is_string($hiddenModules));
-        $hiddenModulesList = \array_filter(\array_map(trim(...), \explode(',', $hiddenModules)), static fn (string $module): bool => $module !== '');
+        assert(is_string($hiddenModules));
+        $hiddenModulesList = array_filter(array_map(trim(...), explode(',', $hiddenModules)), static fn (string $module): bool => $module !== '');
 
-        return !\in_array('tools_TemporalCache', $hiddenModulesList, true);
+        return !in_array('tools_TemporalCache', $hiddenModulesList, true);
     }
 
     /**
@@ -167,9 +176,9 @@ final class PermissionService implements SingletonInterface
         $user = $this->getBackendUser();
 
         return [
-            'isAdmin' => $user->isAdmin(),
-            'canModify' => $this->canModifyTemporalContent(),
-            'canAccessModule' => $this->canAccessModule(),
+            'isAdmin'            => $user->isAdmin(),
+            'canModify'          => $this->canModifyTemporalContent(),
+            'canAccessModule'    => $this->canAccessModule(),
             'unmodifiableTables' => $this->getUnmodifiableTables(),
         ];
     }
@@ -195,7 +204,8 @@ final class PermissionService implements SingletonInterface
     private function getBackendUser(): BackendUserAuthentication
     {
         $user = $GLOBALS['BE_USER'];
-        \assert($user instanceof BackendUserAuthentication);
+        assert($user instanceof BackendUserAuthentication);
+
         return $user;
     }
 }

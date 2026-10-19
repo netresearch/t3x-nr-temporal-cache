@@ -1,18 +1,23 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Tests\Unit\Configuration;
 
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
+use function dirname;
+use function str_replace;
+use function strlen;
+use function substr;
+
 /**
- * Unit tests for Configuration/JavaScriptModules.php
+ * Unit tests for Configuration/JavaScriptModules.php.
  *
  * Guards against the backend module 500 error
  * "#1728220800: JavaScript module '@netresearch/nr-temporal-cache/backend-module.js'
@@ -49,11 +54,11 @@ final class JavaScriptModulesConfigurationTest extends UnitTestCase
     {
         parent::setUp();
 
-        $this->extensionRoot = \dirname(__DIR__, 3);
+        $this->extensionRoot = dirname(__DIR__, 3);
 
         if (self::$cachedConfiguration === null) {
             /** @var array{dependencies?: list<string>, imports?: array<string, string>} $configuration */
-            $configuration = require_once $this->extensionRoot . '/Configuration/JavaScriptModules.php';
+            $configuration             = require_once $this->extensionRoot . '/Configuration/JavaScriptModules.php';
             self::$cachedConfiguration = $configuration;
         }
 
@@ -82,9 +87,9 @@ final class JavaScriptModulesConfigurationTest extends UnitTestCase
 
     public function testControllerModuleSpecifierResolvesToExistingFile(): void
     {
-        $target = $this->configuration['imports'][self::SPECIFIER_PREFIX] ?? '';
-        $relativePath = \str_replace('EXT:nr_temporal_cache/', '', $target)
-            . \substr(self::MODULE_SPECIFIER, \strlen(self::SPECIFIER_PREFIX));
+        $target       = $this->configuration['imports'][self::SPECIFIER_PREFIX] ?? '';
+        $relativePath = str_replace('EXT:nr_temporal_cache/', '', $target)
+            . substr(self::MODULE_SPECIFIER, strlen(self::SPECIFIER_PREFIX));
 
         self::assertFileExists($this->extensionRoot . '/' . $relativePath);
     }

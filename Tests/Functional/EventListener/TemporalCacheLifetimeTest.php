@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\EventListener;
 
@@ -19,8 +19,11 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
+use function microtime;
+use function time;
+
 /**
- * Functional tests for TemporalCacheLifetime event listener
+ * Functional tests for TemporalCacheLifetime event listener.
  *
  * Tests actual integration with TYPO3 database and context system.
  */
@@ -42,7 +45,6 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/tt_content.csv');
     }
 
-    /**     */
     public function testEventListenerIsRegisteredInContainer(): void
     {
         $subject = $this->get(TemporalCacheLifetime::class);
@@ -50,17 +52,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertInstanceOf(TemporalCacheLifetime::class, $subject);
     }
 
-    /**     */
     public function testCalculatesLifetimeBasedOnPageStarttime(): void
     {
-        $now = \time();
+        $now             = time();
         $futureStarttime = $now + 3600; // 1 hour from now
 
         // Insert page with future starttime
         $this->insertPage($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class)); // 24h default
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class)); // 24h default
 
         $subject->__invoke($event);
 
@@ -70,17 +71,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**     */
     public function testCalculatesLifetimeBasedOnPageEndtime(): void
     {
-        $now = \time();
+        $now           = time();
         $futureEndtime = $now + 7200; // 2 hours from now
 
         // Insert page with future endtime
         $this->insertPage(0, $futureEndtime);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -90,17 +90,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(7202, $lifetime);
     }
 
-    /**     */
     public function testCalculatesLifetimeBasedOnContentElementStarttime(): void
     {
-        $now = \time();
+        $now             = time();
         $futureStarttime = $now + 1800; // 30 minutes from now
 
         // Insert content element with future starttime
         $this->insertContentElement($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -110,19 +109,18 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**     */
     public function testSelectsNearestTransitionFromMultipleRecords(): void
     {
-        $now = \time();
+        $now            = time();
         $nearTransition = $now + 1800;  // 30 min
-        $farTransition = $now + 7200;   // 2 hours
+        $farTransition  = $now + 7200;   // 2 hours
 
         // Insert multiple records with different transitions
         $this->insertPage($farTransition, 0);
         $this->insertContentElement($nearTransition, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -132,10 +130,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**     */
     public function testRespectsLanguageContext(): void
     {
-        $now = \time();
+        $now             = time();
         $futureStarttime = $now + 3600;
 
         // Insert page in default language (0)
@@ -149,7 +146,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $context->setAspect('language', new LanguageAspect(0, 0, LanguageAspect::OVERLAYS_OFF));
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -159,17 +156,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**     */
     public function testIgnoresPastStarttimes(): void
     {
-        $now = \time();
+        $now           = time();
         $pastStarttime = $now - 3600;   // 1 hour ago
         $futureEndtime = $now + 3600;   // 1 hour from now
 
         $this->insertPage($pastStarttime, $futureEndtime);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -179,10 +175,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**     */
     public function testIgnoresZeroTimestamps(): void
     {
-        $now = \time();
+        $now             = time();
         $futureStarttime = $now + 3600;
 
         // Insert page with zero timestamps (should be ignored)
@@ -192,7 +187,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         $this->insertPage($futureStarttime, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -202,16 +197,15 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(3602, $lifetime);
     }
 
-    /**     */
     public function testDoesNotModifyLifetimeWhenNoTemporalContent(): void
     {
         // Insert page with no temporal restrictions
         $this->insertPage(0, 0);
         $this->insertContentElement(0, 0);
 
-        $subject = $this->get(TemporalCacheLifetime::class);
+        $subject          = $this->get(TemporalCacheLifetime::class);
         $originalLifetime = 86400;
-        $event = new ModifyCacheLifetimeForPageEvent($originalLifetime, 1, [], [], $this->get(Context::class));
+        $event            = new ModifyCacheLifetimeForPageEvent($originalLifetime, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -219,10 +213,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertEquals($originalLifetime, $event->getCacheLifetime());
     }
 
-    /**     */
     public function testHandlesHiddenContentElements(): void
     {
-        $now = \time();
+        $now             = time();
         $futureStarttime = $now + 3600;
 
         // A hidden content element is not rendered, so its starttime must not shorten the
@@ -230,16 +223,16 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         // TCA "disabled" column). The fixture's other transitions lie years ahead.
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', [
-            'pid' => 1,
-            'header' => 'Hidden Content',
-            'starttime' => $futureStarttime,
-            'endtime' => 0,
-            'hidden' => 1,
+            'pid'              => 1,
+            'header'           => 'Hidden Content',
+            'starttime'        => $futureStarttime,
+            'endtime'          => 0,
+            'hidden'           => 1,
             'sys_language_uid' => 0,
         ]);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -248,10 +241,9 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertSame(86400, $event->getCacheLifetime());
     }
 
-    /**     */
     public function testHandlesMultipleContentElementsOnSamePage(): void
     {
-        $now = \time();
+        $now         = time();
         $transitions = [
             $now + 1800,  // 30 min
             $now + 3600,  // 1 hour
@@ -263,7 +255,7 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         }
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -273,33 +265,32 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         self::assertLessThan(1802, $lifetime);
     }
 
-    /**     */
     public function testPerformanceWithManyRecords(): void
     {
-        $now = \time();
+        $now = time();
 
         // Insert 100 pages with various temporal settings
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 100; ++$i) {
             $this->insertPage(
                 $now + ($i * 100),
-                $now + ($i * 200)
+                $now + ($i * 200),
             );
         }
 
         // Insert 100 content elements
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 100; ++$i) {
             $this->insertContentElement(
                 $now + ($i * 150),
-                $now + ($i * 250)
+                $now + ($i * 250),
             );
         }
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
-        $startTime = \microtime(true);
+        $startTime = microtime(true);
         $subject->__invoke($event);
-        $duration = \microtime(true) - $startTime;
+        $duration = microtime(true) - $startTime;
 
         // Performance assertion: Should complete in < 50ms even with 200 records
         self::assertLessThan(0.05, $duration, 'Performance degraded: took ' . ($duration * 1000) . 'ms');
@@ -315,10 +306,10 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
         // TYPO3 hands the listener the lifetime it calculated, e.g. from
         // config.cache_period or from a record expiring in 5 minutes. A later
         // temporal transition must not extend it.
-        $this->insertPage(\time() + 3600, 0);
+        $this->insertPage(time() + 3600, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(300, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(300, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -327,10 +318,10 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
 
     public function testShortensALongerLifetimeThatTypo3Calculated(): void
     {
-        $this->insertPage(\time() + 600, 0);
+        $this->insertPage(time() + 600, 0);
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(3600, 1, [], [], $this->get(Context::class));
+        $event   = new ModifyCacheLifetimeForPageEvent(3600, 1, [], [], $this->get(Context::class));
 
         $subject->__invoke($event);
 
@@ -350,13 +341,13 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
     #[DataProvider('languageProvider')]
     public function testContentForAllLanguagesCapsTheLifetimeInEveryLanguage(int $languageId): void
     {
-        $this->insertContentElement(0, \time() + 900, -1);
+        $this->insertContentElement(0, time() + 900, -1);
 
         $context = $this->get(Context::class);
         $context->setAspect('language', new LanguageAspect($languageId, $languageId, LanguageAspect::OVERLAYS_OFF));
 
         $subject = $this->get(TemporalCacheLifetime::class);
-        $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $context);
+        $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $context);
 
         $subject->__invoke($event);
 
@@ -373,15 +364,15 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
 
         try {
             $this->getConnectionPool()->getConnectionForTable('fe_users')->insert('fe_users', [
-                'pid' => 1,
-                'username' => 'expiring',
+                'pid'       => 1,
+                'username'  => 'expiring',
                 'starttime' => 0,
-                'endtime' => \time() + 600,
+                'endtime'   => time() + 600,
             ]);
-            $this->insertPage(\time() + 3600, 0);
+            $this->insertPage(time() + 3600, 0);
 
             $subject = $this->get(TemporalCacheLifetime::class);
-            $event = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
+            $event   = new ModifyCacheLifetimeForPageEvent(86400, 1, [], [], $this->get(Context::class));
 
             $subject->__invoke($event);
 
@@ -396,11 +387,11 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('pages');
         $connection->insert('pages', [
-            'pid' => 0,
-            'title' => 'Test Page',
-            'starttime' => $starttime,
-            'endtime' => $endtime,
-            'hidden' => 0,
+            'pid'              => 0,
+            'title'            => 'Test Page',
+            'starttime'        => $starttime,
+            'endtime'          => $endtime,
+            'hidden'           => 0,
             'sys_language_uid' => $languageUid,
         ]);
     }
@@ -409,11 +400,11 @@ final class TemporalCacheLifetimeTest extends FunctionalTestCase
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', [
-            'pid' => 1,
-            'header' => 'Test Content',
-            'starttime' => $starttime,
-            'endtime' => $endtime,
-            'hidden' => 0,
+            'pid'              => 1,
+            'header'           => 'Test Content',
+            'starttime'        => $starttime,
+            'endtime'          => $endtime,
+            'hidden'           => 0,
             'sys_language_uid' => $languageUid,
         ]);
     }

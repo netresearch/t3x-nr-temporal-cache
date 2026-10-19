@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
@@ -27,7 +27,7 @@ trait BackendModuleRequestTrait
     private function createModuleRequest(string $actionName): ExtbaseRequest
     {
         $serverRequest = new ServerRequest('http://localhost', 'GET');
-        $route = new Route('/module/temporal-cache', []);
+        $route         = new Route('/module/temporal-cache', []);
         $route->setOption('packageName', 'nr_temporal_cache');
 
         $serverRequest = $serverRequest

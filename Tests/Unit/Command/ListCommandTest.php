@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Command;
 
@@ -19,6 +19,8 @@ use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(ListCommand::class)]
 #[UsesClass(TemporalContent::class)]
@@ -36,19 +38,17 @@ final class ListCommandTest extends UnitTestCase
     {
         parent::setUp();
         $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->input = $this->createStub(InputInterface::class);
-        $this->output = $this->createStub(OutputInterface::class);
+        $this->input      = $this->createStub(InputInterface::class);
+        $this->output     = $this->createStub(OutputInterface::class);
 
         $this->subject = new ListCommand($this->repository);
     }
 
-    /**     */
     public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:list', $this->subject->getName());
     }
 
-    /**     */
     public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults('table');
@@ -58,71 +58,66 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithInvalidTableNameReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => 'invalid_table',
+            'table'     => 'invalid_table',
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => 'uid',
-            'format' => 'table',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => 'uid',
+            'format'    => 'table',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
         self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithInvalidSortFieldReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => null,
+            'table'     => null,
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => 'invalid_field',
-            'format' => 'table',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => 'invalid_field',
+            'format'    => 'table',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
         self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithInvalidFormatReturnsFailure(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => null,
+            'table'     => null,
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => 'uid',
-            'format' => 'invalid_format',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => 'uid',
+            'format'    => 'invalid_format',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
         self::assertSame(1, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithTableFormatDisplaysTable(): void
     {
         $this->setupInputDefaults('table');
         $this->stubOutputDefaults($this->output);
 
         $this->stubRepositoryReturns([
-            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time() + 3600),
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: time() + 3600),
         ]);
 
         self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithJsonFormatOutputsJson(): void
     {
         $this->setupInputDefaults('json');
@@ -131,7 +126,7 @@ final class ListCommandTest extends UnitTestCase
         $this->stubOutputDefaults($output);
 
         $this->stubRepositoryReturns([
-            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time()),
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: time()),
         ]);
 
         // Expect JSON output
@@ -143,7 +138,6 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $this->subject->run($this->input, $output));
     }
 
-    /**     */
     public function testExecuteWithCsvFormatOutputsCsv(): void
     {
         $this->setupInputDefaults('csv');
@@ -152,7 +146,7 @@ final class ListCommandTest extends UnitTestCase
         $this->stubOutputDefaults($output);
 
         $this->stubRepositoryReturns([
-            $this->makeContent(uid: 1, title: 'Test Page', starttime: \time()),
+            $this->makeContent(uid: 1, title: 'Test Page', starttime: time()),
         ]);
 
         // Expect CSV output with header
@@ -161,50 +155,48 @@ final class ListCommandTest extends UnitTestCase
             ->method('writeln')
             ->with(self::logicalOr(
                 self::stringContains('Table,UID'),
-                self::stringContains('pages,1')
+                self::stringContains('pages,1'),
             ));
 
         self::assertSame(0, $this->subject->run($this->input, $output));
     }
 
-    /**     */
     public function testExecuteWithTableFilterOnlyShowsSpecifiedTable(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => 'pages',
+            'table'     => 'pages',
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => 'uid',
-            'format' => 'table',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => 'uid',
+            'format'    => 'table',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
         $this->stubRepositoryReturns([
-            $this->makeContent(uid: 1, title: 'Page', starttime: \time()),
-            $this->makeContent(uid: 2, title: 'Content', starttime: \time(), tableName: 'tt_content', pid: 1),
+            $this->makeContent(uid: 1, title: 'Page', starttime: time()),
+            $this->makeContent(uid: 2, title: 'Content', starttime: time(), tableName: 'tt_content', pid: 1),
         ]);
 
         self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithUpcomingFilterOnlyShowsFutureTransitions(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => null,
+            'table'     => null,
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => true,
-            'sort' => 'uid',
-            'format' => 'table',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => true,
+            'sort'      => 'uid',
+            'format'    => 'table',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
-        $futureTime = \time() + 3600;
-        $pastTime = \time() - 3600;
+        $futureTime = time() + 3600;
+        $pastTime   = time() - 3600;
 
         $this->stubRepositoryReturns([
             $this->makeContent(uid: 1, title: 'Future', starttime: $futureTime),
@@ -214,23 +206,22 @@ final class ListCommandTest extends UnitTestCase
         self::assertSame(0, $this->subject->run($this->input, $this->output));
     }
 
-    /**     */
     public function testExecuteWithLimitOptionLimitsResults(): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => null,
+            'table'     => null,
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => 'uid',
-            'format' => 'table',
-            'limit' => '1',
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => 'uid',
+            'format'    => 'table',
+            'limit'     => '1',
         ]);
         $this->stubOutputDefaults($this->output);
 
         $this->stubRepositoryReturns([
-            $this->makeContent(uid: 1, title: 'Page 1', starttime: \time()),
-            $this->makeContent(uid: 2, title: 'Page 2', starttime: \time()),
+            $this->makeContent(uid: 1, title: 'Page 1', starttime: time()),
+            $this->makeContent(uid: 2, title: 'Page 2', starttime: time()),
         ]);
 
         self::assertSame(0, $this->subject->run($this->input, $this->output));
@@ -240,13 +231,13 @@ final class ListCommandTest extends UnitTestCase
     public function testExecuteWithDifferentSortFieldsSortsCorrectly(string $sortField): void
     {
         $this->setupInputDefaultsWithOptions([
-            'table' => null,
+            'table'     => null,
             'workspace' => '0',
-            'language' => '0',
-            'upcoming' => false,
-            'sort' => $sortField,
-            'format' => 'table',
-            'limit' => null,
+            'language'  => '0',
+            'upcoming'  => false,
+            'sort'      => $sortField,
+            'format'    => 'table',
+            'limit'     => null,
         ]);
         $this->stubOutputDefaults($this->output);
 
@@ -254,15 +245,15 @@ final class ListCommandTest extends UnitTestCase
             $this->makeContent(
                 uid: 2,
                 title: 'B Content',
-                starttime: \time() + 7200,
+                starttime: time() + 7200,
                 tableName: 'tt_content',
-                endtime: \time() + 10800
+                endtime: time() + 10800,
             ),
             $this->makeContent(
                 uid: 1,
                 title: 'A Page',
-                starttime: \time() + 3600,
-                endtime: \time() + 14400
+                starttime: time() + 3600,
+                endtime: time() + 14400,
             ),
         ]);
 
@@ -272,11 +263,11 @@ final class ListCommandTest extends UnitTestCase
     public static function sortFieldDataProvider(): array
     {
         return [
-            'sort by uid' => ['uid'],
-            'sort by title' => ['title'],
-            'sort by table' => ['table'],
+            'sort by uid'       => ['uid'],
+            'sort by title'     => ['title'],
+            'sort by table'     => ['table'],
             'sort by starttime' => ['starttime'],
-            'sort by endtime' => ['endtime'],
+            'sort by endtime'   => ['endtime'],
         ];
     }
 
@@ -315,7 +306,7 @@ final class ListCommandTest extends UnitTestCase
             starttime: $starttime,
             endtime: $endtime,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
     }
 

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
@@ -29,19 +29,19 @@ class ScopingStrategyFactory implements ScopingStrategyInterface
     private readonly ScopingStrategyInterface $activeStrategy;
 
     /**
-     * @param iterable<array-key, ScopingStrategyInterface> $strategies All services tagged 'nr_temporal_cache.scoping_strategy'
-     * @param ExtensionConfiguration $extensionConfiguration Extension configuration
+     * @param iterable<array-key, ScopingStrategyInterface> $strategies             All services tagged 'nr_temporal_cache.scoping_strategy'
+     * @param ExtensionConfiguration                        $extensionConfiguration Extension configuration
      */
     public function __construct(
         iterable $strategies,
-        ExtensionConfiguration $extensionConfiguration
+        ExtensionConfiguration $extensionConfiguration,
     ) {
         // The fallback is the first tagged service, i.e. the highest tag priority;
         // GlobalScopingStrategy carries priority 100 to stay the default.
         $this->activeStrategy = $this->selectNamedStrategy(
             $strategies,
             $extensionConfiguration->getScopingStrategy(),
-            'No scoping strategies registered'
+            'No scoping strategies registered',
         );
     }
 

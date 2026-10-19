@@ -1,11 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
- *
+ */
+
+declare(strict_types=1);
+
+/*
  * Packaging exclude list for `tailor ter:publish`, selected via the
  * TYPO3_EXCLUDE_FROM_PACKAGING environment variable.
  *

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Repository;
 
@@ -28,8 +28,9 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- */
+use function count;
+use function time;
+
 #[CoversClass(TemporalContentRepository::class)]
 #[UsesClass(TemporalContent::class)]
 final class TemporalContentRepositoryTest extends UnitTestCase
@@ -59,22 +60,21 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         // Use real TransitionCache instance (it's just in-memory, no side effects)
         $this->transitionCache = new TransitionCache();
         // Use real TemporalMonitorRegistry instance (it's a final class, can't be mocked)
-        $this->monitorRegistry = new TemporalMonitorRegistry();
+        $this->monitorRegistry    = new TemporalMonitorRegistry();
         $this->deletedRestriction = $this->createStub(DeletedRestriction::class);
-        $this->subject = new TemporalContentRepository(
+        $this->subject            = new TemporalContentRepository(
             $this->connectionPool,
             $this->transitionCache,
             $this->monitorRegistry,
-            $this->deletedRestriction
+            $this->deletedRestriction,
         );
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -82,19 +82,18 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
 
-        $result = $this->subject->getNextTransition(\time(), 0, 0);
+        $result = $this->subject->getNextTransition(time(), 0, 0);
 
         self::assertNull($result);
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextTransitionReturnsEarliestTransition(): void
     {
-        $nextTransition = \time() + 3600;
+        $nextTransition = time() + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -102,19 +101,18 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
 
-        $result = $this->subject->getNextTransition(\time(), 0, 0);
+        $result = $this->subject->getNextTransition(time(), 0, 0);
 
         self::assertSame($nextTransition, $result);
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextPageTransitionReturnsEarliestPageTransition(): void
     {
-        $next = \time() + 3600;
+        $next = time() + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -122,15 +120,14 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
 
-        self::assertSame($next, $this->subject->getNextPageTransition(\time(), 0, 0));
+        self::assertSame($next, $this->subject->getNextPageTransition(time(), 0, 0));
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextPageTransitionReturnsNullWhenNoTransitions(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -138,17 +135,16 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
 
-        self::assertNull($this->subject->getNextPageTransition(\time(), 0, 0));
+        self::assertNull($this->subject->getNextPageTransition(time(), 0, 0));
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextContentTransitionForPageReturnsEarliestTransition(): void
     {
-        $next = \time() + 1800;
+        $next = time() + 1800;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -156,17 +152,16 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
 
-        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 0, 0));
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, time(), 0, 0));
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextContentTransitionForPageUsesNonZeroWorkspace(): void
     {
-        $next = \time() + 900;
+        $next = time() + 900;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($next);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -175,17 +170,16 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             ->willReturn($queryBuilder);
 
         // Exercises the non-live workspace branch of applyWorkspaceRestriction().
-        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, \time(), 1, 0));
+        self::assertSame($next, $this->subject->getNextContentTransitionForPage(42, time(), 1, 0));
     }
 
-    /**     */
     public function testGetNextTransitionUsesCacheOnSecondCall(): void
     {
-        $currentTime = \time();
+        $currentTime    = time();
         $nextTransition = $currentTime + 3600;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($nextTransition);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -204,28 +198,27 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertSame($nextTransition, $result2);
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testFindAllWithTemporalFieldsReturnsContentArray(): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchAssociative')->willReturnOnConsecutiveCalls(
             [
-                'uid' => 1,
-                'pid' => 0,
-                'title' => 'Test Page',
-                'starttime' => \time(),
-                'endtime' => 0,
+                'uid'              => 1,
+                'pid'              => 0,
+                'title'            => 'Test Page',
+                'starttime'        => time(),
+                'endtime'          => 0,
                 'sys_language_uid' => 0,
-                't3ver_wsid' => 0,
-                'hidden' => 0,
-                'deleted' => 0,
+                't3ver_wsid'       => 0,
+                'hidden'           => 0,
+                'deleted'          => 0,
             ],
             false,  // End of first table result set
             false,  // Additional tables return no results
             false,
-            false
+            false,
         );
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -239,14 +232,13 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         self::assertNotEmpty($result);
     }
 
-    /**     */
     #[AllowMockObjectsWithoutExpectations]
     public function testGetNextContentTransitionForPageBindsPageIdAndTimestampAsIntegerParameters(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -260,11 +252,11 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         // integer parameters, not as inlined literals.
         self::assertContains(
             ['value' => 42, 'type' => Connection::PARAM_INT],
-            $this->boundParameters
+            $this->boundParameters,
         );
         self::assertContains(
             ['value' => $currentTime, 'type' => Connection::PARAM_INT],
-            $this->boundParameters
+            $this->boundParameters,
         );
     }
 
@@ -273,7 +265,7 @@ final class TemporalContentRepositoryTest extends UnitTestCase
         $queryBuilder = $this->createStub(QueryBuilder::class);
 
         $expressionBuilder = $this->createStub(ExpressionBuilder::class);
-        $restrictions = $this->createStub(QueryRestrictionContainerInterface::class);
+        $restrictions      = $this->createStub(QueryRestrictionContainerInterface::class);
 
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
@@ -293,8 +285,8 @@ final class TemporalContentRepositoryTest extends UnitTestCase
             function (mixed $value, mixed $type = Connection::PARAM_STR, ?string $placeHolder = null): string {
                 $this->boundParameters[] = ['value' => $value, 'type' => $type];
 
-                return $placeHolder ?? ':param_' . \count($this->boundParameters);
-            }
+                return $placeHolder ?? ':param_' . count($this->boundParameters);
+            },
         );
         $queryBuilder->method('quoteIdentifier')->willReturnArgument(0);
 

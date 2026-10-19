@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Command;
 
@@ -15,6 +15,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function floor;
+use function time;
 
 /**
  * temporalcache:analyze against a real database, in verbose mode: the transition list,
@@ -33,8 +36,8 @@ final class AnalyzeCommandTest extends FunctionalTestCase
         'EXTENSIONS' => [
             'nr_temporal_cache' => [
                 'harmonization' => [
-                    'enabled' => '1',
-                    'slots' => '00:00,12:00',
+                    'enabled'   => '1',
+                    'slots'     => '00:00,12:00',
                     'tolerance' => '3600',
                 ],
             ],
@@ -46,26 +49,26 @@ final class AnalyzeCommandTest extends FunctionalTestCase
         parent::setUp();
         // 12:00 UTC in three days: the eleven transitions below stay on one date in any
         // time zone within twelve hours of UTC.
-        $slot = ((int)\floor(\time() / 86400) + 3) * 86400 + 43200;
+        $slot = ((int) floor(time() / 86400) + 3) * 86400 + 43200;
 
         $content = $this->get(ConnectionPool::class)->getConnectionForTable('tt_content');
-        for ($i = 0; $i < 11; $i++) {
+        for ($i = 0; $i < 11; ++$i) {
             $content->insert('tt_content', [
-                'uid' => 100 + $i,
-                'pid' => 1,
-                'header' => 'Launch ' . $i,
-                'starttime' => $slot + ($i + 1) * 60,
-                'endtime' => 0,
+                'uid'              => 100 + $i,
+                'pid'              => 1,
+                'header'           => 'Launch ' . $i,
+                'starttime'        => $slot + ($i + 1) * 60,
+                'endtime'          => 0,
                 'sys_language_uid' => 0,
             ]);
         }
 
         $this->get(ConnectionPool::class)->getConnectionForTable('pages')->insert('pages', [
-            'uid' => 1,
-            'pid' => 0,
-            'title' => 'Campaign page',
-            'starttime' => 0,
-            'endtime' => $slot + 86400 + 300,
+            'uid'              => 1,
+            'pid'              => 0,
+            'title'            => 'Campaign page',
+            'starttime'        => 0,
+            'endtime'          => $slot + 86400 + 300,
             'sys_language_uid' => 0,
         ]);
     }

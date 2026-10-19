@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Controller\Backend;
 
@@ -14,6 +14,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function time;
 
 /**
  * The wizard's analysis step renders each recommendation as a core callout whose
@@ -65,30 +67,30 @@ final class TemporalCacheWizardRecommendationTest extends FunctionalTestCase
         // with harmonization off recommends harmonization (warning), more than 20
         // with dynamic timing recommends scheduler timing (info).
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
-        $now = \time();
-        for ($day = 1; $day <= 25; $day++) {
+        $now        = time();
+        for ($day = 1; $day <= 25; ++$day) {
             $connection->insert('tt_content', [
-                'uid' => 9000 + $day,
-                'pid' => 1,
-                'header' => 'Daily ' . $day,
-                'CType' => 'text',
+                'uid'       => 9000 + $day,
+                'pid'       => 1,
+                'header'    => 'Daily ' . $day,
+                'CType'     => 'text',
                 'starttime' => $now + $day * 86400,
             ]);
         }
 
-        $request = $this->createModuleRequest('wizard');
+        $request                  = $this->createModuleRequest('wizard');
         $GLOBALS['TYPO3_REQUEST'] = $request;
-        $response = $this->get(TemporalCacheController::class)->wizardAction($request, 'analysis');
+        $response                 = $this->get(TemporalCacheController::class)->wizardAction($request, 'analysis');
         self::assertSame(200, $response->getStatusCode());
-        $body = (string)$response->getBody();
+        $body = (string) $response->getBody();
 
         self::assertMatchesRegularExpression(
             '#<div class="callout callout-warning">(?:(?!<div class="callout ).)*Enable Harmonization#s',
-            $body
+            $body,
         );
         self::assertMatchesRegularExpression(
             '#<div class="callout callout-info">(?:(?!<div class="callout ).)*Use Scheduler Timing#s',
-            $body
+            $body,
         );
     }
 }

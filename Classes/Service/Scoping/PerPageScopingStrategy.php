@@ -1,17 +1,21 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use TYPO3\CMS\Core\Context\Context;
+
+use function array_filter;
+use function min;
+use function time;
 
 /**
  * Per-page scoping strategy - flushes only the affected page cache.
@@ -35,9 +39,8 @@ class PerPageScopingStrategy implements ScopingStrategyInterface
     use ResolvesContextAspects;
 
     public function __construct(
-        private readonly TemporalContentRepositoryInterface $temporalContentRepository
-    ) {
-    }
+        private readonly TemporalContentRepositoryInterface $temporalContentRepository,
+    ) {}
 
     /**
      * {@inheritdoc}
@@ -73,20 +76,20 @@ class PerPageScopingStrategy implements ScopingStrategyInterface
     public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
         $workspaceId = $this->resolveWorkspaceId($context);
-        $languageId = $this->resolveLanguageId($context);
+        $languageId  = $this->resolveLanguageId($context);
 
-        $now = \time();
+        $now = time();
 
         if ($pageId === null) {
             return $this->temporalContentRepository->getNextTransition($now, $workspaceId, $languageId);
         }
 
-        $candidates = \array_filter([
+        $candidates = array_filter([
             $this->temporalContentRepository->getNextPageTransition($now, $workspaceId, $languageId),
             $this->temporalContentRepository->getNextContentTransitionForPage($pageId, $now, $workspaceId, $languageId),
         ], static fn (?int $value): bool => $value !== null);
 
-        return $candidates === [] ? null : \min($candidates);
+        return $candidates === [] ? null : min($candidates);
     }
 
     /**

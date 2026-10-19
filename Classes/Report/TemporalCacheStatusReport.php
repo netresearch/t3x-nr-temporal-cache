@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Report;
 
@@ -18,6 +18,27 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Reports\Status;
 use TYPO3\CMS\Reports\StatusProviderInterface;
+
+use function array_map;
+use function array_slice;
+use function array_sum;
+use function assert;
+use function chr;
+use function count;
+use function date;
+use function floor;
+use function implode;
+use function in_array;
+use function is_array;
+use function is_object;
+use function is_string;
+use function method_exists;
+use function round;
+use function spl_object_id;
+use function strtolower;
+use function strtotime;
+use function time;
+use function ucfirst;
 
 /**
  * TYPO3 Reports module status provider for Temporal Cache extension.
@@ -46,7 +67,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
      * Required database indexes for optimal performance.
      */
     private const REQUIRED_INDEXES = [
-        'pages' => ['starttime', 'endtime'],
+        'pages'      => ['starttime', 'endtime'],
         'tt_content' => ['starttime', 'endtime'],
     ];
 
@@ -71,9 +92,8 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
         private readonly TemporalContentRepositoryInterface $contentRepository,
         private readonly HarmonizationService $harmonizationService,
         private readonly ConnectionPool $connectionPool,
-        private readonly LoggerInterface $logger
-    ) {
-    }
+        private readonly LoggerInterface $logger,
+    ) {}
 
     /**
      * Get the label for this status provider (displayed in Reports module).
@@ -100,9 +120,9 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     public function getStatus(): array
     {
         return [
-            'extensionStatus' => $this->getExtensionStatus(),
-            'databaseIndexes' => $this->getDatabaseIndexesStatus(),
-            'temporalContent' => $this->getTemporalContentStatus(),
+            'extensionStatus'     => $this->getExtensionStatus(),
+            'databaseIndexes'     => $this->getDatabaseIndexesStatus(),
+            'temporalContent'     => $this->getTemporalContentStatus(),
             'harmonizationStatus' => $this->getHarmonizationStatus(),
             'upcomingTransitions' => $this->getUpcomingTransitionsStatus(),
         ];
@@ -116,32 +136,32 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
      */
     private function getExtensionStatus(): Status
     {
-        $scopingStrategy = $this->extensionConfiguration->getScopingStrategy();
-        $timingStrategy = $this->extensionConfiguration->getTimingStrategy();
+        $scopingStrategy      = $this->extensionConfiguration->getScopingStrategy();
+        $timingStrategy       = $this->extensionConfiguration->getTimingStrategy();
         $harmonizationEnabled = $this->extensionConfiguration->isHarmonizationEnabled();
-        $useRefindex = $this->extensionConfiguration->useRefindex();
+        $useRefindex          = $this->extensionConfiguration->useRefindex();
 
         // Validate configuration
-        $scopingValid = \in_array($scopingStrategy, self::VALID_SCOPING_STRATEGIES, true);
-        $timingValid = \in_array($timingStrategy, self::VALID_TIMING_STRATEGIES, true);
+        $scopingValid = in_array($scopingStrategy, self::VALID_SCOPING_STRATEGIES, true);
+        $timingValid  = in_array($timingStrategy, self::VALID_TIMING_STRATEGIES, true);
 
         if (!$scopingValid || !$timingValid) {
             return new Status(
                 'Extension Configuration',
                 'Invalid Configuration',
-                'The extension configuration contains invalid values. ' .
-                'Please review your settings in Admin Tools > Settings > Extension Configuration > temporal_cache.',
-                ContextualFeedbackSeverity::ERROR
+                'The extension configuration contains invalid values. '
+                . 'Please review your settings in Admin Tools > Settings > Extension Configuration > temporal_cache.',
+                ContextualFeedbackSeverity::ERROR,
             );
         }
 
         // Build status message
-        $value = 'Enabled';
-        $message = '<strong>Active Configuration:</strong>' . \chr(10);
-        $message .= '• Scoping Strategy: ' . $this->formatStrategyName($scopingStrategy) . \chr(10);
-        $message .= '• Timing Strategy: ' . $this->formatStrategyName($timingStrategy) . \chr(10);
-        $message .= '• Harmonization: ' . ($harmonizationEnabled ? 'Enabled' : 'Disabled') . \chr(10);
-        $message .= '• Reference Index: ' . ($useRefindex ? 'Enabled' : 'Disabled') . \chr(10) . \chr(10);
+        $value   = 'Enabled';
+        $message = '<strong>Active Configuration:</strong>' . chr(10);
+        $message .= '• Scoping Strategy: ' . $this->formatStrategyName($scopingStrategy) . chr(10);
+        $message .= '• Timing Strategy: ' . $this->formatStrategyName($timingStrategy) . chr(10);
+        $message .= '• Harmonization: ' . ($harmonizationEnabled ? 'Enabled' : 'Disabled') . chr(10);
+        $message .= '• Reference Index: ' . ($useRefindex ? 'Enabled' : 'Disabled') . chr(10) . chr(10);
 
         $message .= $this->getStrategyRecommendations($scopingStrategy, $timingStrategy);
 
@@ -149,7 +169,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             'Extension Configuration',
             $value,
             $message,
-            ContextualFeedbackSeverity::OK
+            ContextualFeedbackSeverity::OK,
         );
     }
 
@@ -162,17 +182,17 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function getDatabaseIndexesStatus(): Status
     {
         $missingIndexes = [];
-        $schemas = [];
+        $schemas        = [];
 
         foreach (self::REQUIRED_INDEXES as $tableName => $fields) {
-            $connection = $this->connectionPool->getConnectionForTable($tableName);
+            $connection    = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
                 // introspectSchema() and Table::getIndexes() exist in DBAL 3
                 // (TYPO3 v12) and in DBAL 4.4 (TYPO3 v13/v14) without a
                 // deprecation; listTableIndexes() is deprecated in DBAL 4.4.
-                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $schema       = $schemas[spl_object_id($connection)] ??= $schemaManager->introspectSchema();
                 $tableIndexes = $schema->hasTable($tableName) ? $schema->getTable($tableName)->getIndexes() : [];
 
                 foreach ($fields as $field) {
@@ -187,25 +207,25 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                     'Database Indexes',
                     'Verification Failed',
                     'Failed to verify database indexes.' . self::LOG_HINT,
-                    ContextualFeedbackSeverity::ERROR
+                    ContextualFeedbackSeverity::ERROR,
                 );
             }
         }
 
         if ($missingIndexes !== []) {
-            $message = '<strong>Missing Indexes:</strong>' . \chr(10);
-            $message .= '• ' . \implode(\chr(10) . '• ', $missingIndexes) . \chr(10) . \chr(10);
-            $message .= '<strong>Performance Impact:</strong>' . \chr(10);
-            $message .= 'Missing indexes cause slow queries and can severely degrade frontend performance. ' .
-                       'Each temporal content lookup will require a full table scan instead of an index lookup.' . \chr(10) . \chr(10);
-            $message .= '<strong>Action Required:</strong>' . \chr(10);
+            $message = '<strong>Missing Indexes:</strong>' . chr(10);
+            $message .= '• ' . implode(chr(10) . '• ', $missingIndexes) . chr(10) . chr(10);
+            $message .= '<strong>Performance Impact:</strong>' . chr(10);
+            $message .= 'Missing indexes cause slow queries and can severely degrade frontend performance. '
+                       . 'Each temporal content lookup will require a full table scan instead of an index lookup.' . chr(10) . chr(10);
+            $message .= '<strong>Action Required:</strong>' . chr(10);
             $message .= 'Run the database schema update: Admin Tools > Maintenance > Analyze Database Structure';
 
             return new Status(
                 'Database Indexes',
                 'Missing Indexes',
                 $message,
-                ContextualFeedbackSeverity::ERROR
+                ContextualFeedbackSeverity::ERROR,
             );
         }
 
@@ -215,7 +235,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             'Database Indexes',
             'OK',
             $message,
-            ContextualFeedbackSeverity::OK
+            ContextualFeedbackSeverity::OK,
         );
     }
 
@@ -228,27 +248,27 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function getTemporalContentStatus(): Status
     {
         try {
-            $stats = $this->contentRepository->getStatistics();
-            $currentTime = \time();
+            $stats       = $this->contentRepository->getStatistics();
+            $currentTime = time();
 
             // Calculate next transition
             $nextTransition = $this->contentRepository->getNextTransition($currentTime);
 
-            $message = '<strong>Temporal Content Overview:</strong>' . \chr(10);
-            $message .= '• Total Items: ' . $stats['total'] . \chr(10);
-            $message .= '• Pages: ' . $stats['pages'] . \chr(10);
-            $message .= '• Content Elements: ' . $stats['content'] . \chr(10) . \chr(10);
+            $message = '<strong>Temporal Content Overview:</strong>' . chr(10);
+            $message .= '• Total Items: ' . $stats['total'] . chr(10);
+            $message .= '• Pages: ' . $stats['pages'] . chr(10);
+            $message .= '• Content Elements: ' . $stats['content'] . chr(10) . chr(10);
 
-            $message .= '<strong>Temporal Field Distribution:</strong>' . \chr(10);
-            $message .= '• With Start Date Only: ' . $stats['withStart'] . \chr(10);
-            $message .= '• With End Date Only: ' . $stats['withEnd'] . \chr(10);
-            $message .= '• With Both Dates: ' . $stats['withBoth'] . \chr(10) . \chr(10);
+            $message .= '<strong>Temporal Field Distribution:</strong>' . chr(10);
+            $message .= '• With Start Date Only: ' . $stats['withStart'] . chr(10);
+            $message .= '• With End Date Only: ' . $stats['withEnd'] . chr(10);
+            $message .= '• With Both Dates: ' . $stats['withBoth'] . chr(10) . chr(10);
 
             if ($nextTransition !== null) {
                 $timeUntil = $nextTransition - $currentTime;
-                $message .= '<strong>Next Transition:</strong>' . \chr(10);
-                $message .= '• Time: ' . \date('Y-m-d H:i:s', $nextTransition) . \chr(10);
-                $message .= '• In: ' . $this->formatDuration($timeUntil) . \chr(10);
+                $message .= '<strong>Next Transition:</strong>' . chr(10);
+                $message .= '• Time: ' . date('Y-m-d H:i:s', $nextTransition) . chr(10);
+                $message .= '• In: ' . $this->formatDuration($timeUntil) . chr(10);
             } else {
                 $message .= '<strong>Next Transition:</strong> No upcoming transitions scheduled';
             }
@@ -257,16 +277,16 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             $severity = ContextualFeedbackSeverity::OK;
             if ($stats['total'] === 0) {
                 $severity = ContextualFeedbackSeverity::WARNING;
-                $message .= \chr(10) . \chr(10);
-                $message .= '<strong>Note:</strong> No temporal content found. ' .
-                          'The extension is active but not currently managing any time-based content.';
+                $message .= chr(10) . chr(10);
+                $message .= '<strong>Note:</strong> No temporal content found. '
+                          . 'The extension is active but not currently managing any time-based content.';
             }
 
             return new Status(
                 'Temporal Content Statistics',
                 $stats['total'] . ' items',
                 $message,
-                $severity
+                $severity,
             );
         } catch (Exception $e) {
             $this->logException('Failed to retrieve temporal content statistics', $e);
@@ -275,7 +295,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 'Temporal Content Statistics',
                 'Error',
                 'Failed to retrieve temporal content statistics.' . self::LOG_HINT,
-                ContextualFeedbackSeverity::ERROR
+                ContextualFeedbackSeverity::ERROR,
             );
         }
     }
@@ -289,34 +309,34 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function getHarmonizationStatus(): Status
     {
         if (!$this->extensionConfiguration->isHarmonizationEnabled()) {
-            $message = '<strong>Status:</strong> Disabled' . \chr(10) . \chr(10);
-            $message .= '<strong>About Harmonization:</strong>' . \chr(10);
-            $message .= 'Harmonization reduces cache churn by rounding transition times to predefined time slots. ' .
-                       'This groups multiple transitions together, reducing the number of cache invalidations.' . \chr(10) . \chr(10);
-            $message .= '<strong>Recommendation:</strong>' . \chr(10);
-            $message .= 'Consider enabling harmonization if you have many temporal transitions (>10 per day). ' .
-                       'This can significantly reduce cache invalidations and improve performance.';
+            $message = '<strong>Status:</strong> Disabled' . chr(10) . chr(10);
+            $message .= '<strong>About Harmonization:</strong>' . chr(10);
+            $message .= 'Harmonization reduces cache churn by rounding transition times to predefined time slots. '
+                       . 'This groups multiple transitions together, reducing the number of cache invalidations.' . chr(10) . chr(10);
+            $message .= '<strong>Recommendation:</strong>' . chr(10);
+            $message .= 'Consider enabling harmonization if you have many temporal transitions (>10 per day). '
+                       . 'This can significantly reduce cache invalidations and improve performance.';
 
             return new Status(
                 'Harmonization',
                 'Disabled',
                 $message,
-                ContextualFeedbackSeverity::INFO
+                ContextualFeedbackSeverity::INFO,
             );
         }
 
         // Harmonization is enabled - show configuration and impact
-        $slots = $this->harmonizationService->getFormattedSlots();
+        $slots     = $this->harmonizationService->getFormattedSlots();
         $tolerance = $this->extensionConfiguration->getHarmonizationTolerance();
         $autoRound = $this->extensionConfiguration->isAutoRoundEnabled();
 
-        $message = '<strong>Status:</strong> Enabled' . \chr(10) . \chr(10);
-        $message .= '<strong>Configuration:</strong>' . \chr(10);
-        $message .= '• Time Slots: ' . \implode(', ', $slots) . \chr(10);
-        $message .= '• Tolerance: ' . $tolerance . ' seconds (' . \round($tolerance / 60) . ' minutes)' . \chr(10);
+        $message = '<strong>Status:</strong> Enabled' . chr(10) . chr(10);
+        $message .= '<strong>Configuration:</strong>' . chr(10);
+        $message .= '• Time Slots: ' . implode(', ', $slots) . chr(10);
+        $message .= '• Tolerance: ' . $tolerance . ' seconds (' . round($tolerance / 60) . ' minutes)' . chr(10);
         // "on Save" would assert a FormEngine integration that does not exist:
         // the flag is recorded and reported, and harmonization is applied on demand.
-        $message .= '• Auto-round (reporting only): ' . ($autoRound ? 'Yes' : 'No') . \chr(10) . \chr(10);
+        $message .= '• Auto-round (reporting only): ' . ($autoRound ? 'Yes' : 'No') . chr(10) . chr(10);
 
         // Calculate potential impact
         try {
@@ -336,18 +356,18 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             if ($timestamps !== []) {
                 $impact = $this->harmonizationService->calculateHarmonizationImpact($timestamps);
 
-                $message .= '<strong>Current Impact:</strong>' . \chr(10);
-                $message .= '• Original Transitions: ' . $impact['original'] . \chr(10);
-                $message .= '• After Harmonization: ' . $impact['harmonized'] . \chr(10);
-                $message .= '• Cache Reduction: ' . $impact['reduction'] . '%' . \chr(10) . \chr(10);
+                $message .= '<strong>Current Impact:</strong>' . chr(10);
+                $message .= '• Original Transitions: ' . $impact['original'] . chr(10);
+                $message .= '• After Harmonization: ' . $impact['harmonized'] . chr(10);
+                $message .= '• Cache Reduction: ' . $impact['reduction'] . '%' . chr(10) . chr(10);
 
                 if ($impact['reduction'] > 30) {
                     $message .= '<strong>Status:</strong> Harmonization is providing significant cache reduction benefits.';
                 } elseif ($impact['reduction'] > 10) {
                     $message .= '<strong>Status:</strong> Harmonization is providing moderate cache reduction benefits.';
                 } else {
-                    $message .= '<strong>Note:</strong> Current harmonization impact is low. ' .
-                              'Consider adjusting time slots or tolerance for better results.';
+                    $message .= '<strong>Note:</strong> Current harmonization impact is low. '
+                              . 'Consider adjusting time slots or tolerance for better results.';
                 }
             } else {
                 $message .= '<strong>Note:</strong> No temporal content with transitions found.';
@@ -362,7 +382,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
             'Harmonization',
             'Enabled',
             $message,
-            ContextualFeedbackSeverity::OK
+            ContextualFeedbackSeverity::OK,
         );
     }
 
@@ -375,76 +395,76 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function getUpcomingTransitionsStatus(): Status
     {
         try {
-            $currentTime = \time();
-            $next7Days = $currentTime + (86400 * 7);
+            $currentTime = time();
+            $next7Days   = $currentTime + (86400 * 7);
 
             $transitions = $this->contentRepository->findTransitionsInRange(
                 $currentTime,
-                $next7Days
+                $next7Days,
             );
 
             if ($transitions === []) {
-                $message = 'No transitions scheduled in the next 7 days. ' .
-                          'Page caches will remain stable with no time-based invalidations.';
+                $message = 'No transitions scheduled in the next 7 days. '
+                          . 'Page caches will remain stable with no time-based invalidations.';
 
                 return new Status(
                     'Upcoming Transitions',
                     'None',
                     $message,
-                    ContextualFeedbackSeverity::OK
+                    ContextualFeedbackSeverity::OK,
                 );
             }
 
             // Group by day
             $transitionsByDay = [];
             foreach ($transitions as $transition) {
-                $day = \date('Y-m-d', $transition->timestamp);
+                $day = date('Y-m-d', $transition->timestamp);
                 $transitionsByDay[$day] ??= 0;
 
-                $transitionsByDay[$day]++;
+                ++$transitionsByDay[$day];
             }
 
-            $message = '<strong>Next 7 Days:</strong>' . \chr(10);
-            $message .= '• Total Transitions: ' . \count($transitions) . \chr(10);
-            $message .= '• Days with Transitions: ' . \count($transitionsByDay) . \chr(10) . \chr(10);
+            $message = '<strong>Next 7 Days:</strong>' . chr(10);
+            $message .= '• Total Transitions: ' . count($transitions) . chr(10);
+            $message .= '• Days with Transitions: ' . count($transitionsByDay) . chr(10) . chr(10);
 
-            $message .= '<strong>Daily Breakdown:</strong>' . \chr(10);
+            $message .= '<strong>Daily Breakdown:</strong>' . chr(10);
             $dayCount = 0;
             foreach ($transitionsByDay as $day => $count) {
                 if ($dayCount >= 5) {
-                    $remaining = \array_sum(\array_slice($transitionsByDay, 5));
+                    $remaining = array_sum(array_slice($transitionsByDay, 5));
                     if ($remaining > 0) {
-                        $message .= '• ... and ' . $remaining . ' more transitions' . \chr(10);
+                        $message .= '• ... and ' . $remaining . ' more transitions' . chr(10);
                     }
 
                     break;
                 }
 
-                $dayTimestamp = \strtotime($day);
-                \assert($dayTimestamp !== false);
-                $dayName = \date('l', $dayTimestamp);
-                $message .= '• ' . $day . ' (' . $dayName . '): ' . $count . ' transition' . ($count !== 1 ? 's' : '') . \chr(10);
-                $dayCount++;
+                $dayTimestamp = strtotime($day);
+                assert($dayTimestamp !== false);
+                $dayName = date('l', $dayTimestamp);
+                $message .= '• ' . $day . ' (' . $dayName . '): ' . $count . ' transition' . ($count !== 1 ? 's' : '') . chr(10);
+                ++$dayCount;
             }
 
-            $message .= \chr(10);
+            $message .= chr(10);
             $message .= '<strong>Note:</strong> Each transition may trigger cache invalidation depending on your scoping strategy.';
 
             // Warning if too many transitions
-            $severity = ContextualFeedbackSeverity::OK;
-            $avgPerDay = \count($transitions) / 7;
+            $severity  = ContextualFeedbackSeverity::OK;
+            $avgPerDay = count($transitions) / 7;
             if ($avgPerDay > 20) {
                 $severity = ContextualFeedbackSeverity::WARNING;
-                $message .= \chr(10) . \chr(10);
-                $message .= '<strong>High Transition Volume:</strong> You have ' . \round($avgPerDay, 1) . ' transitions per day on average. ' .
-                          'Consider enabling harmonization to reduce cache churn.';
+                $message .= chr(10) . chr(10);
+                $message .= '<strong>High Transition Volume:</strong> You have ' . round($avgPerDay, 1) . ' transitions per day on average. '
+                          . 'Consider enabling harmonization to reduce cache churn.';
             }
 
             return new Status(
                 'Upcoming Transitions',
-                \count($transitions) . ' in next 7 days',
+                count($transitions) . ' in next 7 days',
                 $message,
-                $severity
+                $severity,
             );
         } catch (Exception $e) {
             $this->logException('Failed to retrieve upcoming transitions', $e);
@@ -453,7 +473,7 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
                 'Upcoming Transitions',
                 'Error',
                 'Failed to retrieve upcoming transitions.' . self::LOG_HINT,
-                ContextualFeedbackSeverity::ERROR
+                ContextualFeedbackSeverity::ERROR,
             );
         }
     }
@@ -471,38 +491,39 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
         // detail this method exists to preserve never reaches the log.
         $this->logger->error(
             $message,
-            $context + ['exception' => $exception]
+            $context + ['exception' => $exception],
         );
     }
 
     /**
      * Check if an index exists for specified columns.
      *
-     * @param array<mixed> $tableIndexes
+     * @param array<mixed>  $tableIndexes
      * @param array<string> $columns
      */
     private function checkIndexExists(array $tableIndexes, array $columns): bool
     {
         foreach ($tableIndexes as $index) {
-            \assert(\is_object($index) && \method_exists($index, 'getColumns'));
+            assert(is_object($index) && method_exists($index, 'getColumns'));
             $columns_data = $index->getColumns();
-            \assert(\is_array($columns_data));
-            $indexColumns = \array_map(
+            assert(is_array($columns_data));
+            $indexColumns = array_map(
                 function ($col): string {
-                    \assert(\is_string($col));
-                    return \strtolower($col);
+                    assert(is_string($col));
+
+                    return strtolower($col);
                 },
-                $columns_data
+                $columns_data,
             );
 
-            $searchColumns = \array_map(
-                \strtolower(...),
-                $columns
+            $searchColumns = array_map(
+                strtolower(...),
+                $columns,
             );
 
             // Index covers our columns if exact match or starts with our columns
-            if ($indexColumns === $searchColumns ||
-                \array_slice($indexColumns, 0, \count($searchColumns)) === $searchColumns) {
+            if ($indexColumns === $searchColumns
+                || array_slice($indexColumns, 0, count($searchColumns)) === $searchColumns) {
                 return true;
             }
         }
@@ -516,15 +537,15 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function formatStrategyName(string $strategy): string
     {
         $names = [
-            'global' => 'Global Scoping',
-            'per-page' => 'Per-Page Scoping',
+            'global'      => 'Global Scoping',
+            'per-page'    => 'Per-Page Scoping',
             'per-content' => 'Per-Content Scoping',
-            'dynamic' => 'Dynamic Timing',
-            'scheduler' => 'Scheduler-Based Timing',
-            'hybrid' => 'Hybrid Timing',
+            'dynamic'     => 'Dynamic Timing',
+            'scheduler'   => 'Scheduler-Based Timing',
+            'hybrid'      => 'Hybrid Timing',
         ];
 
-        return $names[$strategy] ?? \ucfirst($strategy);
+        return $names[$strategy] ?? ucfirst($strategy);
     }
 
     /**
@@ -536,21 +557,21 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
 
         // Scoping recommendations
         if ($scoping === 'global') {
-            $recommendations[] = 'Global scoping invalidates all page caches on transitions. ' .
-                               'Consider per-page or per-content scoping for better performance on large sites.';
+            $recommendations[] = 'Global scoping invalidates all page caches on transitions. '
+                               . 'Consider per-page or per-content scoping for better performance on large sites.';
         }
 
         // Timing recommendations
         if ($timing === 'dynamic') {
-            $recommendations[] = 'Dynamic timing calculates cache lifetime on every request. ' .
-                               'Consider scheduler-based timing if you have many temporal items (>100).';
+            $recommendations[] = 'Dynamic timing calculates cache lifetime on every request. '
+                               . 'Consider scheduler-based timing if you have many temporal items (>100).';
         }
 
         if ($recommendations === []) {
             return '<strong>Configuration:</strong> Your current settings are optimized for production use.';
         }
 
-        return '<strong>Recommendations:</strong>' . \chr(10) . '• ' . \implode(\chr(10) . '• ', $recommendations);
+        return '<strong>Recommendations:</strong>' . chr(10) . '• ' . implode(chr(10) . '• ', $recommendations);
     }
 
     /**
@@ -563,20 +584,23 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
         }
 
         if ($seconds < 3600) {
-            $minutes = (int)\floor($seconds / 60);
+            $minutes = (int) floor($seconds / 60);
+
             return $minutes . ' minute' . ($minutes !== 1 ? 's' : '');
         }
 
         if ($seconds < 86400) {
-            $hours = (int)\floor($seconds / 3600);
-            $minutes = (int)\floor(($seconds % 3600) / 60);
-            return $hours . ' hour' . ($hours !== 1 ? 's' : '') .
-                   ($minutes > 0 ? ' ' . $minutes . ' minute' . ($minutes !== 1 ? 's' : '') : '');
+            $hours   = (int) floor($seconds / 3600);
+            $minutes = (int) floor(($seconds % 3600) / 60);
+
+            return $hours . ' hour' . ($hours !== 1 ? 's' : '')
+                   . ($minutes > 0 ? ' ' . $minutes . ' minute' . ($minutes !== 1 ? 's' : '') : '');
         }
 
-        $days = (int)\floor($seconds / 86400);
-        $hours = (int)\floor(($seconds % 86400) / 3600);
-        return $days . ' day' . ($days !== 1 ? 's' : '') .
-               ($hours > 0 ? ' ' . $hours . ' hour' . ($hours !== 1 ? 's' : '') : '');
+        $days  = (int) floor($seconds / 86400);
+        $hours = (int) floor(($seconds % 86400) / 3600);
+
+        return $days . ' day' . ($days !== 1 ? 's' : '')
+               . ($hours > 0 ? ' ' . $hours . ' hour' . ($hours !== 1 ? 's' : '') : '');
     }
 }
