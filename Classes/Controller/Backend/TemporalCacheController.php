@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Controller\Backend;
 
@@ -22,13 +22,13 @@ use Throwable;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
 use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
 use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -38,6 +38,21 @@ use TYPO3\CMS\Core\Pagination\SimplePagination;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+
+use function array_filter;
+use function array_map;
+use function assert;
+use function class_exists;
+use function count;
+use function implode;
+use function is_array;
+use function is_int;
+use function is_numeric;
+use function is_string;
+use function json_encode;
+use function method_exists;
+use function sprintf;
+use function time;
 
 /**
  * Backend module controller for Temporal Cache management.
@@ -59,6 +74,13 @@ final class TemporalCacheController extends ActionController
 
     private const MODULE_ROUTE = 'tools_TemporalCache';
 
+    /**
+     * The value of Icon::SIZE_SMALL, the icon size IconFactory::getIcon() takes
+     * on TYPO3 v12, which has no IconSize enum. The constant is deprecated on
+     * v13 and removed on v14, so its value is used instead of the constant.
+     */
+    private const ICON_SIZE_SMALL_V12 = 'small';
+
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly ExtensionConfiguration $extensionConfiguration,
@@ -71,8 +93,7 @@ final class TemporalCacheController extends ActionController
         private readonly IconFactory $iconFactory,
         private readonly PageRenderer $pageRenderer,
         private readonly BackendUriBuilder $backendUriBuilder,
-    ) {
-    }
+    ) {}
 
     /**
      * Build a backend module URI for the given action.
@@ -84,9 +105,9 @@ final class TemporalCacheController extends ActionController
     private function buildModuleUri(string $action): string
     {
         try {
-            return (string)$this->backendUriBuilder->buildUriFromRoute(
+            return (string) $this->backendUriBuilder->buildUriFromRoute(
                 self::MODULE_ROUTE,
-                ['action' => $action]
+                ['action' => $action],
             );
         } catch (Throwable) {
             return '#';
@@ -102,15 +123,15 @@ final class TemporalCacheController extends ActionController
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'dashboard');
 
-        $currentTime = \time();
-        $stats = $this->statisticsService->calculateStatistics($currentTime);
-        $timeline = $this->statisticsService->buildTimeline($currentTime);
-        $config = $this->statisticsService->getConfigurationSummary();
+        $currentTime = time();
+        $stats       = $this->statisticsService->calculateStatistics($currentTime);
+        $timeline    = $this->statisticsService->buildTimeline($currentTime);
+        $config      = $this->statisticsService->getConfigurationSummary();
 
         $moduleTemplate->assignMultiple([
-            'stats' => $stats,
-            'timeline' => $timeline,
-            'config' => $config,
+            'stats'       => $stats,
+            'timeline'    => $timeline,
+            'config'      => $config,
             'currentTime' => $currentTime,
         ]);
 
@@ -126,37 +147,37 @@ final class TemporalCacheController extends ActionController
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'content');
 
-        $currentTime = \time();
-        $allContent = $this->contentRepository->findAllWithTemporalFields();
+        $currentTime     = time();
+        $allContent      = $this->contentRepository->findAllWithTemporalFields();
         $filteredContent = $this->filterContent($allContent, $filter, $currentTime);
 
         // Add harmonization suggestions and pre-computed visibility status
-        /** @var array<int, array<string, mixed>> $contentWithSuggestions */
-        $contentWithSuggestions = \array_map(
+        $contentWithSuggestions = array_map(
             function (TemporalContent $content) use ($currentTime): array {
                 $suggestion = $this->harmonizationAnalysisService->generateHarmonizationSuggestion($content);
                 // Pre-compute isVisible for Fluid template (can't call methods with params in Fluid)
                 $suggestion['isVisible'] = $content->isVisible($currentTime);
+
                 return $suggestion;
             },
-            $filteredContent
+            $filteredContent,
         );
 
         // Pagination
-        $paginator = new ArrayPaginator($contentWithSuggestions, $currentPage, self::ITEMS_PER_PAGE);
+        $paginator  = new ArrayPaginator($contentWithSuggestions, $currentPage, self::ITEMS_PER_PAGE);
         $pagination = new SimplePagination($paginator);
 
         $moduleTemplate->assignMultiple([
-            'content' => $paginator->getPaginatedItems(),
-            'pagination' => $pagination,
-            'paginator' => $paginator,
-            'filter' => $filter,
-            'filterOptions' => $this->getFilterOptions(),
-            'currentTime' => $currentTime,
+            'content'              => $paginator->getPaginatedItems(),
+            'pagination'           => $pagination,
+            'paginator'            => $paginator,
+            'filter'               => $filter,
+            'filterOptions'        => $this->getFilterOptions(),
+            'currentTime'          => $currentTime,
             'harmonizationEnabled' => $this->extensionConfiguration->isHarmonizationEnabled(),
-            'canModifyContent' => $this->permissionService->canModifyTemporalContent(),
-            'permissionStatus' => $this->permissionService->getPermissionStatus(),
-            'harmonizeActionUri' => $this->buildModuleUri('harmonize'),
+            'canModifyContent'     => $this->permissionService->canModifyTemporalContent(),
+            'permissionStatus'     => $this->permissionService->getPermissionStatus(),
+            'harmonizeActionUri'   => $this->buildModuleUri('harmonize'),
         ]);
 
         return $moduleTemplate->renderResponse('Backend/TemporalCache/Content');
@@ -171,16 +192,16 @@ final class TemporalCacheController extends ActionController
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->setupModuleTemplate($moduleTemplate, 'wizard');
 
-        $currentConfig = $this->extensionConfiguration->getAll();
-        $presets = $this->getConfigurationPresets();
+        $currentConfig   = $this->extensionConfiguration->getAll();
+        $presets         = $this->getConfigurationPresets();
         $recommendations = $this->analyzeConfiguration();
 
         $moduleTemplate->assignMultiple([
-            'step' => $step,
-            'currentConfig' => $currentConfig,
-            'presets' => $presets,
+            'step'            => $step,
+            'currentConfig'   => $currentConfig,
+            'presets'         => $presets,
             'recommendations' => $recommendations,
-            'stats' => $this->statisticsService->calculateStatistics(\time()),
+            'stats'           => $this->statisticsService->calculateStatistics(time()),
         ]);
 
         return $moduleTemplate->renderResponse('Backend/TemporalCache/Wizard');
@@ -192,40 +213,43 @@ final class TemporalCacheController extends ActionController
     public function harmonizeAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
-        \assert(\is_array($parsedBody));
+        assert(is_array($parsedBody));
         $contentUids = $parsedBody['content'] ?? [];
-        \assert(\is_array($contentUids));
-        $dryRun = (bool)($parsedBody['dryRun'] ?? true);
+        assert(is_array($contentUids));
+        $dryRun = (bool) ($parsedBody['dryRun'] ?? true);
 
         if ($contentUids === []) {
-            $json = \json_encode([
+            $json = json_encode([
                 'success' => false,
                 'message' => $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:harmonize.error.no_content'),
             ]);
-            \assert(\is_string($json));
+            assert(is_string($json));
+
             return $this->jsonResponse($json);
         }
 
         if (!$this->extensionConfiguration->isHarmonizationEnabled()) {
-            $json = \json_encode([
+            $json = json_encode([
                 'success' => false,
                 'message' => $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:harmonize.error.disabled'),
             ]);
-            \assert(\is_string($json));
+            assert(is_string($json));
+
             return $this->jsonResponse($json);
         }
 
         // Check write permissions
         if (!$this->permissionService->canModifyTemporalContent()) {
             $unmodifiableTables = $this->permissionService->getUnmodifiableTables();
-            $json = \json_encode([
+            $json               = json_encode([
                 'success' => false,
-                'message' => \sprintf(
+                'message' => sprintf(
                     $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:harmonize.error.no_permission'),
-                    \implode(', ', $unmodifiableTables)
+                    implode(', ', $unmodifiableTables),
                 ),
             ]);
-            \assert(\is_string($json));
+            assert(is_string($json));
+
             return $this->jsonResponse($json);
         }
 
@@ -234,19 +258,19 @@ final class TemporalCacheController extends ActionController
             // Each selected item may be either a plain uid (legacy, assumed tt_content)
             // or an object carrying both uid and table so pages and content are routed
             // to the correct table. findByUid() rejects tables not registered for monitoring.
-            if (\is_array($item)) {
-                $rawUid = $item['uid'] ?? 0;
-                $rawTable = $item['table'] ?? null;
-                $tableName = \is_string($rawTable) ? $rawTable : 'tt_content';
+            if (is_array($item)) {
+                $rawUid    = $item['uid'] ?? 0;
+                $rawTable  = $item['table'] ?? null;
+                $tableName = is_string($rawTable) ? $rawTable : 'tt_content';
             } else {
-                $rawUid = $item;
+                $rawUid    = $item;
                 $tableName = 'tt_content';
             }
 
             $uid = match (true) {
-                \is_int($rawUid) => $rawUid,
-                \is_string($rawUid) && \is_numeric($rawUid) => (int)$rawUid,
-                default => 0,
+                is_int($rawUid)                           => $rawUid,
+                is_string($rawUid) && is_numeric($rawUid) => (int) $rawUid,
+                default                                   => 0,
             };
 
             if ($uid <= 0) {
@@ -258,29 +282,30 @@ final class TemporalCacheController extends ActionController
                 continue;
             }
 
-            $result = $this->harmonizationService->harmonizeContent($content, $dryRun);
+            $result    = $this->harmonizationService->harmonizeContent($content, $dryRun);
             $results[] = $result;
         }
 
-        $successCount = \count(\array_filter($results, fn (array $r): bool => $r['success']));
-        $totalCount = \count($results);
+        $successCount = count(array_filter($results, fn (array $r): bool => $r['success']));
+        $totalCount   = count($results);
 
         if (!$dryRun) {
             // Clear page cache after harmonization
             $this->cacheManager->flushCachesInGroup('pages');
         }
 
-        $json = \json_encode([
+        $json = json_encode([
             'success' => true,
-            'message' => \sprintf(
+            'message' => sprintf(
                 $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:harmonize.success'),
                 $successCount,
-                $totalCount
+                $totalCount,
             ),
             'results' => $results,
-            'dryRun' => $dryRun,
+            'dryRun'  => $dryRun,
         ]);
-        \assert(\is_string($json));
+        assert(is_string($json));
+
         return $this->jsonResponse($json);
     }
 
@@ -290,12 +315,12 @@ final class TemporalCacheController extends ActionController
     private function setupModuleTemplate(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
         $moduleTemplate->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
         );
 
         // Load JavaScript module (TYPO3 v12/v13 compatible via injected PageRenderer)
         $this->pageRenderer->loadJavaScriptModule(
-            '@netresearch/nr-temporal-cache/backend-module.js'
+            '@netresearch/nr-temporal-cache/backend-module.js',
         );
 
         // Add DocHeader buttons (may fail in test environments)
@@ -316,14 +341,14 @@ final class TemporalCacheController extends ActionController
             // Without a label the view menu has no accessible name: a <select> with
             // no label on 12 and 13, and on 14 a dropdown named after its first item.
             $menu->setLabel($this->getLanguageService()->sL(
-                'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.label'
+                'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.label',
             ));
 
             $actions = ['dashboard', 'content', 'wizard'];
             foreach ($actions as $action) {
                 $item = GeneralUtility::makeInstance(MenuItem::class)
                     ->setTitle($this->getLanguageService()->sL(
-                        'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.' . $action
+                        'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:menu.' . $action,
                     ))
                     ->setHref($this->buildModuleUri($action))
                     ->setActive($currentAction === $action);
@@ -341,11 +366,11 @@ final class TemporalCacheController extends ActionController
      */
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate, string $currentAction): void
     {
-        $docHeader = $moduleTemplate->getDocHeaderComponent();
-        $buttonBar = $docHeader->getButtonBar();
+        $docHeader   = $moduleTemplate->getDocHeaderComponent();
+        $buttonBar   = $docHeader->getButtonBar();
         $displayName = $this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab');
 
-        if (\method_exists($docHeader, 'setShortcutContext')) {
+        if (method_exists($docHeader, 'setShortcutContext')) {
             // TYPO3 v14 adds the reload and shortcut buttons itself; adding them
             // here as well shows two reload buttons, and a manual shortcut button
             // is deprecated there.
@@ -355,12 +380,14 @@ final class TemporalCacheController extends ActionController
             $refreshButton = GeneralUtility::makeInstance(LinkButton::class)
                 ->setHref($this->buildModuleUri($currentAction))
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-                ->setIcon($this->iconFactory->getIcon('actions-refresh', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                ->setIcon($this->iconFactory->getIcon('actions-refresh', class_exists(IconSize::class) ? IconSize::SMALL : self::ICON_SIZE_SMALL_V12))
                 ->setShowLabelText(false);
             $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
-            // Shortcut button (all actions)
-            $shortcutButton = $buttonBar->makeShortcutButton()
+            // Shortcut button (all actions). Built like the LinkButton above:
+            // ButtonBar::makeShortcutButton() does nothing else on v12/v13 and
+            // is deprecated on v14.
+            $shortcutButton = GeneralUtility::makeInstance(ShortcutButton::class)
                 ->setRouteIdentifier(self::MODULE_ROUTE)
                 ->setDisplayName($displayName)
                 ->setArguments(['action' => $currentAction]);
@@ -374,7 +401,7 @@ final class TemporalCacheController extends ActionController
                 $contentButton = GeneralUtility::makeInstance(LinkButton::class)
                     ->setHref($this->buildModuleUri('content'))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:button.view_content'))
-                    ->setIcon($this->iconFactory->getIcon('actions-document-open', \class_exists(IconSize::class) ? IconSize::SMALL : Icon::SIZE_SMALL))
+                    ->setIcon($this->iconFactory->getIcon('actions-document-open', class_exists(IconSize::class) ? IconSize::SMALL : self::ICON_SIZE_SMALL_V12))
                     ->setShowLabelText(true);
                 $buttonBar->addButton($contentButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
                 break;
@@ -393,18 +420,19 @@ final class TemporalCacheController extends ActionController
      * Filter content based on selected filter.
      *
      * @param array<TemporalContent> $content
+     *
      * @return array<TemporalContent>
      */
     private function filterContent(array $content, string $filter, int $currentTime): array
     {
         return match ($filter) {
-            'pages' => \array_filter($content, fn (TemporalContent $c): bool => $c->isPage()),
-            'content' => \array_filter($content, fn (TemporalContent $c): bool => $c->isContent()),
-            'active' => \array_filter($content, fn (TemporalContent $c): bool => $c->isVisible($currentTime)),
-            'scheduled' => \array_filter($content, fn (TemporalContent $c): bool => $c->starttime !== null && $c->starttime > $currentTime),
-            'expired' => \array_filter($content, fn (TemporalContent $c): bool => $c->endtime !== null && $c->endtime < $currentTime),
+            'pages'        => array_filter($content, fn (TemporalContent $c): bool => $c->isPage()),
+            'content'      => array_filter($content, fn (TemporalContent $c): bool => $c->isContent()),
+            'active'       => array_filter($content, fn (TemporalContent $c): bool => $c->isVisible($currentTime)),
+            'scheduled'    => array_filter($content, fn (TemporalContent $c): bool => $c->starttime !== null && $c->starttime > $currentTime),
+            'expired'      => array_filter($content, fn (TemporalContent $c): bool => $c->endtime !== null && $c->endtime < $currentTime),
             'harmonizable' => $this->harmonizationAnalysisService->filterHarmonizableContent($content),
-            default => $content,
+            default        => $content,
         };
     }
 
@@ -416,16 +444,15 @@ final class TemporalCacheController extends ActionController
     private function getFilterOptions(): array
     {
         return [
-            'all' => 'filter.all',
-            'pages' => 'filter.pages',
-            'content' => 'filter.content',
-            'active' => 'filter.active',
-            'scheduled' => 'filter.scheduled',
-            'expired' => 'filter.expired',
+            'all'          => 'filter.all',
+            'pages'        => 'filter.pages',
+            'content'      => 'filter.content',
+            'active'       => 'filter.active',
+            'scheduled'    => 'filter.scheduled',
+            'expired'      => 'filter.expired',
             'harmonizable' => 'filter.harmonizable',
         ];
     }
-
 
     /**
      * Get configuration presets for wizard.
@@ -436,29 +463,29 @@ final class TemporalCacheController extends ActionController
     {
         return [
             'simple' => [
-                'name' => 'preset.simple.name',
+                'name'        => 'preset.simple.name',
                 'description' => 'preset.simple.description',
-                'config' => [
-                    'scoping' => ['strategy' => 'global'],
-                    'timing' => ['strategy' => 'dynamic'],
+                'config'      => [
+                    'scoping'       => ['strategy' => 'global'],
+                    'timing'        => ['strategy' => 'dynamic'],
                     'harmonization' => ['enabled' => false],
                 ],
             ],
             'balanced' => [
-                'name' => 'preset.balanced.name',
+                'name'        => 'preset.balanced.name',
                 'description' => 'preset.balanced.description',
-                'config' => [
-                    'scoping' => ['strategy' => 'per-page'],
-                    'timing' => ['strategy' => 'hybrid'],
+                'config'      => [
+                    'scoping'       => ['strategy' => 'per-page'],
+                    'timing'        => ['strategy' => 'hybrid'],
                     'harmonization' => ['enabled' => true, 'slots' => '00:00,06:00,12:00,18:00'],
                 ],
             ],
             'aggressive' => [
-                'name' => 'preset.aggressive.name',
+                'name'        => 'preset.aggressive.name',
                 'description' => 'preset.aggressive.description',
-                'config' => [
-                    'scoping' => ['strategy' => 'per-content', 'use_refindex' => true],
-                    'timing' => ['strategy' => 'scheduler'],
+                'config'      => [
+                    'scoping'       => ['strategy' => 'per-content', 'use_refindex' => true],
+                    'timing'        => ['strategy' => 'scheduler'],
                     'harmonization' => ['enabled' => true, 'slots' => '00:00,04:00,08:00,12:00,16:00,20:00'],
                 ],
             ],
@@ -476,14 +503,14 @@ final class TemporalCacheController extends ActionController
     private function analyzeConfiguration(): array
     {
         $recommendations = [];
-        $stats = $this->statisticsService->calculateStatistics(\time());
+        $stats           = $this->statisticsService->calculateStatistics(time());
 
         // Recommendation: Enable harmonization if many transitions
         if (!$this->extensionConfiguration->isHarmonizationEnabled() && $stats['transitionsPerDay'] > 10) {
             $recommendations[] = [
-                'type' => 'warning',
-                'state' => ContextualFeedbackSeverity::WARNING->value,
-                'title' => 'recommendation.harmonization.title',
+                'type'    => 'warning',
+                'state'   => ContextualFeedbackSeverity::WARNING->value,
+                'title'   => 'recommendation.harmonization.title',
                 'message' => 'recommendation.harmonization.message',
             ];
         }
@@ -491,9 +518,9 @@ final class TemporalCacheController extends ActionController
         // Recommendation: Use per-content scoping if many content elements
         if ($this->extensionConfiguration->getScopingStrategy() === 'global' && $stats['contentCount'] > 100) {
             $recommendations[] = [
-                'type' => 'info',
-                'state' => ContextualFeedbackSeverity::INFO->value,
-                'title' => 'recommendation.scoping.title',
+                'type'    => 'info',
+                'state'   => ContextualFeedbackSeverity::INFO->value,
+                'title'   => 'recommendation.scoping.title',
                 'message' => 'recommendation.scoping.message',
             ];
         }
@@ -501,9 +528,9 @@ final class TemporalCacheController extends ActionController
         // Recommendation: Use scheduler timing if many transitions per day
         if ($this->extensionConfiguration->getTimingStrategy() === 'dynamic' && $stats['transitionsPerDay'] > 20) {
             $recommendations[] = [
-                'type' => 'info',
-                'state' => ContextualFeedbackSeverity::INFO->value,
-                'title' => 'recommendation.timing.title',
+                'type'    => 'info',
+                'state'   => ContextualFeedbackSeverity::INFO->value,
+                'title'   => 'recommendation.timing.title',
                 'message' => 'recommendation.timing.message',
             ];
         }
@@ -517,7 +544,8 @@ final class TemporalCacheController extends ActionController
     private function getLanguageService(): LanguageService
     {
         $languageService = $GLOBALS['LANG'];
-        \assert($languageService instanceof LanguageService);
+        assert($languageService instanceof LanguageService);
+
         return $languageService;
     }
 }

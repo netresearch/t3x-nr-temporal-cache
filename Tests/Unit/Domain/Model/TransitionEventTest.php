@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Domain\Model;
 
@@ -16,8 +16,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
+use function date;
+
 /**
- * Unit tests for TransitionEvent value object
+ * Unit tests for TransitionEvent value object.
  */
 #[CoversClass(TransitionEvent::class)]
 final class TransitionEventTest extends UnitTestCase
@@ -36,11 +38,10 @@ final class TransitionEventTest extends UnitTestCase
             starttime: 1609459200,
             endtime: 1612137600,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
     }
 
-    /**     */
     public function testConstructorCreatesImmutableObject(): void
     {
         $timestamp = 1609459200;
@@ -50,7 +51,7 @@ final class TransitionEventTest extends UnitTestCase
             timestamp: $timestamp,
             transitionType: 'start',
             workspaceId: 1,
-            languageId: 2
+            languageId: 2,
         );
 
         self::assertSame($this->temporalContent, $subject->content);
@@ -60,13 +61,12 @@ final class TransitionEventTest extends UnitTestCase
         self::assertSame(2, $subject->languageId);
     }
 
-    /**     */
     public function testConstructorUsesDefaultValues(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1609459200,
-            transitionType: 'start'
+            transitionType: 'start',
         );
 
         self::assertSame(0, $subject->workspaceId);
@@ -79,7 +79,7 @@ final class TransitionEventTest extends UnitTestCase
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1609459200,
-            transitionType: $transitionType
+            transitionType: $transitionType,
         );
 
         self::assertSame($transitionType, $subject->transitionType);
@@ -88,13 +88,12 @@ final class TransitionEventTest extends UnitTestCase
     public static function validTransitionTypeDataProvider(): array
     {
         return [
-            'start' => ['start'],
-            'end' => ['end'],
+            'start'   => ['start'],
+            'end'     => ['end'],
             'unknown' => ['unknown'],
         ];
     }
 
-    /**     */
     public function testConstructorThrowsExceptionForInvalidTransitionType(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -103,50 +102,46 @@ final class TransitionEventTest extends UnitTestCase
         new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1609459200,
-            transitionType: 'invalid'
+            transitionType: 'invalid',
         );
     }
 
-    /**     */
     public function testIsStartTransitionReturnsTrueForStartType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1609459200,
-            transitionType: 'start'
+            transitionType: 'start',
         );
 
         self::assertTrue($subject->isStartTransition());
         self::assertFalse($subject->isEndTransition());
     }
 
-    /**     */
     public function testIsEndTransitionReturnsTrueForEndType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1612137600,
-            transitionType: 'end'
+            transitionType: 'end',
         );
 
         self::assertTrue($subject->isEndTransition());
         self::assertFalse($subject->isStartTransition());
     }
 
-    /**     */
     public function testIsStartAndEndReturnFalseForUnknownType(): void
     {
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: 1609459200,
-            transitionType: 'unknown'
+            transitionType: 'unknown',
         );
 
         self::assertFalse($subject->isStartTransition());
         self::assertFalse($subject->isEndTransition());
     }
 
-    /**     */
     public function testGetLogMessageReturnsFormattedMessage(): void
     {
         $subject = new TransitionEvent(
@@ -154,7 +149,7 @@ final class TransitionEventTest extends UnitTestCase
             timestamp: 1609459200,
             transitionType: 'start',
             workspaceId: 1,
-            languageId: 2
+            languageId: 2,
         );
 
         $message = $subject->getLogMessage();
@@ -167,7 +162,6 @@ final class TransitionEventTest extends UnitTestCase
         self::assertStringContainsString('language=2', $message);
     }
 
-    /**     */
     public function testGetLogMessageIncludesFormattedTimestamp(): void
     {
         $timestamp = 1609459200; // 2021-01-01 00:00:00 UTC
@@ -175,12 +169,12 @@ final class TransitionEventTest extends UnitTestCase
         $subject = new TransitionEvent(
             content: $this->temporalContent,
             timestamp: $timestamp,
-            transitionType: 'start'
+            transitionType: 'start',
         );
 
         $message = $subject->getLogMessage();
 
-        self::assertStringContainsString(\date('Y-m-d H:i:s', $timestamp), $message);
+        self::assertStringContainsString(date('Y-m-d H:i:s', $timestamp), $message);
     }
 
     #[DataProvider('transitionScenarioDataProvider')]
@@ -188,7 +182,7 @@ final class TransitionEventTest extends UnitTestCase
         string $tableName,
         string $transitionType,
         int $workspaceId,
-        int $languageId
+        int $languageId,
     ): void {
         $content = new TemporalContent(
             uid: 456,
@@ -198,7 +192,7 @@ final class TransitionEventTest extends UnitTestCase
             starttime: 1609459200,
             endtime: 1612137600,
             languageUid: $languageId,
-            workspaceUid: $workspaceId
+            workspaceUid: $workspaceId,
         );
 
         $subject = new TransitionEvent(
@@ -206,7 +200,7 @@ final class TransitionEventTest extends UnitTestCase
             timestamp: 1609459200,
             transitionType: $transitionType,
             workspaceId: $workspaceId,
-            languageId: $languageId
+            languageId: $languageId,
         );
 
         $message = $subject->getLogMessage();
@@ -220,9 +214,9 @@ final class TransitionEventTest extends UnitTestCase
     public static function transitionScenarioDataProvider(): array
     {
         return [
-            'page start in default workspace/language' => ['pages', 'start', 0, 0],
-            'content end in workspace 1' => ['tt_content', 'end', 1, 0],
-            'page start in language 2' => ['pages', 'start', 0, 2],
+            'page start in default workspace/language'      => ['pages', 'start', 0, 0],
+            'content end in workspace 1'                    => ['tt_content', 'end', 1, 0],
+            'page start in language 2'                      => ['pages', 'start', 0, 2],
             'content unknown in workspace 1 and language 3' => ['tt_content', 'unknown', 1, 3],
         ];
     }

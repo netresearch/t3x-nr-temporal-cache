@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Domain\Repository;
 
@@ -16,6 +16,16 @@ use Netresearch\TemporalCache\Service\TemporalMonitorRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function array_filter;
+use function array_keys;
+use function array_map;
+use function array_values;
+use function date;
+use function floor;
+use function ksort;
+use function sort;
+use function time;
 
 /**
  * The repository queries the backend module, the Reports status and the console commands
@@ -38,7 +48,7 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->day = (int)(\floor(\time() / 86400) + 10) * 86400 + 43200;
+        $this->day = (int) (floor(time() / 86400) + 10) * 86400 + 43200;
 
         $pages = $this->get(ConnectionPool::class)->getConnectionForTable('pages');
         foreach ([
@@ -50,13 +60,13 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
             [904, 'Deleted page with start', $this->day, 0, 0, 1],
         ] as [$uid, $title, $start, $end, $language, $deleted]) {
             $pages->insert('pages', [
-                'uid' => $uid,
-                'pid' => 0,
-                'title' => $title,
-                'hidden' => 0,
-                'deleted' => $deleted,
-                'starttime' => $start,
-                'endtime' => $end,
+                'uid'              => $uid,
+                'pid'              => 0,
+                'title'            => $title,
+                'hidden'           => 0,
+                'deleted'          => $deleted,
+                'starttime'        => $start,
+                'endtime'          => $end,
                 'sys_language_uid' => $language,
             ]);
         }
@@ -72,13 +82,13 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
             [915, 901, 'Content on another page', $this->day, 0, 0, 0, 0],
         ] as [$uid, $pid, $header, $start, $end, $language, $hidden, $deleted]) {
             $content->insert('tt_content', [
-                'uid' => $uid,
-                'pid' => $pid,
-                'header' => $header,
-                'hidden' => $hidden,
-                'deleted' => $deleted,
-                'starttime' => $start,
-                'endtime' => $end,
+                'uid'              => $uid,
+                'pid'              => $pid,
+                'header'           => $header,
+                'hidden'           => $hidden,
+                'deleted'          => $deleted,
+                'starttime'        => $start,
+                'endtime'          => $end,
                 'sys_language_uid' => $language,
             ]);
         }
@@ -89,14 +99,14 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         // Pages 900-902 and content 910, 911, 913, 915; deleted and time-less records do not count.
         self::assertSame(
             [
-                'total' => 7,
-                'pages' => 3,
-                'content' => 4,
+                'total'     => 7,
+                'pages'     => 3,
+                'content'   => 4,
                 'withStart' => 4,
-                'withEnd' => 2,
-                'withBoth' => 1,
+                'withEnd'   => 2,
+                'withBoth'  => 1,
             ],
-            $this->getSubject()->getStatistics()
+            $this->getSubject()->getStatistics(),
         );
     }
 
@@ -108,10 +118,10 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         // the module shows them), 915 on the first day; 901 and 902 (end) on the second.
         self::assertSame(
             [
-                \date('Y-m-d', $this->day) => 5,
-                \date('Y-m-d', $this->day + 86400) => 2,
+                date('Y-m-d', $this->day)         => 5,
+                date('Y-m-d', $this->day + 86400) => 2,
             ],
-            $counts
+            $counts,
         );
     }
 
@@ -119,9 +129,9 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
     {
         $transitions = $this->getSubject()->findTransitionsInRange($this->day - 60, $this->day + 2 * 86400);
 
-        $timestamps = \array_map(static fn (TransitionEvent $transition): int => $transition->timestamp, $transitions);
-        $sorted = $timestamps;
-        \sort($sorted);
+        $timestamps = array_map(static fn (TransitionEvent $transition): int => $transition->timestamp, $transitions);
+        $sorted     = $timestamps;
+        sort($sorted);
 
         self::assertCount(7, $transitions);
         self::assertSame($sorted, $timestamps);
@@ -136,10 +146,10 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
             $byUid[$record->uid] = $record;
         }
 
-        \ksort($byUid);
+        ksort($byUid);
 
         // 912 has no times, 913 is another language, 914 is deleted, 915 is on page 901.
-        self::assertSame([910, 911], \array_keys($byUid));
+        self::assertSame([910, 911], array_keys($byUid));
         self::assertSame('Content with start', $byUid[910]->title);
         self::assertSame($this->day + 7200, $byUid[910]->starttime);
         self::assertNull($byUid[910]->endtime);
@@ -167,10 +177,10 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
             [922, 'Category for all languages', -1],
         ] as [$uid, $title, $language]) {
             $categories->insert('sys_category', [
-                'uid' => $uid,
-                'pid' => 0,
-                'title' => $title,
-                'starttime' => $this->day,
+                'uid'              => $uid,
+                'pid'              => 0,
+                'title'            => $title,
+                'starttime'        => $this->day,
                 'sys_language_uid' => $language,
             ]);
         }
@@ -179,9 +189,9 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         $registry->registerTable('sys_category', ['uid', 'pid', 'title', 'starttime', 'endtime']);
 
         try {
-            $records = \array_filter(
+            $records = array_filter(
                 $this->getSubject()->findAllWithTemporalFields(0, 1),
-                static fn (TemporalContent $record): bool => $record->tableName === 'sys_category'
+                static fn (TemporalContent $record): bool => $record->tableName === 'sys_category',
             );
             $translated = $this->getSubject()->findByUid(921, 'sys_category');
         } finally {
@@ -196,7 +206,7 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
             $languageByUid[$record->uid] = $record->languageUid;
         }
 
-        \ksort($languageByUid);
+        ksort($languageByUid);
 
         self::assertSame([921 => 1, 922 => -1], $languageByUid);
     }
@@ -204,9 +214,9 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
     public function testRegisteredTableWithOnlyTheRequiredFieldsIsListedAndHasTransitions(): void
     {
         $this->get(ConnectionPool::class)->getConnectionForTable('fe_users')->insert('fe_users', [
-            'uid' => 930,
-            'pid' => 5,
-            'username' => 'temporal-user',
+            'uid'       => 930,
+            'pid'       => 5,
+            'username'  => 'temporal-user',
             'starttime' => $this->day,
         ]);
 
@@ -214,13 +224,13 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         $registry->registerTable('fe_users', ['uid', 'starttime', 'endtime']);
 
         try {
-            $records = \array_values(\array_filter(
+            $records = array_values(array_filter(
                 $this->getSubject()->findAllWithTemporalFields(),
-                static fn (TemporalContent $record): bool => $record->tableName === 'fe_users'
+                static fn (TemporalContent $record): bool => $record->tableName === 'fe_users',
             ));
-            $transitions = \array_values(\array_filter(
+            $transitions = array_values(array_filter(
                 $this->getSubject()->findTransitionsInRange($this->day - 60, $this->day + 60),
-                static fn (TransitionEvent $transition): bool => $transition->content->tableName === 'fe_users'
+                static fn (TransitionEvent $transition): bool => $transition->content->tableName === 'fe_users',
             ));
             $single = $this->getSubject()->findByUid(930, 'fe_users');
         } finally {
@@ -265,11 +275,11 @@ final class TemporalContentRepositoryTest extends FunctionalTestCase
         // monitored table, but TemporalMonitorRegistry does not know it. The record exists,
         // so only the table check can make the result null.
         $this->get(ConnectionPool::class)->getConnectionForTable('sys_category')->insert('sys_category', [
-            'uid' => 1,
-            'pid' => 0,
-            'title' => 'Scheduled category',
+            'uid'       => 1,
+            'pid'       => 0,
+            'title'     => 'Scheduled category',
             'starttime' => $this->day,
-            'endtime' => 0,
+            'endtime'   => 0,
         ]);
 
         self::assertNull($this->getSubject()->findByUid(1, 'sys_category'));

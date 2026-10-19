@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
 
@@ -16,14 +16,14 @@ use Netresearch\TemporalCache\Controller\Backend\TemporalCacheController;
  */
 return [
     'tools_TemporalCache' => [
-        'parent' => 'tools',
-        'position' => ['after' => 'tools_ExtensionmanagerExtensionmanager'],
-        'access' => 'admin',
-        'workspaces' => 'live',
-        'path' => '/module/tools/temporal-cache',
-        'labels' => 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf',
-        'extensionName' => 'TemporalCache',
-        'iconIdentifier' => 'temporal-cache-module',
+        'parent'            => 'tools',
+        'position'          => ['after' => 'tools_ExtensionmanagerExtensionmanager'],
+        'access'            => 'admin',
+        'workspaces'        => 'live',
+        'path'              => '/module/tools/temporal-cache',
+        'labels'            => 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf',
+        'extensionName'     => 'TemporalCache',
+        'iconIdentifier'    => 'temporal-cache-module',
         'controllerActions' => [
             TemporalCacheController::class => [
                 'dashboard',

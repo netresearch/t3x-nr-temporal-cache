@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service;
 
@@ -17,6 +17,20 @@ use Psr\Log\NullLogger;
 use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function abs;
+use function array_map;
+use function array_reverse;
+use function array_unique;
+use function count;
+use function end;
+use function floor;
+use function in_array;
+use function preg_match;
+use function round;
+use function sort;
+use function sprintf;
+use function trim;
 
 /**
  * Service for harmonizing timestamps to configured time slots.
@@ -71,7 +85,7 @@ class HarmonizationService implements SingletonInterface
     public function __construct(
         private readonly ExtensionConfiguration $configuration,
         private readonly ConnectionPool $connectionPool,
-        private readonly LoggerInterface $logger = new NullLogger()
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->initializeSlots();
     }
@@ -85,7 +99,7 @@ class HarmonizationService implements SingletonInterface
     private function initializeSlots(): void
     {
         $slotStrings = $this->configuration->getHarmonizationSlots();
-        $slots = [];
+        $slots       = [];
 
         foreach ($slotStrings as $slotString) {
             $seconds = $this->parseTimeSlot($slotString);
@@ -94,7 +108,7 @@ class HarmonizationService implements SingletonInterface
             }
         }
 
-        \sort($slots);
+        sort($slots);
         $this->slots = $slots;
     }
 
@@ -102,16 +116,17 @@ class HarmonizationService implements SingletonInterface
      * Parse time slot string (HH:MM) to seconds since midnight.
      *
      * @param string $slotString Time in HH:MM format
+     *
      * @return int|null Seconds since midnight, or null if invalid
      */
     private function parseTimeSlot(string $slotString): ?int
     {
-        if (!\preg_match('/^(\d{1,2}):(\d{2})$/', \trim($slotString), $matches)) {
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', trim($slotString), $matches) !== 1) {
             return null;
         }
 
-        $hours = (int)$matches[1];
-        $minutes = (int)$matches[2];
+        $hours   = (int) $matches[1];
+        $minutes = (int) $matches[2];
 
         if ($hours > 23 || $minutes > 59) {
             return null;
@@ -136,6 +151,7 @@ class HarmonizationService implements SingletonInterface
      * on the calendar day of the input.
      *
      * @param int $timestamp Unix timestamp to harmonize
+     *
      * @return int Harmonized timestamp (or original if no slot within tolerance)
      */
     public function harmonizeTimestamp(int $timestamp): int
@@ -151,10 +167,10 @@ class HarmonizationService implements SingletonInterface
         // Extract time of day (seconds since midnight). DateTime('@...') is always
         // UTC, so a day is exactly SECONDS_PER_DAY long here and the wrap-around
         // arithmetic below is not disturbed by daylight saving transitions.
-        $dateTime = new DateTime('@' . $timestamp);
-        $timeOfDay = ((int)$dateTime->format('H') * 3600) +
-                     ((int)$dateTime->format('i') * 60) +
-                     ((int)$dateTime->format('s'));
+        $dateTime  = new DateTime('@' . $timestamp);
+        $timeOfDay = ((int) $dateTime->format('H') * 3600)
+                     + ((int) $dateTime->format('i') * 60)
+                     + ((int) $dateTime->format('s'));
 
         // Signed shift onto the nearest slot, which may lie on the adjacent day.
         $offset = $this->findNearestSlotOffset($timeOfDay);
@@ -165,7 +181,7 @@ class HarmonizationService implements SingletonInterface
 
         // Check if within tolerance
         $tolerance = $this->configuration->getHarmonizationTolerance();
-        if (\abs($offset) > $tolerance) {
+        if (abs($offset) > $tolerance) {
             return $timestamp;
         }
 
@@ -183,6 +199,7 @@ class HarmonizationService implements SingletonInterface
      * point means the next day's occurrence rather than today's.
      *
      * @param int $timeOfDay Seconds since midnight
+     *
      * @return int|null Signed shift in seconds, or null if no slots configured
      */
     private function findNearestSlotOffset(int $timeOfDay): ?int
@@ -210,8 +227,8 @@ class HarmonizationService implements SingletonInterface
                 continue;
             }
 
-            $distance = \abs($offset);
-            $nearestDistance = \abs($nearestOffset);
+            $distance        = abs($offset);
+            $nearestDistance = abs($nearestOffset);
 
             // Prefer forward-rounding when distances are equal (for scheduling clarity)
             if ($distance < $nearestDistance || ($distance === $nearestDistance && $offset > 0)) {
@@ -241,7 +258,8 @@ class HarmonizationService implements SingletonInterface
      *   ]
      *
      * @param int $startTimestamp Start of range (Unix timestamp)
-     * @param int $endTimestamp End of range (Unix timestamp)
+     * @param int $endTimestamp   End of range (Unix timestamp)
+     *
      * @return array<int> Array of slot timestamps in chronological order
      */
     public function getSlotsInRange(int $startTimestamp, int $endTimestamp): array
@@ -284,6 +302,7 @@ class HarmonizationService implements SingletonInterface
      * Useful for calculating cache lifetime: "cache until next slot".
      *
      * @param int $timestamp Reference timestamp
+     *
      * @return int|null Next slot timestamp, or null if no slots configured
      */
     public function getNextSlot(int $timestamp): ?int
@@ -292,16 +311,17 @@ class HarmonizationService implements SingletonInterface
             return null;
         }
 
-        $dateTime = new DateTime('@' . $timestamp);
-        $timeOfDay = ((int)$dateTime->format('H') * 3600) +
-                     ((int)$dateTime->format('i') * 60) +
-                     ((int)$dateTime->format('s'));
+        $dateTime  = new DateTime('@' . $timestamp);
+        $timeOfDay = ((int) $dateTime->format('H') * 3600)
+                     + ((int) $dateTime->format('i') * 60)
+                     + ((int) $dateTime->format('s'));
 
         // Find next slot today
         foreach ($this->slots as $slot) {
             if ($slot > $timeOfDay) {
                 $dayStart = clone $dateTime;
                 $dayStart->setTime(0, 0, 0);
+
                 return $dayStart->getTimestamp() + $slot;
             }
         }
@@ -310,6 +330,7 @@ class HarmonizationService implements SingletonInterface
         $tomorrow = clone $dateTime;
         $tomorrow->modify('+1 day');
         $tomorrow->setTime(0, 0, 0);
+
         return $tomorrow->getTimestamp() + $this->slots[0];
     }
 
@@ -319,6 +340,7 @@ class HarmonizationService implements SingletonInterface
      * Useful for analytics: "what was the last slot boundary?"
      *
      * @param int $timestamp Reference timestamp
+     *
      * @return int|null Previous slot timestamp, or null if no slots configured
      */
     public function getPreviousSlot(int $timestamp): ?int
@@ -327,17 +349,18 @@ class HarmonizationService implements SingletonInterface
             return null;
         }
 
-        $dateTime = new DateTime('@' . $timestamp);
-        $timeOfDay = ((int)$dateTime->format('H') * 3600) +
-                     ((int)$dateTime->format('i') * 60) +
-                     ((int)$dateTime->format('s'));
+        $dateTime  = new DateTime('@' . $timestamp);
+        $timeOfDay = ((int) $dateTime->format('H') * 3600)
+                     + ((int) $dateTime->format('i') * 60)
+                     + ((int) $dateTime->format('s'));
 
         // Find previous slot today (iterate backwards)
-        $reversedSlots = \array_reverse($this->slots);
+        $reversedSlots = array_reverse($this->slots);
         foreach ($reversedSlots as $slot) {
             if ($slot < $timeOfDay) {
                 $dayStart = clone $dateTime;
                 $dayStart->setTime(0, 0, 0);
+
                 return $dayStart->getTimestamp() + $slot;
             }
         }
@@ -346,13 +369,15 @@ class HarmonizationService implements SingletonInterface
         $yesterday = clone $dateTime;
         $yesterday->modify('-1 day');
         $yesterday->setTime(0, 0, 0);
-        return $yesterday->getTimestamp() + \end($this->slots);
+
+        return $yesterday->getTimestamp() + end($this->slots);
     }
 
     /**
      * Check if a timestamp is exactly on a slot boundary.
      *
      * @param int $timestamp Timestamp to check
+     *
      * @return bool True if timestamp is on a slot boundary
      */
     public function isOnSlotBoundary(int $timestamp): bool
@@ -361,26 +386,27 @@ class HarmonizationService implements SingletonInterface
             return false;
         }
 
-        $dateTime = new DateTime('@' . $timestamp);
-        $timeOfDay = ((int)$dateTime->format('H') * 3600) +
-                     ((int)$dateTime->format('i') * 60) +
-                     ((int)$dateTime->format('s'));
+        $dateTime  = new DateTime('@' . $timestamp);
+        $timeOfDay = ((int) $dateTime->format('H') * 3600)
+                     + ((int) $dateTime->format('i') * 60)
+                     + ((int) $dateTime->format('s'));
 
-        return \in_array($timeOfDay, $this->slots, true);
+        return in_array($timeOfDay, $this->slots, true);
     }
 
     /**
      * Get human-readable slot time (HH:MM format).
      *
      * @param int $slotSeconds Seconds since midnight
+     *
      * @return string Time in HH:MM format
      */
     public function formatSlot(int $slotSeconds): string
     {
-        $hours = \floor($slotSeconds / 3600);
-        $minutes = \floor(($slotSeconds % 3600) / 60);
+        $hours   = floor($slotSeconds / 3600);
+        $minutes = floor(($slotSeconds % 3600) / 60);
 
-        return \sprintf('%02d:%02d', $hours, $minutes);
+        return sprintf('%02d:%02d', $hours, $minutes);
     }
 
     /**
@@ -390,9 +416,9 @@ class HarmonizationService implements SingletonInterface
      */
     public function getFormattedSlots(): array
     {
-        return \array_map(
+        return array_map(
             $this->formatSlot(...),
-            $this->slots
+            $this->slots,
         );
     }
 
@@ -403,34 +429,35 @@ class HarmonizationService implements SingletonInterface
      * by harmonization, useful for backend module statistics.
      *
      * @param array<int> $timestamps Array of transition timestamps
+     *
      * @return array{original: int, harmonized: int, reduction: float} Statistics
      */
     public function calculateHarmonizationImpact(array $timestamps): array
     {
-        $originalCount = \count($timestamps);
+        $originalCount = count($timestamps);
 
         if ($originalCount === 0) {
             return [
-                'original' => 0,
+                'original'   => 0,
                 'harmonized' => 0,
-                'reduction' => 0.0,
+                'reduction'  => 0.0,
             ];
         }
 
         // Harmonize all timestamps and count unique values
-        $harmonized = \array_map(
+        $harmonized = array_map(
             $this->harmonizeTimestamp(...),
-            $timestamps
+            $timestamps,
         );
 
-        $harmonizedCount = \count(\array_unique($harmonized));
+        $harmonizedCount = count(array_unique($harmonized));
 
         $reduction = (($originalCount - $harmonizedCount) / $originalCount) * 100;
 
         return [
-            'original' => $originalCount,
+            'original'   => $originalCount,
             'harmonized' => $harmonizedCount,
-            'reduction' => \round($reduction, 1),
+            'reduction'  => round($reduction, 1),
         ];
     }
 
@@ -438,14 +465,15 @@ class HarmonizationService implements SingletonInterface
      * Harmonize temporal content (starttime/endtime fields).
      *
      * @param TemporalContent $content Content to harmonize
-     * @param bool $dryRun If true, don't persist changes
+     * @param bool            $dryRun  If true, don't persist changes
+     *
      * @return array{success: bool, message: string, changes: array<string, array{old: int|null, new: int|null}>}
      */
     public function harmonizeContent(
         TemporalContent $content,
-        bool $dryRun = false
+        bool $dryRun = false,
     ): array {
-        $changes = [];
+        $changes  = [];
         $modified = false;
 
         // Harmonize starttime if set
@@ -495,18 +523,18 @@ class HarmonizationService implements SingletonInterface
         }
 
         try {
-            $connection = $this->connectionPool->getConnectionForTable($content->tableName);
+            $connection   = $this->connectionPool->getConnectionForTable($content->tableName);
             $affectedRows = $connection->update(
                 $content->tableName,
                 $updateFields,
-                ['uid' => $content->uid]
+                ['uid' => $content->uid],
             );
         } catch (Throwable $e) {
             // The message is surfaced verbatim in the backend AJAX response - keep it
             // free of database internals and log the detail instead.
             $this->logger->error('Failed to persist harmonized timestamps', [
-                'table' => $content->tableName,
-                'uid' => $content->uid,
+                'table'     => $content->tableName,
+                'uid'       => $content->uid,
                 'exception' => $e,
             ]);
 
@@ -520,7 +548,7 @@ class HarmonizationService implements SingletonInterface
         if ($affectedRows < 1) {
             return [
                 'success' => false,
-                'message' => \sprintf('Record %s:%d could not be updated', $content->tableName, $content->uid),
+                'message' => sprintf('Record %s:%d could not be updated', $content->tableName, $content->uid),
                 'changes' => $changes,
             ];
         }
@@ -528,8 +556,8 @@ class HarmonizationService implements SingletonInterface
         // This write bypasses DataHandler (see class docblock), so it leaves no
         // sys_log/sys_history trail - record it here instead.
         $this->logger->info('Harmonized temporal timestamps', [
-            'table' => $content->tableName,
-            'uid' => $content->uid,
+            'table'   => $content->tableName,
+            'uid'     => $content->uid,
             'changes' => $changes,
         ]);
 

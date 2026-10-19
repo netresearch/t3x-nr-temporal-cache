@@ -8,7 +8,7 @@
 
 /**
  * Manual code coverage calculator
- * Analyzes test structure to estimate coverage percentage
+ * Analyzes test structure to estimate coverage percentage.
  */
 
 declare(strict_types=1);
@@ -18,8 +18,8 @@ require_once __DIR__ . '/../.Build/vendor/autoload.php';
 class CoverageCalculator
 {
     private array $sourceFiles = [];
-    private array $testFiles = [];
-    private array $coverage = [];
+    private array $testFiles   = [];
+    private array $coverage    = [];
 
     public function run(): void
     {
@@ -32,14 +32,14 @@ class CoverageCalculator
     private function collectSourceFiles(): void
     {
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator(__DIR__ . '/../Classes')
+            new RecursiveDirectoryIterator(__DIR__ . '/../Classes'),
         );
 
         foreach ($iterator as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
-                $relativePath = str_replace(__DIR__ . '/../Classes/', '', $file->getPathname());
+                $relativePath                     = str_replace(__DIR__ . '/../Classes/', '', $file->getPathname());
                 $this->sourceFiles[$relativePath] = [
-                    'path' => $file->getPathname(),
+                    'path'  => $file->getPathname(),
                     'lines' => count(file($file->getPathname())),
                     'class' => $this->extractClassName($file->getPathname()),
                 ];
@@ -56,18 +56,18 @@ class CoverageCalculator
             }
 
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($testDir)
+                new RecursiveDirectoryIterator($testDir),
             );
 
             foreach ($iterator as $file) {
                 if ($file->isFile() && $file->getExtension() === 'php') {
-                    $relativePath = str_replace(__DIR__ . '/../Tests/' . $type . '/', '', $file->getPathname());
+                    $relativePath                   = str_replace(__DIR__ . '/../Tests/' . $type . '/', '', $file->getPathname());
                     $this->testFiles[$relativePath] = [
-                        'path' => $file->getPathname(),
-                        'type' => $type,
-                        'tests' => $this->countTests($file->getPathname()),
+                        'path'       => $file->getPathname(),
+                        'type'       => $type,
+                        'tests'      => $this->countTests($file->getPathname()),
                         'assertions' => $this->countAssertions($file->getPathname()),
-                        'covers' => $this->extractTestedClass($file->getPathname()),
+                        'covers'     => $this->extractTestedClass($file->getPathname()),
                     ];
                 }
             }
@@ -76,11 +76,11 @@ class CoverageCalculator
 
     private function analyzeCoverage(): void
     {
-        $totalFiles = count($this->sourceFiles);
-        $coveredFiles = 0;
-        $totalLines = 0;
+        $totalFiles      = count($this->sourceFiles);
+        $coveredFiles    = 0;
+        $totalLines      = 0;
         $executableLines = 0;
-        $coveredLines = 0;
+        $coveredLines    = 0;
 
         foreach ($this->sourceFiles as $relativePath => $sourceInfo) {
             $totalLines += $sourceInfo['lines'];
@@ -93,46 +93,46 @@ class CoverageCalculator
             $testFile = $this->findTestFile($relativePath, $sourceInfo['class']);
 
             if ($testFile) {
-                $coveredFiles++;
+                ++$coveredFiles;
 
                 // Estimate covered lines based on test assertions
                 $assertions = $testFile['assertions'];
-                $covered = min($executable, (int)($assertions * 3)); // Rough estimate: 3 lines per assertion
+                $covered    = min($executable, (int) ($assertions * 3)); // Rough estimate: 3 lines per assertion
                 $coveredLines += $covered;
 
                 $this->coverage[$relativePath] = [
-                    'source' => $sourceInfo,
-                    'test' => $testFile,
+                    'source'     => $sourceInfo,
+                    'test'       => $testFile,
                     'executable' => $executable,
-                    'covered' => $covered,
-                    'coverage' => $executable > 0 ? round(($covered / $executable) * 100, 2) : 0,
+                    'covered'    => $covered,
+                    'coverage'   => $executable > 0 ? round(($covered / $executable) * 100, 2) : 0,
                 ];
             } else {
                 $this->coverage[$relativePath] = [
-                    'source' => $sourceInfo,
-                    'test' => null,
+                    'source'     => $sourceInfo,
+                    'test'       => null,
                     'executable' => $executable,
-                    'covered' => 0,
-                    'coverage' => 0,
+                    'covered'    => 0,
+                    'coverage'   => 0,
                 ];
             }
         }
 
         $this->coverage['_summary'] = [
-            'total_files' => $totalFiles,
-            'covered_files' => $coveredFiles,
-            'file_coverage' => round(($coveredFiles / $totalFiles) * 100, 2),
-            'total_lines' => $totalLines,
+            'total_files'      => $totalFiles,
+            'covered_files'    => $coveredFiles,
+            'file_coverage'    => round(($coveredFiles / $totalFiles) * 100, 2),
+            'total_lines'      => $totalLines,
             'executable_lines' => $executableLines,
-            'covered_lines' => $coveredLines,
-            'line_coverage' => $executableLines > 0 ? round(($coveredLines / $executableLines) * 100, 2) : 0,
+            'covered_lines'    => $coveredLines,
+            'line_coverage'    => $executableLines > 0 ? round(($coveredLines / $executableLines) * 100, 2) : 0,
         ];
     }
 
     private function estimateExecutableLines(string $filePath): int
     {
-        $content = file_get_contents($filePath);
-        $lines = explode("\n", $content);
+        $content    = file_get_contents($filePath);
+        $lines      = explode("\n", $content);
         $executable = 0;
 
         foreach ($lines as $line) {
@@ -153,7 +153,7 @@ class CoverageCalculator
 
             // Count lines that likely contain executable code
             if (preg_match('/(\$|return|if|else|foreach|while|switch|case|throw|new |->|::)/', $trimmed)) {
-                $executable++;
+                ++$executable;
             }
         }
 
@@ -166,6 +166,7 @@ class CoverageCalculator
         if (preg_match('/class\s+(\w+)/', $content, $matches)) {
             return $matches[1];
         }
+
         return '';
     }
 
@@ -176,18 +177,21 @@ class CoverageCalculator
         if (preg_match('/use\s+Netresearch\\\\TemporalCache.*?\\\\(\w+);/m', $content, $matches)) {
             return $matches[1];
         }
+
         return '';
     }
 
     private function countTests(string $filePath): int
     {
         $content = file_get_contents($filePath);
+
         return preg_match_all('/public function test\w+\(\)/', $content);
     }
 
     private function countAssertions(string $filePath): int
     {
         $content = file_get_contents($filePath);
+
         return preg_match_all('/self::assert/', $content);
     }
 
@@ -200,6 +204,7 @@ class CoverageCalculator
                 return $testInfo;
             }
         }
+
         return null;
     }
 
@@ -226,22 +231,22 @@ class CoverageCalculator
         echo "\n";
 
         // Sort by coverage percentage
-        uasort($this->coverage, fn($a, $b) => $a['coverage'] <=> $b['coverage']);
+        uasort($this->coverage, fn ($a, $b) => $a['coverage'] <=> $b['coverage']);
 
         echo "DETAILED BREAKDOWN:\n";
         echo str_repeat('─', 110) . "\n";
-        printf("%-50s %12s %12s %10s %10s\n", "Class", "Executable", "Covered", "Coverage", "Tests");
+        printf("%-50s %12s %12s %10s %10s\n", 'Class', 'Executable', 'Covered', 'Coverage', 'Tests');
         echo str_repeat('─', 110) . "\n";
 
         foreach ($this->coverage as $relativePath => $info) {
-            $className = substr($info['source']['class'], 0, 48);
+            $className  = substr($info['source']['class'], 0, 48);
             $executable = $info['executable'];
-            $covered = $info['covered'];
-            $coverage = $info['coverage'];
-            $tests = $info['test'] ? $info['test']['tests'] : 0;
+            $covered    = $info['covered'];
+            $coverage   = $info['coverage'];
+            $tests      = $info['test'] ? $info['test']['tests'] : 0;
 
-            $coverageDisplay = $coverage >= 85 ? "\033[32m{$coverage}%\033[0m" :
-                              ($coverage >= 70 ? "\033[33m{$coverage}%\033[0m" : "\033[31m{$coverage}%\033[0m");
+            $coverageDisplay = $coverage >= 85 ? "\033[32m{$coverage}%\033[0m"
+                              : ($coverage >= 70 ? "\033[33m{$coverage}%\033[0m" : "\033[31m{$coverage}%\033[0m");
 
             printf("%-50s %12d %12d %10s %10d\n", $className, $executable, $covered, $coverageDisplay, $tests);
         }

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 
@@ -20,6 +20,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(HybridTimingStrategy::class)]
 #[UsesClass(TemporalContent::class)]
@@ -39,10 +41,10 @@ final class HybridTimingStrategyTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dynamicStrategy = $this->createStub(TimingStrategyInterface::class);
+        $this->dynamicStrategy   = $this->createStub(TimingStrategyInterface::class);
         $this->schedulerStrategy = $this->createStub(TimingStrategyInterface::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->context = $this->createStub(Context::class);
+        $this->configuration     = $this->createStub(ExtensionConfiguration::class);
+        $this->context           = $this->createStub(Context::class);
     }
 
     /**
@@ -51,7 +53,7 @@ final class HybridTimingStrategyTest extends UnitTestCase
     private function createSubject(
         array $timingRules,
         ?TimingStrategyInterface $dynamicStrategy = null,
-        ?TimingStrategyInterface $schedulerStrategy = null
+        ?TimingStrategyInterface $schedulerStrategy = null,
     ): void {
         $this->configuration
             ->method('getTimingRules')
@@ -60,7 +62,7 @@ final class HybridTimingStrategyTest extends UnitTestCase
         $this->subject = new HybridTimingStrategy(
             $dynamicStrategy ?? $this->dynamicStrategy,
             $schedulerStrategy ?? $this->schedulerStrategy,
-            $this->configuration
+            $this->configuration,
         );
     }
 
@@ -74,13 +76,13 @@ final class HybridTimingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         return new TransitionEvent(
             content: $content,
-            timestamp: \time(),
-            transitionType: 'start'
+            timestamp: time(),
+            transitionType: 'start',
         );
     }
 
@@ -98,8 +100,8 @@ final class HybridTimingStrategyTest extends UnitTestCase
     public static function handledContentTypeDataProvider(): array
     {
         return [
-            'page' => ['page'],
-            'content' => ['content'],
+            'page'         => ['page'],
+            'content'      => ['content'],
             'unknown type' => ['something-else'],
         ];
     }
@@ -114,7 +116,7 @@ final class HybridTimingStrategyTest extends UnitTestCase
     public function testGetStrategyNameForContentTypeFollowsConfiguredRules(
         string $contentType,
         array $timingRules,
-        string $expectedStrategy
+        string $expectedStrategy,
     ): void {
         $this->createSubject($timingRules);
 

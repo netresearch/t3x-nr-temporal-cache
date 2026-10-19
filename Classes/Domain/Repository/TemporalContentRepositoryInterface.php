@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Domain\Repository;
 
@@ -24,7 +24,8 @@ interface TemporalContentRepositoryInterface
      * Find all pages and content elements with temporal fields.
      *
      * @param int $workspaceUid Workspace UID (0 = live workspace)
-     * @param int $languageUid Language UID (-1 = all languages)
+     * @param int $languageUid  Language UID (-1 = all languages)
+     *
      * @return array<TemporalContent>
      */
     public function findAllWithTemporalFields(int $workspaceUid = 0, int $languageUid = -1): array;
@@ -33,30 +34,32 @@ interface TemporalContentRepositoryInterface
      * Find all transitions in a specific time range.
      *
      * @param int $startTimestamp Start of time range
-     * @param int $endTimestamp End of time range
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $endTimestamp   End of time range
+     * @param int $workspaceUid   Workspace UID
+     * @param int $languageUid    Language UID
+     *
      * @return array<TransitionEvent>
      */
     public function findTransitionsInRange(
         int $startTimestamp,
         int $endTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): array;
 
     /**
      * Get the next upcoming transition after the given timestamp.
      *
      * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $workspaceUid     Workspace UID
+     * @param int $languageUid      Language UID
+     *
      * @return int|null Timestamp of next transition, or null if none
      */
     public function getNextTransition(
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int;
 
     /**
@@ -69,40 +72,43 @@ interface TemporalContentRepositoryInterface
     public function getNextPageTransition(
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int;
 
     /**
      * Get the next content-element transition for a single page (content tables, scoped by pid).
      *
      * @param int $pageId The page the rendered output belongs to
+     *
      * @return int|null Timestamp of the next content transition on that page, or null if none
      */
     public function getNextContentTransitionForPage(
         int $pageId,
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int;
 
     /**
      * Count transitions per day in a date range.
      *
      * @param int $startTimestamp Start of range
-     * @param int $endTimestamp End of range
-     * @param int $workspaceUid Workspace UID
+     * @param int $endTimestamp   End of range
+     * @param int $workspaceUid   Workspace UID
+     *
      * @return array<string, int> Date (Y-m-d) => count
      */
     public function countTransitionsPerDay(
         int $startTimestamp,
         int $endTimestamp,
-        int $workspaceUid = 0
+        int $workspaceUid = 0,
     ): array;
 
     /**
      * Get statistics about temporal content.
      *
      * @param int $workspaceUid Workspace UID
+     *
      * @return array{total: int, pages: int, content: int, withStart: int, withEnd: int, withBoth: int}
      */
     public function getStatistics(int $workspaceUid = 0): array;
@@ -110,23 +116,24 @@ interface TemporalContentRepositoryInterface
     /**
      * Find temporal content by page ID.
      *
-     * @param int $pageId Page UID
+     * @param int $pageId       Page UID
      * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $languageUid  Language UID
+     *
      * @return array<TemporalContent>
      */
     public function findByPageId(
         int $pageId,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): array;
 
     /**
      * Find content element by UID.
      *
-     * @param int $uid Content element UID
-     * @param string $tableName Table name ('pages' or 'tt_content')
-     * @param int $workspaceUid Workspace UID
+     * @param int    $uid          Content element UID
+     * @param string $tableName    Table name ('pages' or 'tt_content')
+     * @param int    $workspaceUid Workspace UID
      */
     public function findByUid(int $uid, string $tableName = 'tt_content', int $workspaceUid = 0): ?TemporalContent;
 }

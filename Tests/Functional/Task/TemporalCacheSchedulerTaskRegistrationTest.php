@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Task;
 
@@ -17,6 +17,10 @@ use TYPO3\CMS\Scheduler\Domain\Repository\SchedulerTaskRepository;
 use TYPO3\CMS\Scheduler\Execution;
 use TYPO3\CMS\Scheduler\Service\TaskService;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function serialize;
+use function time;
+use function unserialize;
 
 /**
  * The scheduler module builds its list of selectable task types from
@@ -53,12 +57,12 @@ final class TemporalCacheSchedulerTaskRegistrationTest extends FunctionalTestCas
         self::assertArrayHasKey(
             TemporalCacheSchedulerTask::class,
             $registeredTasks,
-            'The scheduler task type is not registered, so it cannot be created in the scheduler module.'
+            'The scheduler task type is not registered, so it cannot be created in the scheduler module.',
         );
         self::assertSame(
             'nr_temporal_cache',
             $registeredTasks[TemporalCacheSchedulerTask::class]['extension'],
-            'The task is not grouped under the extension key in the scheduler module.'
+            'The task is not grouped under the extension key in the scheduler module.',
         );
     }
 
@@ -72,12 +76,12 @@ final class TemporalCacheSchedulerTaskRegistrationTest extends FunctionalTestCas
         self::assertSame(
             'Temporal Cache: Process Transitions',
             $GLOBALS['LANG']->sL($registration['title'] ?? ''),
-            'Task title does not resolve through the XLIFF file.'
+            'Task title does not resolve through the XLIFF file.',
         );
         self::assertStringContainsString(
             'temporal content transitions',
             $GLOBALS['LANG']->sL($registration['description'] ?? ''),
-            'Task description does not resolve through the XLIFF file.'
+            'Task description does not resolve through the XLIFF file.',
         );
     }
 
@@ -99,7 +103,7 @@ final class TemporalCacheSchedulerTaskRegistrationTest extends FunctionalTestCas
         self::assertArrayHasKey(TemporalCacheSchedulerTask::class, $taskService->getAllTaskTypes());
 
         $execution = new Execution();
-        $execution->setStart(\time());
+        $execution->setStart(time());
         $execution->setInterval(3600);
         $execution->setMultiple(false);
 
@@ -128,7 +132,10 @@ final class TemporalCacheSchedulerTaskRegistrationTest extends FunctionalTestCas
     {
         $task = $this->get(TemporalCacheSchedulerTask::class);
 
-        $restoredTask = \unserialize(\serialize($task));
+        // The value is this test's own serialize() output, the same round trip the
+        // scheduler performs on the stored task; no external input reaches it.
+        // nosemgrep: php.lang.security.unserialize-use.unserialize-use
+        $restoredTask = unserialize(serialize($task));
 
         self::assertInstanceOf(TemporalCacheSchedulerTask::class, $restoredTask);
         self::assertTrue($restoredTask->execute(), 'The unserialized task lost its dependencies and refuses to run.');

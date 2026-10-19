@@ -1,15 +1,18 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Service\Scoping;
 
 use TYPO3\CMS\Core\Context\Context;
+
+use function assert;
+use function is_int;
 
 /**
  * Resolves workspace and language ids from the TYPO3 context.
@@ -22,7 +25,7 @@ trait ResolvesContextAspects
     private function resolveWorkspaceId(Context $context): int
     {
         $workspaceId = $context->getPropertyFromAspect('workspace', 'id', 0);
-        \assert(\is_int($workspaceId));
+        assert(is_int($workspaceId));
 
         return $workspaceId;
     }
@@ -30,7 +33,7 @@ trait ResolvesContextAspects
     private function resolveLanguageId(Context $context): int
     {
         $languageId = $context->getPropertyFromAspect('language', 'id', 0);
-        \assert(\is_int($languageId));
+        assert(is_int($languageId));
 
         return $languageId;
     }

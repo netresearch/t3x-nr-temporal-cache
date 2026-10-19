@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Timing;
 
@@ -25,6 +25,9 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function str_contains;
+use function time;
 
 #[AllowMockObjectsWithoutExpectations]
 #[CoversClass(SchedulerTimingStrategy::class)]
@@ -50,28 +53,26 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
     {
         parent::setUp();
         $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
-        $this->cacheManager = $this->createMock(CacheManager::class);
-        $this->context = $this->createStub(Context::class);
-        $this->logger = $this->createStub(LoggerInterface::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
+        $this->cacheManager    = $this->createMock(CacheManager::class);
+        $this->context         = $this->createStub(Context::class);
+        $this->logger          = $this->createStub(LoggerInterface::class);
+        $this->configuration   = $this->createStub(ExtensionConfiguration::class);
 
         $this->subject = new SchedulerTimingStrategy(
             $this->scopingStrategy,
             $this->cacheManager,
             $this->context,
             $this->logger,
-            $this->configuration
+            $this->configuration,
         );
     }
 
-    /**     */
     public function testHandlesContentTypeReturnsAlwaysTrue(): void
     {
         self::assertTrue($this->subject->handlesContentType('page'));
         self::assertTrue($this->subject->handlesContentType('content'));
     }
 
-    /**     */
     public function testGetCacheLifetimeReturnsNull(): void
     {
         $lifetime = $this->subject->getCacheLifetime($this->context);
@@ -79,7 +80,6 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         self::assertNull($lifetime);
     }
 
-    /**     */
     public function testProcessTransitionFlushesCache(): void
     {
         $content = new TemporalContent(
@@ -87,16 +87,16 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
             tableName: 'tt_content',
             title: 'Test',
             pid: 5,
-            starttime: \time(),
+            starttime: time(),
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $event = new TransitionEvent(
             content: $content,
-            timestamp: \time(),
-            transitionType: 'start'
+            timestamp: time(),
+            transitionType: 'start',
         );
 
         $this->scopingStrategy
@@ -128,13 +128,13 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
                 tableName: 'tt_content',
                 title: 'Test',
                 pid: 5,
-                starttime: \time(),
+                starttime: time(),
                 endtime: null,
                 languageUid: 0,
-                workspaceUid: 0
+                workspaceUid: 0,
             ),
-            timestamp: \time(),
-            transitionType: 'start'
+            timestamp: time(),
+            transitionType: 'start',
         );
 
         $this->scopingStrategy
@@ -150,7 +150,6 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
         $this->subject->processTransition($event);
     }
 
-    /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('scheduler', $this->subject->getName());
@@ -170,7 +169,7 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
                 'Processed temporal transition',
                 self::callback(static fn (array $context): bool => $context['flushed_tags'] === ['pageId_5']
                     && $context['strategy'] === 'per-page'
-                    && \str_contains((string)$context['event'], 'tt_content'))
+                    && str_contains((string) $context['event'], 'tt_content')),
             );
         $logger->expects(self::never())->method('error');
 
@@ -200,7 +199,7 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
             ->method('error')
             ->with(
                 'Failed to process temporal transition',
-                self::callback(static fn (array $context): bool => $context['error'] === 'cache unavailable')
+                self::callback(static fn (array $context): bool => $context['error'] === 'cache unavailable'),
             );
 
         // The scheduler task processes the next transition after this one, so no exception.
@@ -214,7 +213,7 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
             $this->cacheManager,
             $this->context,
             $logger,
-            $this->configuration
+            $this->configuration,
         );
     }
 
@@ -229,10 +228,10 @@ final class SchedulerTimingStrategyTest extends UnitTestCase
                 starttime: 1893456000,
                 endtime: null,
                 languageUid: 0,
-                workspaceUid: 0
+                workspaceUid: 0,
             ),
             timestamp: 1893456000,
-            transitionType: 'start'
+            transitionType: 'start',
         );
     }
 }

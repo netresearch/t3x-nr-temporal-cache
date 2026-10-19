@@ -1,13 +1,16 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Domain\Model;
+
+use function array_filter;
+use function min;
 
 /**
  * Value object representing temporal content (pages or content elements with starttime/endtime).
@@ -28,9 +31,8 @@ final class TemporalContent
         public readonly int $languageUid,
         public readonly int $workspaceUid,
         public readonly bool $hidden = false,
-        public readonly bool $deleted = false
-    ) {
-    }
+        public readonly bool $deleted = false,
+    ) {}
 
     public function hasTemporalFields(): bool
     {
@@ -39,12 +41,12 @@ final class TemporalContent
 
     public function getNextTransition(int $currentTime): ?int
     {
-        $transitions = \array_filter(
+        $transitions = array_filter(
             [$this->starttime, $this->endtime],
-            fn (?int $t): bool => $t !== null && $t > $currentTime
+            fn (?int $t): bool => $t !== null && $t > $currentTime,
         );
 
-        return $transitions === [] ? null : \min($transitions);
+        return $transitions === [] ? null : min($transitions);
     }
 
     public function getContentType(): string

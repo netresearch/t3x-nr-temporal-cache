@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\EventListener;
 
@@ -23,8 +23,10 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
+use function is_array;
+
 /**
- * Unit tests for TemporalCacheLifetime event listener
+ * Unit tests for TemporalCacheLifetime event listener.
  */
 #[AllowMockObjectsWithoutExpectations]
 #[CoversClass(TemporalCacheLifetime::class)]
@@ -47,10 +49,10 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         parent::setUp();
 
         $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
-        $this->scopingStrategy = $this->createStub(ScopingStrategyInterface::class);
-        $this->timingStrategy = $this->createMock(TimingStrategyInterface::class);
-        $this->context = $this->createStub(Context::class);
-        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->scopingStrategy        = $this->createStub(ScopingStrategyInterface::class);
+        $this->timingStrategy         = $this->createMock(TimingStrategyInterface::class);
+        $this->context                = $this->createStub(Context::class);
+        $this->logger                 = $this->createStub(LoggerInterface::class);
 
         // Configure default mock behaviors
         $this->extensionConfiguration
@@ -71,7 +73,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             $this->scopingStrategy,
             $this->timingStrategy,
             $this->context,
-            $this->logger
+            $this->logger,
         );
     }
 
@@ -84,7 +86,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->with($this->context)
             ->willReturn(null);
 
-        $event = $this->createEvent(86400);
+        $event            = $this->createEvent(86400);
         $originalLifetime = $event->getCacheLifetime();
 
         // Act
@@ -95,7 +97,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
     }
 
     /**
-     * Helper to create real event instances
+     * Helper to create real event instances.
      */
     private function createEvent(int $cacheLifetime, array $renderingInstructions = []): ModifyCacheLifetimeForPageEvent
     {
@@ -104,7 +106,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             pageId: 1,
             pageRecord: ['uid' => 1],
             renderingInstructions: $renderingInstructions,
-            context: $this->context
+            context: $this->context,
         );
     }
 
@@ -131,7 +133,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
     public function testInvokeCapsLifetimeAtDefaultMaximum(): void
     {
         $requestedLifetime = 100000; // More than default 86400
-        $expectedLifetime = 86400;
+        $expectedLifetime  = 86400;
 
         // Arrange
         $this->timingStrategy
@@ -150,7 +152,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
     public function testInvokeRespectsTypoScriptCachePeriod(): void
     {
         $typoScriptMaxLifetime = 7200;
-        $requestedLifetime = 10000;
+        $requestedLifetime     = 10000;
 
         // Arrange
         $this->timingStrategy
@@ -173,7 +175,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->method('getCacheLifetime')
             ->willThrowException(new RuntimeException('Test exception'));
 
-        $event = $this->createEvent(86400);
+        $event            = $this->createEvent(86400);
         $originalLifetime = $event->getCacheLifetime();
 
         // Act: Should not throw
@@ -192,7 +194,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
         $debugConfig->method('getDefaultMaxLifetime')->willReturn(86400);
         $debugConfig->method('isDebugLoggingEnabled')->willReturn(true);
 
-        $debugLogger = $this->createMock(LoggerInterface::class);
+        $debugLogger         = $this->createMock(LoggerInterface::class);
         $debugTimingStrategy = $this->createStub(TimingStrategyInterface::class);
         $debugTimingStrategy->method('getName')->willReturn('test-timing');
         $debugTimingStrategy->method('getCacheLifetime')->willReturn($lifetime);
@@ -205,7 +207,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             $debugScopingStrategy,
             $debugTimingStrategy,
             $this->context,
-            $debugLogger
+            $debugLogger,
         );
 
         $event = $this->createEvent(3600);
@@ -216,7 +218,7 @@ final class TemporalCacheLifetimeTest extends UnitTestCase
             ->method('debug')
             ->with(
                 'Temporal cache lifetime set',
-                self::callback(static fn ($value): bool => \is_array($value))
+                self::callback(static fn ($value): bool => is_array($value)),
             );
 
         // Act

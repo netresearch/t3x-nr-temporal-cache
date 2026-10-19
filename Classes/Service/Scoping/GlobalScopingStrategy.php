@@ -1,17 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use TYPO3\CMS\Core\Context\Context;
+
+use function time;
 
 /**
  * Global scoping strategy - flushes ALL page caches.
@@ -34,9 +36,8 @@ class GlobalScopingStrategy implements ScopingStrategyInterface
     use ResolvesContextAspects;
 
     public function __construct(
-        private readonly TemporalContentRepositoryInterface $temporalContentRepository
-    ) {
-    }
+        private readonly TemporalContentRepositoryInterface $temporalContentRepository,
+    ) {}
 
     /**
      * {@inheritdoc}
@@ -57,9 +58,9 @@ class GlobalScopingStrategy implements ScopingStrategyInterface
     public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
         return $this->temporalContentRepository->getNextTransition(
-            \time(),
+            time(),
             $this->resolveWorkspaceId($context),
-            $this->resolveLanguageId($context)
+            $this->resolveLanguageId($context),
         );
     }
 

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
@@ -58,7 +58,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
     public function __construct(
         private readonly TimingStrategyInterface $dynamicStrategy,
         private readonly TimingStrategyInterface $schedulerStrategy,
-        private readonly ExtensionConfiguration $configuration
+        private readonly ExtensionConfiguration $configuration,
     ) {
         $this->timingRules = $this->configuration->getTimingRules();
     }
@@ -118,7 +118,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
      */
     public function getCacheLifetime(Context $context, ?int $pageId = null): ?int
     {
-        $pageStrategy = $this->getStrategyForContentType('page');
+        $pageStrategy    = $this->getStrategyForContentType('page');
         $contentStrategy = $this->getStrategyForContentType('content');
 
         $lifetime = $pageStrategy->getCacheLifetime($context, $pageId);
@@ -148,6 +148,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
      * Get the appropriate timing strategy for a content type.
      *
      * @param string $contentType Content type ('page' or 'content')
+     *
      * @return TimingStrategyInterface The strategy to use
      */
     private function getStrategyForContentType(string $contentType): TimingStrategyInterface
@@ -156,8 +157,8 @@ class HybridTimingStrategy implements TimingStrategyInterface
 
         return match ($strategyName) {
             'scheduler' => $this->schedulerStrategy,
-            'dynamic' => $this->dynamicStrategy,
-            default => $this->dynamicStrategy,
+            'dynamic'   => $this->dynamicStrategy,
+            default     => $this->dynamicStrategy,
         };
     }
 
@@ -165,6 +166,7 @@ class HybridTimingStrategy implements TimingStrategyInterface
      * Get the strategy name for a content type (for debugging).
      *
      * @param string $contentType Content type ('page' or 'content')
+     *
      * @return string Strategy name
      */
     public function getStrategyNameForContentType(string $contentType): string

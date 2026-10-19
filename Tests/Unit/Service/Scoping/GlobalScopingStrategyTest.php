@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Scoping;
 
@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
- * Unit tests for GlobalScopingStrategy
+ * Unit tests for GlobalScopingStrategy.
  */
 #[CoversClass(GlobalScopingStrategy::class)]
 #[UsesClass(TemporalContent::class)]
@@ -35,11 +35,10 @@ final class GlobalScopingStrategyTest extends UnitTestCase
     {
         parent::setUp();
         $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->context = $this->createStub(Context::class);
-        $this->subject = new GlobalScopingStrategy($this->repository);
+        $this->context    = $this->createStub(Context::class);
+        $this->subject    = new GlobalScopingStrategy($this->repository);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushReturnsGlobalTagForPages(): void
     {
         $content = new TemporalContent(
@@ -50,7 +49,7 @@ final class GlobalScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
@@ -58,7 +57,6 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame(['pages'], $tags);
     }
 
-    /**     */
     public function testGetCacheTagsToFlushReturnsGlobalTagForContent(): void
     {
         $content = new TemporalContent(
@@ -69,7 +67,7 @@ final class GlobalScopingStrategyTest extends UnitTestCase
             starttime: null,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $tags = $this->subject->getCacheTagsToFlush($content, $this->context);
@@ -77,7 +75,6 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame(['pages'], $tags);
     }
 
-    /**     */
     public function testGetNextTransitionDelegatesToRepository(): void
     {
         $expectedTransition = 1620000000;
@@ -98,10 +95,9 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame($expectedTransition, $result);
     }
 
-    /**     */
     public function testGetNextTransitionRespectsWorkspaceContext(): void
     {
-        $workspaceId = 1;
+        $workspaceId       = 1;
         $passedWorkspaceId = null;
 
         $this->context
@@ -118,7 +114,7 @@ final class GlobalScopingStrategyTest extends UnitTestCase
                     $passedWorkspaceId = $workspaceUid;
 
                     return null;
-                }
+                },
             );
 
         $this->subject->getNextTransition($this->context);
@@ -127,10 +123,9 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame($workspaceId, $passedWorkspaceId);
     }
 
-    /**     */
     public function testGetNextTransitionRespectsLanguageContext(): void
     {
-        $languageId = 2;
+        $languageId       = 2;
         $passedLanguageId = null;
 
         $this->context
@@ -147,7 +142,7 @@ final class GlobalScopingStrategyTest extends UnitTestCase
                     $passedLanguageId = $languageUid;
 
                     return null;
-                }
+                },
             );
 
         $this->subject->getNextTransition($this->context);
@@ -156,7 +151,6 @@ final class GlobalScopingStrategyTest extends UnitTestCase
         self::assertSame($languageId, $passedLanguageId);
     }
 
-    /**     */
     public function testGetNameReturnsCorrectIdentifier(): void
     {
         self::assertSame('global', $this->subject->getName());

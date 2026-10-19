@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
@@ -44,8 +44,9 @@ interface TimingStrategyInterface extends NamedStrategyInterface
      * This method is called by the EventListener on every page generation.
      * Returns null if this strategy doesn't modify cache lifetime.
      *
-     * @param Context $context TYPO3 context
-     * @param int|null $pageId The page currently being rendered (enables per-page scoping)
+     * @param Context  $context TYPO3 context
+     * @param int|null $pageId  The page currently being rendered (enables per-page scoping)
+     *
      * @return int|null Seconds until next transition, or null
      */
     public function getCacheLifetime(Context $context, ?int $pageId = null): ?int;

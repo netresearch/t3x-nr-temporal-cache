@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Domain\Repository;
 
@@ -18,6 +18,20 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function array_filter;
+use function array_keys;
+use function array_merge;
+use function array_values;
+use function assert;
+use function count;
+use function date;
+use function in_array;
+use function is_array;
+use function is_int;
+use function is_string;
+use function min;
+use function usort;
 
 /**
  * Repository for finding and managing temporal content across all registered tables.
@@ -41,9 +55,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         private readonly ConnectionPool $connectionPool,
         private readonly TransitionCache $transitionCache,
         private readonly TemporalMonitorRegistry $monitorRegistry,
-        private readonly DeletedRestriction $deletedRestriction
-    ) {
-    }
+        private readonly DeletedRestriction $deletedRestriction,
+    ) {}
 
     /**
      * Find all temporal content across all registered tables.
@@ -53,7 +66,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * starttime or endtime set, creating TemporalContent value objects.
      *
      * @param int $workspaceUid Workspace UID (0 = live workspace)
-     * @param int $languageUid Language UID (-1 = all languages, 0 = default, >0 = specific)
+     * @param int $languageUid  Language UID (-1 = all languages, 0 = default, >0 = specific)
+     *
      * @return array<TemporalContent> Array of temporal content objects
      */
     public function findAllWithTemporalFields(int $workspaceUid = 0, int $languageUid = -1): array
@@ -62,9 +76,9 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
 
         // Iterate over all registered tables (default + custom)
         foreach ($this->monitorRegistry->getAllTables() as $tableName => $fields) {
-            $temporalContent = \array_merge(
+            $temporalContent = array_merge(
                 $temporalContent,
-                $this->findTemporalRecordsForTable($tableName, $fields, $workspaceUid, $languageUid)
+                $this->findTemporalRecordsForTable($tableName, $fields, $workspaceUid, $languageUid),
             );
         }
 
@@ -78,17 +92,18 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * Queries the specified table using the provided field list and returns
      * TemporalContent value objects.
      *
-     * @param string $tableName Name of the table to query
-     * @param array<string> $fields Field list from registry (must include uid, starttime, endtime)
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param string        $tableName    Name of the table to query
+     * @param array<string> $fields       Field list from registry (must include uid, starttime, endtime)
+     * @param int           $workspaceUid Workspace UID
+     * @param int           $languageUid  Language UID
+     *
      * @return array<TemporalContent> Array of temporal content objects
      */
     private function findTemporalRecordsForTable(
         string $tableName,
         array $fields,
         int $workspaceUid,
-        int $languageUid
+        int $languageUid,
     ): array {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($tableName);
         $queryBuilder->getRestrictions()
@@ -96,7 +111,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->add($this->deletedRestriction);
 
         $languageField = $this->resolveLanguageField($tableName, $fields);
-        $selectFields = $this->buildSelectFields($tableName, $fields, $languageField);
+        $selectFields  = $this->buildSelectFields($tableName, $fields, $languageField);
 
         // Select the registered fields (plus the language column)
         $queryBuilder
@@ -105,8 +120,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->where(
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->gt('starttime', 0),
-                    $queryBuilder->expr()->gt('endtime', 0)
-                )
+                    $queryBuilder->expr()->gt('endtime', 0),
+                ),
             );
 
         $this->applyWorkspaceRestriction($queryBuilder, $tableName, $workspaceUid);
@@ -115,7 +130,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             $this->applyLanguageRestriction($queryBuilder, $tableName, $languageUid);
         }
 
-        $result = $queryBuilder->executeQuery();
+        $result  = $queryBuilder->executeQuery();
         $records = [];
 
         // Determine title field: 'title' for pages, 'header' for tt_content, 'title' as fallback
@@ -141,7 +156,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     {
         $languageField = $this->getLanguageField($tableName);
         if ($languageField !== null && $this->getTcaCtrl($tableName) === null
-            && !\in_array($languageField, $fields, true)) {
+            && !in_array($languageField, $fields, true)) {
             return null;
         }
 
@@ -156,16 +171,17 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * plus the language column from resolveLanguageField().
      *
      * @param array<string> $fields Field list from the registry
+     *
      * @return array<string>
      */
     private function buildSelectFields(string $tableName, array $fields, ?string $languageField): array
     {
         $selectFields = $fields;
-        if ($this->getTcaCtrl($tableName) !== null && !\in_array('pid', $selectFields, true)) {
+        if ($this->getTcaCtrl($tableName) !== null && !in_array('pid', $selectFields, true)) {
             $selectFields[] = 'pid';
         }
 
-        if ($languageField !== null && !\in_array($languageField, $selectFields, true)) {
+        if ($languageField !== null && !in_array($languageField, $selectFields, true)) {
             $selectFields[] = $languageField;
         }
 
@@ -185,29 +201,29 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         string $tableName,
         string $titleField,
         ?string $languageField,
-        int $workspaceUid
+        int $workspaceUid,
     ): TemporalContent {
         $uid = $row['uid'];
-        \assert(\is_int($uid));
+        assert(is_int($uid));
         $title = $row[$titleField] ?? '';
         // determineTitleField() falls back to the integer uid
-        if (\is_int($title)) {
-            $title = (string)$title;
+        if (is_int($title)) {
+            $title = (string) $title;
         }
 
-        \assert(\is_string($title));
+        assert(is_string($title));
         $pid = $row['pid'] ?? 0;
-        \assert(\is_int($pid));
+        assert(is_int($pid));
         $starttime = $row['starttime'];
-        \assert(\is_int($starttime));
+        assert(is_int($starttime));
         $endtime = $row['endtime'];
-        \assert(\is_int($endtime));
+        assert(is_int($endtime));
         $languageUid = $languageField !== null ? ($row[$languageField] ?? 0) : 0;
-        \assert(\is_int($languageUid));
+        assert(is_int($languageUid));
         $hidden = $row['hidden'] ?? 0;
-        \assert(\is_int($hidden));
+        assert(is_int($hidden));
         $deleted = $row['deleted'] ?? 0;
-        \assert(\is_int($deleted));
+        assert(is_int($deleted));
 
         return new TemporalContent(
             uid: $uid,
@@ -218,31 +234,32 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             endtime: $endtime > 0 ? $endtime : null,
             languageUid: $languageUid,
             workspaceUid: $workspaceUid,
-            hidden: (bool)$hidden,
-            deleted: (bool)$deleted
+            hidden: (bool) $hidden,
+            deleted: (bool) $deleted,
         );
     }
 
     /**
      * Determine which field contains the record title.
      *
-     * @param string $tableName Table name
-     * @param array<string> $fields Available fields
+     * @param string        $tableName Table name
+     * @param array<string> $fields    Available fields
+     *
      * @return string Field name to use as title
      */
     private function determineTitleField(string $tableName, array $fields): string
     {
         // Use 'header' for tt_content, 'title' for everything else
-        if ($tableName === 'tt_content' && \in_array('header', $fields, true)) {
+        if ($tableName === 'tt_content' && in_array('header', $fields, true)) {
             return 'header';
         }
 
-        if (\in_array('title', $fields, true)) {
+        if (in_array('title', $fields, true)) {
             return 'title';
         }
 
         // Fallback: check for 'name' field
-        if (\in_array('name', $fields, true)) {
+        if (in_array('name', $fields, true)) {
             return 'name';
         }
 
@@ -257,51 +274,51 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * occurred since the last run, enabling batch cache invalidation.
      *
      * @param int $startTimestamp Start of time range (inclusive)
-     * @param int $endTimestamp End of time range (inclusive)
-     * @param int $workspaceUid Workspace UID (default 0 = live)
-     * @param int $languageUid Language UID (default 0 = default language)
+     * @param int $endTimestamp   End of time range (inclusive)
+     * @param int $workspaceUid   Workspace UID (default 0 = live)
+     * @param int $languageUid    Language UID (default 0 = default language)
+     *
      * @return array<TransitionEvent> Array of transition events in chronological order
      */
     public function findTransitionsInRange(
         int $startTimestamp,
         int $endTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): array {
-        $allContent = $this->findAllWithTemporalFields($workspaceUid, $languageUid);
+        $allContent  = $this->findAllWithTemporalFields($workspaceUid, $languageUid);
         $transitions = [];
 
         foreach ($allContent as $content) {
             // Check starttime transition
-            if ($content->starttime !== null &&
-                $content->starttime >= $startTimestamp &&
-                $content->starttime <= $endTimestamp
+            if ($content->starttime !== null
+                && $content->starttime >= $startTimestamp
+                && $content->starttime <= $endTimestamp
             ) {
                 $transitions[] = new TransitionEvent(
                     content: $content,
                     timestamp: $content->starttime,
-                    transitionType: 'start'
+                    transitionType: 'start',
                 );
             }
 
             // Check endtime transition
-            if ($content->endtime !== null &&
-                $content->endtime >= $startTimestamp &&
-                $content->endtime <= $endTimestamp
+            if ($content->endtime !== null
+                && $content->endtime >= $startTimestamp
+                && $content->endtime <= $endTimestamp
             ) {
                 $transitions[] = new TransitionEvent(
                     content: $content,
                     timestamp: $content->endtime,
-                    transitionType: 'end'
+                    transitionType: 'end',
                 );
             }
         }
 
         // Sort transitions by time
-        \usort(
+        usort(
             $transitions,
-            fn (TransitionEvent $a, TransitionEvent $b): int =>
-            $a->timestamp <=> $b->timestamp
+            fn (TransitionEvent $a, TransitionEvent $b): int => $a->timestamp <=> $b->timestamp,
         );
 
         return $transitions;
@@ -335,14 +352,15 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * 5. Take minimum of all 4 non-null results
      *
      * @param int $currentTimestamp Reference timestamp (usually current time)
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $workspaceUid     Workspace UID
+     * @param int $languageUid      Language UID
+     *
      * @return int|null Timestamp of next transition, or null if none
      */
     public function getNextTransition(
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int {
         // Check request-level cache first
         if ($this->transitionCache->hasNextTransition($currentTimestamp, $workspaceUid, $languageUid)) {
@@ -380,21 +398,22 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * - Minimal data transfer (single integer result)
      *
      * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $workspaceUid     Workspace UID
+     * @param int $languageUid      Language UID
+     *
      * @return int|null Timestamp of next transition, or null if none
      */
     private function findNextTransitionOptimized(
         int $currentTimestamp,
         int $workspaceUid,
-        int $languageUid
+        int $languageUid,
     ): ?int {
         return $this->findNextTransitionForTables(
-            \array_keys($this->monitorRegistry->getAllTables()),
+            array_keys($this->monitorRegistry->getAllTables()),
             $currentTimestamp,
             $workspaceUid,
             $languageUid,
-            null
+            null,
         );
     }
 
@@ -410,14 +429,14 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     public function getNextPageTransition(
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int {
         return $this->findNextTransitionForTables(
             ['pages'],
             $currentTimestamp,
             $workspaceUid,
             $languageUid,
-            null
+            null,
         );
     }
 
@@ -428,17 +447,18 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * scoping can limit content churn to the page currently being rendered.
      *
      * @param int $pageId The page the rendered output belongs to
+     *
      * @return int|null Timestamp of the next content transition on that page, or null if none
      */
     public function getNextContentTransitionForPage(
         int $pageId,
         int $currentTimestamp,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): ?int {
-        $contentTables = \array_values(\array_filter(
-            \array_keys($this->monitorRegistry->getAllTables()),
-            static fn (string $table): bool => $table !== 'pages'
+        $contentTables = array_values(array_filter(
+            array_keys($this->monitorRegistry->getAllTables()),
+            static fn (string $table): bool => $table !== 'pages',
         ));
 
         return $this->findNextTransitionForTables(
@@ -446,7 +466,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             $currentTimestamp,
             $workspaceUid,
             $languageUid,
-            $pageId
+            $pageId,
         );
     }
 
@@ -454,7 +474,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * Find the earliest upcoming transition across a set of tables.
      *
      * @param array<string> $tables Tables to query
-     * @param int|null $pid Restrict to records on this page (null = no pid restriction)
+     * @param int|null      $pid    Restrict to records on this page (null = no pid restriction)
+     *
      * @return int|null Earliest transition timestamp, or null if none
      */
     private function findNextTransitionForTables(
@@ -462,7 +483,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         int $currentTimestamp,
         int $workspaceUid,
         int $languageUid,
-        ?int $pid
+        ?int $pid,
     ): ?int {
         $candidates = [];
 
@@ -474,7 +495,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                     $currentTimestamp,
                     $workspaceUid,
                     $languageUid,
-                    $pid
+                    $pid,
                 );
                 if ($min !== null) {
                     $candidates[] = $min;
@@ -482,7 +503,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             }
         }
 
-        return $candidates === [] ? null : \min($candidates);
+        return $candidates === [] ? null : min($candidates);
     }
 
     /**
@@ -497,12 +518,13 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      *   AND workspace conditions
      *   AND language conditions
      *
-     * @param string $tableName Table to query ('pages' or 'tt_content')
-     * @param string $fieldName Field to query ('starttime' or 'endtime')
-     * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
-     * @param int|null $pid Restrict to records on this page (null = no pid restriction)
+     * @param string   $tableName        Table to query ('pages' or 'tt_content')
+     * @param string   $fieldName        Field to query ('starttime' or 'endtime')
+     * @param int      $currentTimestamp Reference timestamp
+     * @param int      $workspaceUid     Workspace UID
+     * @param int      $languageUid      Language UID
+     * @param int|null $pid              Restrict to records on this page (null = no pid restriction)
+     *
      * @return int|null Minimum timestamp, or null if none found
      */
     private function findMinTransitionForTable(
@@ -511,7 +533,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         int $currentTimestamp,
         int $workspaceUid,
         int $languageUid,
-        ?int $pid = null
+        ?int $pid = null,
     ): ?int {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($tableName);
 
@@ -526,8 +548,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->where(
                 $queryBuilder->expr()->gt(
                     $fieldName,
-                    $queryBuilder->createNamedParameter($currentTimestamp, Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($currentTimestamp, Connection::PARAM_INT),
+                ),
             );
 
         // Ignore deleted and hidden records: their transitions never change frontend output.
@@ -540,8 +562,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'pid',
-                    $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT),
+                ),
             );
         }
 
@@ -559,7 +581,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             return null;
         }
 
-        \assert(\is_int($result));
+        assert(is_int($result));
+
         return $result;
     }
 
@@ -574,26 +597,26 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     private function getEnableColumns(string $tableName): array
     {
         $tableTca = $this->getTca()[$tableName] ?? null;
-        if (!\is_array($tableTca)) {
+        if (!is_array($tableTca)) {
             return [];
         }
 
         $ctrl = $tableTca['ctrl'] ?? null;
-        if (!\is_array($ctrl)) {
+        if (!is_array($ctrl)) {
             return [];
         }
 
         $columns = [];
 
         $deleteColumn = $ctrl['delete'] ?? null;
-        if (\is_string($deleteColumn) && $deleteColumn !== '') {
+        if (is_string($deleteColumn) && $deleteColumn !== '') {
             $columns[] = $deleteColumn;
         }
 
         $enableColumns = $ctrl['enablecolumns'] ?? null;
-        if (\is_array($enableColumns)) {
+        if (is_array($enableColumns)) {
             $disabledColumn = $enableColumns['disabled'] ?? null;
-            if (\is_string($disabledColumn) && $disabledColumn !== '') {
+            if (is_string($disabledColumn) && $disabledColumn !== '') {
                 $columns[] = $disabledColumn;
             }
         }
@@ -625,7 +648,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     {
         $tca = $GLOBALS['TCA'] ?? [];
 
-        return \is_array($tca) ? $tca : [];
+        return is_array($tca) ? $tca : [];
     }
 
     /**
@@ -644,8 +667,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         $queryBuilder->andWhere(
             $queryBuilder->expr()->in(
                 $languageField,
-                $queryBuilder->createNamedParameter([$languageUid, -1], Connection::PARAM_INT_ARRAY)
-            )
+                $queryBuilder->createNamedParameter([$languageUid, -1], Connection::PARAM_INT_ARRAY),
+            ),
         );
     }
 
@@ -665,7 +688,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
 
         $languageField = $ctrl['languageField'] ?? null;
 
-        return \is_string($languageField) && $languageField !== '' ? $languageField : null;
+        return is_string($languageField) && $languageField !== '' ? $languageField : null;
     }
 
     /**
@@ -676,13 +699,13 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     private function getTcaCtrl(string $tableName): ?array
     {
         $tableTca = $this->getTca()[$tableName] ?? null;
-        if (!\is_array($tableTca)) {
+        if (!is_array($tableTca)) {
             return null;
         }
 
         $ctrl = $tableTca['ctrl'] ?? null;
 
-        return \is_array($ctrl) ? $ctrl : null;
+        return is_array($ctrl) ? $ctrl : null;
     }
 
     /**
@@ -696,7 +719,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         // A table that the TCA does not mark as workspace-versioned has no
         // t3ver_wsid column; all its records are live.
         $ctrl = $this->getTcaCtrl($tableName);
-        if ($ctrl !== null && !(bool)($ctrl['versioningWS'] ?? false)) {
+        if ($ctrl !== null && !(bool) ($ctrl['versioningWS'] ?? false)) {
             return;
         }
 
@@ -704,8 +727,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->eq('t3ver_wsid', 0),
-                    $queryBuilder->expr()->isNull('t3ver_wsid')
-                )
+                    $queryBuilder->expr()->isNull('t3ver_wsid'),
+                ),
             );
 
             return;
@@ -714,8 +737,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         $queryBuilder->andWhere(
             $queryBuilder->expr()->eq(
                 't3ver_wsid',
-                $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT)
-            )
+                $queryBuilder->createNamedParameter($workspaceUid, Connection::PARAM_INT),
+            ),
         );
     }
 
@@ -726,20 +749,21 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * showing how many transitions occur each day.
      *
      * @param int $startTimestamp Start of range
-     * @param int $endTimestamp End of range
-     * @param int $workspaceUid Workspace UID
+     * @param int $endTimestamp   End of range
+     * @param int $workspaceUid   Workspace UID
+     *
      * @return array<string, int> Array mapping date (Y-m-d) to transition count
      */
     public function countTransitionsPerDay(
         int $startTimestamp,
         int $endTimestamp,
-        int $workspaceUid = 0
+        int $workspaceUid = 0,
     ): array {
-        $transitions = $this->findTransitionsInRange($startTimestamp, $endTimestamp, $workspaceUid);
+        $transitions  = $this->findTransitionsInRange($startTimestamp, $endTimestamp, $workspaceUid);
         $countsPerDay = [];
 
         foreach ($transitions as $transition) {
-            $date = \date('Y-m-d', $transition->timestamp);
+            $date                = date('Y-m-d', $transition->timestamp);
             $countsPerDay[$date] = ($countsPerDay[$date] ?? 0) + 1;
         }
 
@@ -752,6 +776,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * Provides overview statistics for backend module dashboard.
      *
      * @param int $workspaceUid Workspace UID
+     *
      * @return array{total: int, pages: int, content: int, withStart: int, withEnd: int, withBoth: int}
      */
     public function getStatistics(int $workspaceUid = 0): array
@@ -759,30 +784,30 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
         $allContent = $this->findAllWithTemporalFields($workspaceUid);
 
         $stats = [
-            'total' => \count($allContent),
-            'pages' => 0,
-            'content' => 0,
+            'total'     => count($allContent),
+            'pages'     => 0,
+            'content'   => 0,
             'withStart' => 0,
-            'withEnd' => 0,
-            'withBoth' => 0,
+            'withEnd'   => 0,
+            'withBoth'  => 0,
         ];
 
         foreach ($allContent as $content) {
             if ($content->isPage()) {
-                $stats['pages']++;
+                ++$stats['pages'];
             } else {
-                $stats['content']++;
+                ++$stats['content'];
             }
 
             $hasStart = $content->starttime !== null;
-            $hasEnd = $content->endtime !== null;
+            $hasEnd   = $content->endtime !== null;
 
             if ($hasStart && $hasEnd) {
-                $stats['withBoth']++;
+                ++$stats['withBoth'];
             } elseif ($hasStart) {
-                $stats['withStart']++;
+                ++$stats['withStart'];
             } elseif ($hasEnd) {
-                $stats['withEnd']++;
+                ++$stats['withEnd'];
             }
         }
 
@@ -795,15 +820,16 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
      * Returns all temporal content elements on a specific page,
      * useful for page-specific analysis.
      *
-     * @param int $pageId Page UID
+     * @param int $pageId       Page UID
      * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $languageUid  Language UID
+     *
      * @return array<TemporalContent> Array of temporal content on the page
      */
     public function findByPageId(
         int $pageId,
         int $workspaceUid = 0,
-        int $languageUid = 0
+        int $languageUid = 0,
     ): array {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $queryBuilder->getRestrictions()
@@ -816,37 +842,37 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->where(
                 $queryBuilder->expr()->eq(
                     'pid',
-                    $queryBuilder->createNamedParameter($pageId, Connection::PARAM_INT)
+                    $queryBuilder->createNamedParameter($pageId, Connection::PARAM_INT),
                 ),
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->gt('starttime', 0),
-                    $queryBuilder->expr()->gt('endtime', 0)
+                    $queryBuilder->expr()->gt('endtime', 0),
                 ),
             );
 
         $this->applyLanguageRestriction($queryBuilder, 'tt_content', $languageUid);
         $this->applyWorkspaceRestriction($queryBuilder, 'tt_content', $workspaceUid);
 
-        $result = $queryBuilder->executeQuery();
+        $result          = $queryBuilder->executeQuery();
         $contentElements = [];
 
         while ($row = $result->fetchAssociative()) {
             $uid = $row['uid'];
-            \assert(\is_int($uid));
+            assert(is_int($uid));
             $header = $row['header'] ?? '';
-            \assert(\is_string($header));
+            assert(is_string($header));
             $pid = $row['pid'];
-            \assert(\is_int($pid));
+            assert(is_int($pid));
             $starttime = $row['starttime'];
-            \assert(\is_int($starttime));
+            assert(is_int($starttime));
             $endtime = $row['endtime'];
-            \assert(\is_int($endtime));
+            assert(is_int($endtime));
             $languageUid = $row['sys_language_uid'] ?? 0;
-            \assert(\is_int($languageUid));
+            assert(is_int($languageUid));
             $hidden = $row['hidden'] ?? false;
-            \assert(\is_int($hidden));
+            assert(is_int($hidden));
             $deleted = $row['deleted'] ?? false;
-            \assert(\is_int($deleted));
+            assert(is_int($deleted));
 
             $contentElements[] = new TemporalContent(
                 uid: $uid,
@@ -857,8 +883,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
                 endtime: $endtime > 0 ? $endtime : null,
                 languageUid: $languageUid,
                 workspaceUid: $workspaceUid,
-                hidden: (bool)$hidden,
-                deleted: (bool)$deleted
+                hidden: (bool) $hidden,
+                deleted: (bool) $deleted,
             );
         }
 
@@ -868,9 +894,10 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
     /**
      * Find content element by UID from any registered table.
      *
-     * @param int $uid Record UID
-     * @param string $tableName Table name (must be registered in TemporalMonitorRegistry)
-     * @param int $workspaceUid Workspace UID
+     * @param int    $uid          Record UID
+     * @param string $tableName    Table name (must be registered in TemporalMonitorRegistry)
+     * @param int    $workspaceUid Workspace UID
+     *
      * @return TemporalContent|null Content object or null if not found or table not registered
      */
     public function findByUid(int $uid, string $tableName = 'tt_content', int $workspaceUid = 0): ?TemporalContent
@@ -892,7 +919,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->add($this->deletedRestriction);
 
         $languageField = $this->resolveLanguageField($tableName, $fields);
-        $selectFields = $this->buildSelectFields($tableName, $fields, $languageField);
+        $selectFields  = $this->buildSelectFields($tableName, $fields, $languageField);
 
         $queryBuilder
             ->select(...$selectFields)
@@ -900,8 +927,8 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             ->where(
                 $queryBuilder->expr()->eq(
                     'uid',
-                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT),
+                ),
             );
 
         $this->applyWorkspaceRestriction($queryBuilder, $tableName, $workspaceUid);
@@ -917,7 +944,7 @@ final class TemporalContentRepository implements TemporalContentRepositoryInterf
             $tableName,
             $this->determineTitleField($tableName, $fields),
             $languageField,
-            $workspaceUid
+            $workspaceUid,
         );
     }
 }

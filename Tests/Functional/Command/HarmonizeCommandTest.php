@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Command;
 
@@ -18,6 +18,9 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function floor;
+use function time;
 
 /**
  * temporalcache:harmonize against a real database: what a live run writes, what a dry run
@@ -47,8 +50,8 @@ final class HarmonizeCommandTest extends FunctionalTestCase
         'EXTENSIONS' => [
             'nr_temporal_cache' => [
                 'harmonization' => [
-                    'enabled' => '1',
-                    'slots' => '00:00,12:00',
+                    'enabled'   => '1',
+                    'slots'     => '00:00,12:00',
                     'tolerance' => '3600',
                 ],
             ],
@@ -61,37 +64,37 @@ final class HarmonizeCommandTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->slot = ((int)\floor(\time() / 86400) + 10) * 86400 + 43200;
+        $this->slot = ((int) floor(time() / 86400) + 10) * 86400 + 43200;
 
         $this->get(ConnectionPool::class)->getConnectionForTable('pages')->insert('pages', [
-            'uid' => 1,
-            'pid' => 0,
-            'title' => 'Page ten minutes after the slot',
-            'starttime' => $this->slot + 600,
-            'endtime' => 0,
+            'uid'              => 1,
+            'pid'              => 0,
+            'title'            => 'Page ten minutes after the slot',
+            'starttime'        => $this->slot + 600,
+            'endtime'          => 0,
             'sys_language_uid' => 0,
         ]);
 
         $content = $this->get(ConnectionPool::class)->getConnectionForTable('tt_content');
         // Twelve content elements a few minutes before a noon slot, one per day.
-        for ($i = 0; $i < 12; $i++) {
+        for ($i = 0; $i < 12; ++$i) {
             $content->insert('tt_content', [
-                'uid' => 100 + $i,
-                'pid' => 1,
-                'header' => 'Content ' . $i,
-                'starttime' => 0,
-                'endtime' => $this->slot + $i * 86400 - 300,
+                'uid'              => 100 + $i,
+                'pid'              => 1,
+                'header'           => 'Content ' . $i,
+                'starttime'        => 0,
+                'endtime'          => $this->slot + $i * 86400 - 300,
                 'sys_language_uid' => 0,
             ]);
         }
 
         // Already on a slot: nothing to change.
         $content->insert('tt_content', [
-            'uid' => 200,
-            'pid' => 1,
-            'header' => 'Content on the slot',
-            'starttime' => $this->slot,
-            'endtime' => 0,
+            'uid'              => 200,
+            'pid'              => 1,
+            'header'           => 'Content on the slot',
+            'starttime'        => $this->slot,
+            'endtime'          => 0,
             'sys_language_uid' => 0,
         ]);
     }
@@ -115,7 +118,7 @@ final class HarmonizeCommandTest extends FunctionalTestCase
         self::assertMatchesRegularExpression('/Updated\s+13\b/', $display);
 
         self::assertSame($this->slot, $this->readTime('pages', 1, 'starttime'));
-        for ($i = 0; $i < 12; $i++) {
+        for ($i = 0; $i < 12; ++$i) {
             self::assertSame($this->slot + $i * 86400, $this->readTime('tt_content', 100 + $i, 'endtime'));
         }
 

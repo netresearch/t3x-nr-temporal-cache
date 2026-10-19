@@ -1,17 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Report;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
@@ -29,8 +31,9 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Reports\Status;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-/**
- */
+use function str_contains;
+use function time;
+
 #[CoversClass(TemporalCacheStatusReport::class)]
 final class TemporalCacheStatusReportTest extends UnitTestCase
 {
@@ -55,14 +58,13 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         parent::setUp();
 
         $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
-        $this->contentRepository = $this->createStub(TemporalContentRepositoryInterface::class);
-        $this->harmonizationService = $this->createStub(HarmonizationService::class);
-        $this->connectionPool = $this->createStub(ConnectionPool::class);
+        $this->contentRepository      = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->harmonizationService   = $this->createStub(HarmonizationService::class);
+        $this->connectionPool         = $this->createStub(ConnectionPool::class);
 
         $this->subject = $this->createSubject($this->createStub(LoggerInterface::class));
     }
 
-    /**     */
     public function testGetLabelReturnsTranslationKey(): void
     {
         $label = $this->subject->getLabel();
@@ -71,7 +73,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('locallang_reports.xlf', $label);
     }
 
-    /**     */
     public function testGetStatusReturnsAllStatusSections(): void
     {
         $this->mockValidConfiguration();
@@ -92,20 +93,18 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         }
     }
 
-    /**     */
     public function testGetExtensionStatusReturnsOkForValidConfiguration(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses        = $this->subject->getStatus();
         $extensionStatus = $statuses['extensionStatus'];
 
         self::assertSame(ContextualFeedbackSeverity::OK, $extensionStatus->getSeverity());
     }
 
-    /**     */
     public function testGetExtensionStatusReturnsErrorForInvalidScopingStrategy(): void
     {
         $this->extensionConfiguration
@@ -119,14 +118,13 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses        = $this->subject->getStatus();
         $extensionStatus = $statuses['extensionStatus'];
 
         self::assertSame(ContextualFeedbackSeverity::ERROR, $extensionStatus->getSeverity());
         self::assertStringContainsString('Invalid Configuration', $extensionStatus->getValue());
     }
 
-    /**     */
     public function testGetExtensionStatusReturnsErrorForInvalidTimingStrategy(): void
     {
         $this->extensionConfiguration
@@ -140,41 +138,38 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses        = $this->subject->getStatus();
         $extensionStatus = $statuses['extensionStatus'];
 
         self::assertSame(ContextualFeedbackSeverity::ERROR, $extensionStatus->getSeverity());
     }
 
-    /**     */
     public function testGetDatabaseIndexesStatusReturnsOkWhenIndexesExist(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses    = $this->subject->getStatus();
         $indexStatus = $statuses['databaseIndexes'];
 
         self::assertSame(ContextualFeedbackSeverity::OK, $indexStatus->getSeverity());
         self::assertStringContainsString('OK', $indexStatus->getValue());
     }
 
-    /**     */
     public function testGetDatabaseIndexesStatusReturnsErrorWhenIndexesMissing(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(false);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses    = $this->subject->getStatus();
         $indexStatus = $statuses['databaseIndexes'];
 
         self::assertSame(ContextualFeedbackSeverity::ERROR, $indexStatus->getSeverity());
         self::assertStringContainsString('Missing Indexes', $indexStatus->getValue());
     }
 
-    /**     */
     public function testGetDatabaseIndexesStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
@@ -191,7 +186,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->mockTemporalContentStatistics();
 
         try {
-            $statuses = $this->subject->getStatus();
+            $statuses    = $this->subject->getStatus();
             $indexStatus = $statuses['databaseIndexes'];
 
             self::assertSame(ContextualFeedbackSeverity::ERROR, $indexStatus->getSeverity());
@@ -202,19 +197,18 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         }
     }
 
-    /**     */
     public function testGetTemporalContentStatusReturnsStatistics(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
 
         $stats = [
-            'total' => 100,
-            'pages' => 50,
-            'content' => 50,
+            'total'     => 100,
+            'pages'     => 50,
+            'content'   => 50,
             'withStart' => 30,
-            'withEnd' => 20,
-            'withBoth' => 50,
+            'withEnd'   => 20,
+            'withBoth'  => 50,
         ];
 
         $this->contentRepository
@@ -223,32 +217,31 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
         $this->contentRepository
             ->method('getNextTransition')
-            ->willReturn(\time() + 3600);
+            ->willReturn(time() + 3600);
 
         $this->contentRepository
             ->method('findTransitionsInRange')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses      = $this->subject->getStatus();
         $contentStatus = $statuses['temporalContent'];
 
         self::assertSame(ContextualFeedbackSeverity::OK, $contentStatus->getSeverity());
         self::assertStringContainsString('100 items', $contentStatus->getValue());
     }
 
-    /**     */
     public function testGetTemporalContentStatusReturnsWarningWhenNoContent(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
 
         $stats = [
-            'total' => 0,
-            'pages' => 0,
-            'content' => 0,
+            'total'     => 0,
+            'pages'     => 0,
+            'content'   => 0,
             'withStart' => 0,
-            'withEnd' => 0,
-            'withBoth' => 0,
+            'withEnd'   => 0,
+            'withBoth'  => 0,
         ];
 
         $this->contentRepository
@@ -263,13 +256,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findTransitionsInRange')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses      = $this->subject->getStatus();
         $contentStatus = $statuses['temporalContent'];
 
         self::assertSame(ContextualFeedbackSeverity::WARNING, $contentStatus->getSeverity());
     }
 
-    /**     */
     public function testGetTemporalContentStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
@@ -283,14 +275,13 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findTransitionsInRange')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses      = $this->subject->getStatus();
         $contentStatus = $statuses['temporalContent'];
 
         self::assertSame(ContextualFeedbackSeverity::ERROR, $contentStatus->getSeverity());
         self::assertStringContainsString('Error', $contentStatus->getValue());
     }
 
-    /**     */
     public function testGetHarmonizationStatusReturnsInfoWhenDisabled(): void
     {
         $this->mockValidConfiguration();
@@ -301,14 +292,13 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses            = $this->subject->getStatus();
         $harmonizationStatus = $statuses['harmonizationStatus'];
 
         self::assertSame(ContextualFeedbackSeverity::INFO, $harmonizationStatus->getSeverity());
         self::assertStringContainsString('Disabled', $harmonizationStatus->getValue());
     }
 
-    /**     */
     public function testGetHarmonizationStatusShowsConfigurationWhenEnabled(): void
     {
         $this->extensionConfiguration
@@ -342,7 +332,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->mockDatabaseIndexes(true);
         $this->mockTemporalContentStatistics();
 
-        $statuses = $this->subject->getStatus();
+        $statuses            = $this->subject->getStatus();
         $harmonizationStatus = $statuses['harmonizationStatus'];
 
         // When harmonization is enabled, it returns OK
@@ -350,7 +340,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('Enabled', $harmonizationStatus->getValue());
     }
 
-    /**     */
     public function testGetHarmonizationStatusCalculatesImpact(): void
     {
         $this->mockHarmonizationEnabled();
@@ -361,22 +350,22 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             tableName: 'pages',
             title: 'Test',
             pid: 0,
-            starttime: \time(),
-            endtime: \time() + 3600,
+            starttime: time(),
+            endtime: time() + 3600,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         // Mock for getStatistics() call
         $this->contentRepository
             ->method('getStatistics')
             ->willReturn([
-                'total' => 1,
-                'pages' => 1,
-                'content' => 0,
+                'total'     => 1,
+                'pages'     => 1,
+                'content'   => 0,
                 'withStart' => 1,
-                'withEnd' => 1,
-                'withBoth' => 1,
+                'withEnd'   => 1,
+                'withBoth'  => 1,
             ]);
 
         $this->contentRepository
@@ -396,12 +385,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->harmonizationService
             ->method('calculateHarmonizationImpact')
             ->willReturn([
-                'original' => 100,
+                'original'   => 100,
                 'harmonized' => 70,
-                'reduction' => 30,
+                'reduction'  => 30,
             ]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses            = $this->subject->getStatus();
         $harmonizationStatus = $statuses['harmonizationStatus'];
 
         $message = $harmonizationStatus->getMessage();
@@ -409,7 +398,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringContainsString('moderate', $message);
     }
 
-    /**     */
     public function testGetUpcomingTransitionsStatusReturnsOkWhenNoTransitions(): void
     {
         $this->mockValidConfiguration();
@@ -420,21 +408,20 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findTransitionsInRange')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses          = $this->subject->getStatus();
         $transitionsStatus = $statuses['upcomingTransitions'];
 
         self::assertSame(ContextualFeedbackSeverity::OK, $transitionsStatus->getSeverity());
         self::assertStringContainsString('None', $transitionsStatus->getValue());
     }
 
-    /**     */
     public function testGetUpcomingTransitionsStatusGroupsByDay(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
 
-        $currentTime = \time();
-        $content = new TemporalContent(
+        $currentTime = time();
+        $content     = new TemporalContent(
             uid: 1,
             tableName: 'pages',
             title: 'Test',
@@ -442,7 +429,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             starttime: $currentTime + 3600,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         $transitions = [
@@ -455,12 +442,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->contentRepository
             ->method('getStatistics')
             ->willReturn([
-                'total' => 1,
-                'pages' => 1,
-                'content' => 0,
+                'total'     => 1,
+                'pages'     => 1,
+                'content'   => 0,
                 'withStart' => 1,
-                'withEnd' => 0,
-                'withBoth' => 0,
+                'withEnd'   => 0,
+                'withBoth'  => 0,
             ]);
 
         $this->contentRepository
@@ -476,21 +463,20 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findAllWithTemporalFields')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses          = $this->subject->getStatus();
         $transitionsStatus = $statuses['upcomingTransitions'];
 
         self::assertSame(ContextualFeedbackSeverity::OK, $transitionsStatus->getSeverity());
         self::assertStringContainsString('3 in next 7 days', $transitionsStatus->getValue());
     }
 
-    /**     */
     public function testGetUpcomingTransitionsStatusReturnsWarningForHighVolume(): void
     {
         $this->mockValidConfiguration();
         $this->mockDatabaseIndexes(true);
 
-        $currentTime = \time();
-        $content = new TemporalContent(
+        $currentTime = time();
+        $content     = new TemporalContent(
             uid: 1,
             tableName: 'pages',
             title: 'Test',
@@ -498,12 +484,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             starttime: $currentTime,
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
 
         // Create 150 transitions (>20 per day average)
         $transitions = [];
-        for ($i = 0; $i < 150; $i++) {
+        for ($i = 0; $i < 150; ++$i) {
             $transitions[] = new TransitionEvent($content, $currentTime + ($i * 3600), 'start');
         }
 
@@ -511,12 +497,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->contentRepository
             ->method('getStatistics')
             ->willReturn([
-                'total' => 1,
-                'pages' => 1,
-                'content' => 0,
+                'total'     => 1,
+                'pages'     => 1,
+                'content'   => 0,
                 'withStart' => 1,
-                'withEnd' => 0,
-                'withBoth' => 0,
+                'withEnd'   => 0,
+                'withBoth'  => 0,
             ]);
 
         $this->contentRepository
@@ -532,14 +518,13 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findAllWithTemporalFields')
             ->willReturn([]);
 
-        $statuses = $this->subject->getStatus();
+        $statuses          = $this->subject->getStatus();
         $transitionsStatus = $statuses['upcomingTransitions'];
 
         self::assertSame(ContextualFeedbackSeverity::WARNING, $transitionsStatus->getSeverity());
         self::assertStringContainsString('High Transition Volume', $transitionsStatus->getMessage());
     }
 
-    /**     */
     public function testGetUpcomingTransitionsStatusHandlesException(): void
     {
         $this->mockValidConfiguration();
@@ -550,7 +535,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             ->method('findTransitionsInRange')
             ->willThrowException(new Exception('Database error'));
 
-        $statuses = $this->subject->getStatus();
+        $statuses          = $this->subject->getStatus();
         $transitionsStatus = $statuses['upcomingTransitions'];
 
         self::assertSame(ContextualFeedbackSeverity::ERROR, $transitionsStatus->getSeverity());
@@ -568,7 +553,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
         $schemaManager
-            ->method('listTableIndexes')
+            ->method('introspectSchema')
             ->willThrowException(new Exception(self::EXCEPTION_MARKER));
 
         $connection = $this->createStub(Connection::class);
@@ -589,7 +574,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringNotContainsString(self::EXCEPTION_MARKER, $indexStatus->getValue());
     }
 
-    /**     */
     public function testGetTemporalContentStatusDoesNotExposeExceptionDetails(): void
     {
         $this->mockValidConfiguration();
@@ -612,7 +596,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringNotContainsString(self::EXCEPTION_MARKER, $contentStatus->getValue());
     }
 
-    /**     */
     public function testGetHarmonizationStatusDoesNotExposeExceptionDetails(): void
     {
         $this->mockHarmonizationEnabled();
@@ -633,7 +616,6 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         self::assertStringNotContainsString(self::EXCEPTION_MARKER, $harmonizationStatus->getValue());
     }
 
-    /**     */
     public function testGetUpcomingTransitionsStatusDoesNotExposeExceptionDetails(): void
     {
         $this->mockValidConfiguration();
@@ -671,8 +653,8 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
                     // PSR-3 reserves 'exception' for the Throwable itself; the
                     // detail must still be recoverable from it.
                     return $exception instanceof Throwable
-                        && \str_contains($exception->getMessage(), self::EXCEPTION_MARKER);
-                })
+                        && str_contains($exception->getMessage(), self::EXCEPTION_MARKER);
+                }),
             );
 
         $this->subject = $this->createSubject($logger);
@@ -685,7 +667,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
             $this->contentRepository,
             $this->harmonizationService,
             $this->connectionPool,
-            $logger
+            $logger,
         );
     }
 
@@ -741,13 +723,27 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
     private function mockDatabaseIndexes(bool $indexesExist): void
     {
-        $connection = $this->createStub(Connection::class);
+        $connection    = $this->createStub(Connection::class);
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
-        $platform = $this->createStub(AbstractPlatform::class);
+        $schema        = $this->createStub(Schema::class);
+        $table         = $this->createStub(Table::class);
+        $platform      = $this->createStub(AbstractPlatform::class);
 
         $connection
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
+
+        $schemaManager
+            ->method('introspectSchema')
+            ->willReturn($schema);
+
+        $schema
+            ->method('hasTable')
+            ->willReturn(true);
+
+        $schema
+            ->method('getTable')
+            ->willReturn($table);
 
         $connection
             ->method('getDatabasePlatform')
@@ -764,12 +760,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
                 ->method('getColumns')
                 ->willReturn(['endtime']);
 
-            $schemaManager
-                ->method('listTableIndexes')
-                ->willReturn([$starttimeIndex, $endtimeIndex]);
+            $table
+                ->method('getIndexes')
+                ->willReturn(['starttime' => $starttimeIndex, 'endtime' => $endtimeIndex]);
         } else {
-            $schemaManager
-                ->method('listTableIndexes')
+            $table
+                ->method('getIndexes')
                 ->willReturn([]);
         }
 
@@ -783,12 +779,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->contentRepository
             ->method('getStatistics')
             ->willReturn([
-                'total' => 10,
-                'pages' => 5,
-                'content' => 5,
+                'total'     => 10,
+                'pages'     => 5,
+                'content'   => 5,
                 'withStart' => 3,
-                'withEnd' => 2,
-                'withBoth' => 5,
+                'withEnd'   => 2,
+                'withBoth'  => 5,
             ]);
 
         $this->contentRepository
@@ -813,12 +809,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
         $this->contentRepository
             ->method('getStatistics')
             ->willReturn([
-                'total' => 10,
-                'pages' => 5,
-                'content' => 5,
+                'total'     => 10,
+                'pages'     => 5,
+                'content'   => 5,
                 'withStart' => 3,
-                'withEnd' => 2,
-                'withBoth' => 5,
+                'withEnd'   => 2,
+                'withBoth'  => 5,
             ]);
 
         $this->contentRepository

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace TYPO3\CMS\Frontend\Event;
 
@@ -25,20 +25,19 @@ use TYPO3\CMS\Core\Context\Context;
 class ModifyCacheLifetimeForPageEvent
 {
     /**
-     * @param int $cacheLifetime Cache lifetime in seconds
-     * @param int $pageId Page ID
-     * @param array<string, mixed> $pageRecord Page record
+     * @param int                  $cacheLifetime         Cache lifetime in seconds
+     * @param int                  $pageId                Page ID
+     * @param array<string, mixed> $pageRecord            Page record
      * @param array<string, mixed> $renderingInstructions TypoScript rendering instructions
-     * @param Context $context TYPO3 Context object
+     * @param Context              $context               TYPO3 Context object
      */
     public function __construct(
         private int $cacheLifetime,
         private readonly int $pageId = 0,
         private readonly array $pageRecord = [],
         private readonly array $renderingInstructions = [],
-        private readonly ?Context $context = null
-    ) {
-    }
+        private readonly ?Context $context = null,
+    ) {}
 
     /**
      * Get cache lifetime in seconds.

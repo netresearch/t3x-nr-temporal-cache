@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service;
 
@@ -20,8 +20,11 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
+use function array_map;
+use function array_shift;
+
 /**
- * Unit tests for RefindexService
+ * Unit tests for RefindexService.
  */
 #[CoversClass(RefindexService::class)]
 final class RefindexServiceTest extends UnitTestCase
@@ -38,7 +41,7 @@ final class RefindexServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->connectionPool = $this->createStub(ConnectionPool::class);
+        $this->connectionPool     = $this->createStub(ConnectionPool::class);
         $this->deletedRestriction = $this->createStub(DeletedRestriction::class);
 
         // Set up callback to return query builders by table name from queue
@@ -47,7 +50,7 @@ final class RefindexServiceTest extends UnitTestCase
             ->willReturnCallback(function (string $table) {
                 // If we have a queue for this table, shift the first one off
                 if (!empty($this->queryBuilders[$table])) {
-                    return \array_shift($this->queryBuilders[$table]);
+                    return array_shift($this->queryBuilders[$table]);
                 }
 
                 // Otherwise create a default mock
@@ -57,10 +60,9 @@ final class RefindexServiceTest extends UnitTestCase
         $this->subject = new RefindexService($this->connectionPool, $this->deletedRestriction);
     }
 
-    /**     */
     public function testFindPagesWithContentReturnsDirectParentPage(): void
     {
-        $contentUid = 123;
+        $contentUid   = 123;
         $parentPageId = 5;
 
         $this->mockTtContentQuery($contentUid, ['pid' => $parentPageId]);
@@ -73,11 +75,10 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([$parentPageId], $result);
     }
 
-    /**     */
     public function testFindPagesWithContentReturnsReferencedPages(): void
     {
-        $contentUid = 123;
-        $parentPageId = 5;
+        $contentUid       = 123;
+        $parentPageId     = 5;
         $referencedPageId = 10;
 
         $this->mockTtContentQuery($contentUid, ['pid' => $parentPageId]);
@@ -92,10 +93,9 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $referencedPageId], $result);
     }
 
-    /**     */
     public function testFindPagesWithContentIncludesMountPoints(): void
     {
-        $contentUid = 123;
+        $contentUid   = 123;
         $parentPageId = 5;
         $mountPointId = 15;
 
@@ -111,12 +111,11 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $mountPointId], $result);
     }
 
-    /**     */
     public function testFindPagesWithContentIncludesShortcuts(): void
     {
-        $contentUid = 123;
+        $contentUid   = 123;
         $parentPageId = 5;
-        $shortcutId = 20;
+        $shortcutId   = 20;
 
         $this->mockTtContentQuery($contentUid, ['pid' => $parentPageId]);
         $this->mockRefindexQuery($contentUid, 0, []);
@@ -130,11 +129,10 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEqualsCanonicalizing([$parentPageId, $shortcutId], $result);
     }
 
-    /**     */
     public function testFindPagesWithContentReturnsUniquePageIds(): void
     {
         $contentUid = 123;
-        $pageId = 5;
+        $pageId     = 5;
 
         $this->mockTtContentQuery($contentUid, ['pid' => $pageId]);
         $this->mockRefindexQuery($contentUid, 0, [
@@ -148,12 +146,11 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([$pageId], $result);
     }
 
-    /**     */
     public function testFindPagesWithContentHandlesContentReferences(): void
     {
-        $contentUid = 123;
-        $parentPageId = 5;
-        $referencingContentUid = 456;
+        $contentUid             = 123;
+        $parentPageId           = 5;
+        $referencingContentUid  = 456;
         $referencingContentPage = 10;
 
         // Queue order: tt_content (parent), sys_refindex, tt_content (referencing), pages (mount), pages (shortcut)
@@ -176,34 +173,33 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertContains($referencingContentPage, $result);
     }
 
-    /**     */
     public function testFindPagesWithContentReturnsEmptyArrayWhenContentNotFound(): void
     {
         $contentUid = 999;
 
         // Mock for tt_content (getDirectParentPage)
-        $qb1 = $this->createMockQueryBuilder();
+        $qb1     = $this->createMockQueryBuilder();
         $result1 = $this->createStub(Result::class);
         $result1->method('fetchOne')->willReturn(false);
         $qb1->method('executeQuery')->willReturn($result1);
         $this->queryBuilders['tt_content'][] = $qb1;
 
         // Mock for sys_refindex (findReferencesFromRefindex)
-        $qb2 = $this->createMockQueryBuilder();
+        $qb2     = $this->createMockQueryBuilder();
         $result2 = $this->createStub(Result::class);
         $result2->method('fetchAssociative')->willReturn(false);
         $qb2->method('executeQuery')->willReturn($result2);
         $this->queryBuilders['sys_refindex'][] = $qb2;
 
         // Mock for pages (findMountPointReferences)
-        $qb3 = $this->createMockQueryBuilder();
+        $qb3     = $this->createMockQueryBuilder();
         $result3 = $this->createStub(Result::class);
         $result3->method('fetchAssociative')->willReturn(false);
         $qb3->method('executeQuery')->willReturn($result3);
         $this->queryBuilders['pages'][] = $qb3;
 
         // Mock for pages (findShortcutReferences)
-        $qb4 = $this->createMockQueryBuilder();
+        $qb4     = $this->createMockQueryBuilder();
         $result4 = $this->createStub(Result::class);
         $result4->method('fetchAssociative')->willReturn(false);
         $qb4->method('executeQuery')->willReturn($result4);
@@ -214,7 +210,6 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertEmpty($result);
     }
 
-    /**     */
     public function testHasIndirectReferencesReturnsTrueForMountPoints(): void
     {
         $pageId = 5;
@@ -229,7 +224,6 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testHasIndirectReferencesReturnsTrueForShortcuts(): void
     {
         $pageId = 5;
@@ -244,7 +238,6 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertTrue($result);
     }
 
-    /**     */
     public function testHasIndirectReferencesReturnsFalseWhenNoReferences(): void
     {
         $pageId = 5;
@@ -257,20 +250,19 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertFalse($result);
     }
 
-    /**     */
     public function testGetContentElementsOnPageReturnsAllContentUids(): void
     {
-        $pageId = 5;
+        $pageId      = 5;
         $languageUid = 0;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchAssociative')
             ->willReturnOnConsecutiveCalls(
                 ['uid' => 10],
                 ['uid' => 20],
                 ['uid' => 30],
-                false
+                false,
             );
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -282,13 +274,12 @@ final class RefindexServiceTest extends UnitTestCase
         self::assertSame([10, 20, 30], $result);
     }
 
-    /**     */
     public function testGetContentElementsOnPageReturnsEmptyArrayWhenNoContent(): void
     {
         $pageId = 999;
 
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchAssociative')->willReturn(false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -302,9 +293,9 @@ final class RefindexServiceTest extends UnitTestCase
 
     private function createMockQueryBuilder(): QueryBuilder&Stub
     {
-        $queryBuilder = $this->createStub(QueryBuilder::class);
+        $queryBuilder      = $this->createStub(QueryBuilder::class);
         $expressionBuilder = $this->createStub(ExpressionBuilder::class);
-        $restrictions = $this->createStub(QueryRestrictionContainerInterface::class);
+        $restrictions      = $this->createStub(QueryRestrictionContainerInterface::class);
 
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
@@ -324,7 +315,7 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockTtContentQuery(int $contentUid, array $row): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
         $result->method('fetchOne')->willReturn($row['pid'] ?? false);
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -334,9 +325,9 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockRefindexQuery(int $contentUid, int $languageUid, array $rows): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
 
-        $calls = \array_map(fn ($row) => $row, $rows);
+        $calls   = array_map(fn ($row) => $row, $rows);
         $calls[] = false;
 
         $result->method('fetchAssociative')->willReturnOnConsecutiveCalls(...$calls);
@@ -348,9 +339,9 @@ final class RefindexServiceTest extends UnitTestCase
     private function mockPagesQuery(string $field, array $pageIds, array $resultRows): void
     {
         $queryBuilder = $this->createMockQueryBuilder();
-        $result = $this->createStub(Result::class);
+        $result       = $this->createStub(Result::class);
 
-        $calls = \array_map(fn ($row) => $row, $resultRows);
+        $calls   = array_map(fn ($row) => $row, $resultRows);
         $calls[] = false;
 
         $result->method('fetchAssociative')->willReturnOnConsecutiveCalls(...$calls);

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Task;
 
@@ -21,13 +21,11 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[CoversClass(TemporalCacheSchedulerTask::class)]
 final class TemporalCacheSchedulerTaskTest extends UnitTestCase
 {
-    /**     */
     public function testExecuteReturnsTrue(): void
     {
         self::markTestSkipped('Requires full TYPO3 Scheduler framework - functional test needed');
     }
 
-    /**     */
     public function testExecuteProcessesTransitions(): void
     {
         self::markTestSkipped('Requires full TYPO3 Scheduler framework - functional test needed');

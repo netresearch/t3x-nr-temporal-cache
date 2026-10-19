@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Command;
 
@@ -23,6 +23,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[AllowMockObjectsWithoutExpectations]
 #[CoversClass(HarmonizeCommand::class)]
@@ -46,28 +48,26 @@ final class HarmonizeCommandTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->repository           = $this->createStub(TemporalContentRepositoryInterface::class);
         $this->harmonizationService = $this->createStub(HarmonizationService::class);
-        $this->configuration = $this->createStub(ExtensionConfiguration::class);
-        $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->input = $this->createStub(InputInterface::class);
-        $this->output = $this->createStub(OutputInterface::class);
+        $this->configuration        = $this->createStub(ExtensionConfiguration::class);
+        $this->connectionPool       = $this->createMock(ConnectionPool::class);
+        $this->input                = $this->createStub(InputInterface::class);
+        $this->output               = $this->createStub(OutputInterface::class);
 
         $this->subject = new HarmonizeCommand(
             $this->repository,
             $this->harmonizationService,
             $this->configuration,
-            $this->connectionPool
+            $this->connectionPool,
         );
     }
 
-    /**     */
     public function testCommandHasCorrectName(): void
     {
         self::assertSame('temporalcache:harmonize', $this->subject->getName());
     }
 
-    /**     */
     public function testExecuteWithHarmonizationDisabledReturnsFailure(): void
     {
         $this->setupInputDefaults(true);
@@ -82,7 +82,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**     */
     public function testExecuteWithInvalidTableNameReturnsFailure(): void
     {
         $this->setupInputDefaults(true, 'invalid_table');
@@ -97,7 +96,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(1, $result);
     }
 
-    /**     */
     public function testExecuteWithNoTemporalContentReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
@@ -113,7 +111,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**     */
     public function testExecuteInDryRunModeDoesNotModifyDatabase(): void
     {
         $this->setupInputDefaults(true);
@@ -128,7 +125,7 @@ final class HarmonizeCommandTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->willReturn(\time() + 600); // Different timestamp (needs harmonization)
+            ->willReturn(time() + 600); // Different timestamp (needs harmonization)
 
         // Connection pool should NOT be called in dry-run mode
         $this->expectConnectionPoolNeverUsed();
@@ -138,7 +135,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**     */
     public function testExecuteInLiveModeWithoutConfirmationCancels(): void
     {
         $this->setupInputDefaults(false);
@@ -159,7 +155,7 @@ final class HarmonizeCommandTest extends UnitTestCase
 
         $this->harmonizationService
             ->method('harmonizeTimestamp')
-            ->willReturn(\time() + 600);
+            ->willReturn(time() + 600);
 
         // Connection pool should NOT be called when user declines
         $this->expectConnectionPoolNeverUsed();
@@ -169,7 +165,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**     */
     public function testExecuteWithTableFilterOnlyProcessesSpecifiedTable(): void
     {
         $this->setupInputDefaults(true, 'pages');
@@ -182,7 +177,7 @@ final class HarmonizeCommandTest extends UnitTestCase
             uid: 2,
             tableName: 'tt_content',
             title: 'Content',
-            pid: 1
+            pid: 1,
         );
 
         $this->repository
@@ -199,7 +194,6 @@ final class HarmonizeCommandTest extends UnitTestCase
         self::assertSame(0, $result);
     }
 
-    /**     */
     public function testExecuteWithNoChangesNeededReturnsSuccess(): void
     {
         $this->setupInputDefaults(true);
@@ -282,10 +276,10 @@ final class HarmonizeCommandTest extends UnitTestCase
             tableName: $tableName,
             title: $title,
             pid: $pid,
-            starttime: \time(),
+            starttime: time(),
             endtime: null,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
     }
 

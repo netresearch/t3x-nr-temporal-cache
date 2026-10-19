@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Timing;
 
@@ -16,6 +16,8 @@ use Netresearch\TemporalCache\Service\Scoping\ScopingStrategyInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Context\Context;
+
+use function in_array;
 
 /**
  * Scheduler timing strategy - background processing of transitions.
@@ -57,9 +59,8 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
         private readonly CacheManager $cacheManager,
         private readonly Context $context,
         private readonly LoggerInterface $logger,
-        private readonly ExtensionConfiguration $configuration
-    ) {
-    }
+        private readonly ExtensionConfiguration $configuration,
+    ) {}
 
     /**
      * {@inheritdoc}
@@ -95,13 +96,13 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
             // Get cache tags from scoping strategy
             $cacheTags = $this->scopingStrategy->getCacheTagsToFlush(
                 $event->content,
-                $this->context
+                $this->context,
             );
 
             // Flush page caches for those tags. ALL_PAGES is no tag TYPO3
             // puts on page cache entries, so it empties the whole cache.
             $pageCache = $this->cacheManager->getCache('pages');
-            if (\in_array(ScopingStrategyInterface::ALL_PAGES, $cacheTags, true)) {
+            if (in_array(ScopingStrategyInterface::ALL_PAGES, $cacheTags, true)) {
                 $pageCache->flush();
             } else {
                 foreach ($cacheTags as $tag) {
@@ -145,26 +146,26 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
     /**
      * Log transition processing for debugging.
      *
-     * @param TransitionEvent $event The processed transition
-     * @param array<string> $cacheTags The cache tags that were flushed
+     * @param TransitionEvent $event     The processed transition
+     * @param array<string>   $cacheTags The cache tags that were flushed
      */
     private function logTransitionProcessing(TransitionEvent $event, array $cacheTags): void
     {
         $this->logger->info(
             'Processed temporal transition',
             [
-                'event' => $event->getLogMessage(),
+                'event'        => $event->getLogMessage(),
                 'flushed_tags' => $cacheTags,
-                'strategy' => $this->scopingStrategy->getName(),
-            ]
+                'strategy'     => $this->scopingStrategy->getName(),
+            ],
         );
     }
 
     /**
      * Log error during transition processing.
      *
-     * @param TransitionEvent $event The transition that failed
-     * @param Exception $exception The error that occurred
+     * @param TransitionEvent $event     The transition that failed
+     * @param Exception       $exception The error that occurred
      */
     private function logError(TransitionEvent $event, Exception $exception): void
     {
@@ -174,7 +175,7 @@ class SchedulerTimingStrategy implements TimingStrategyInterface
                 'event' => $event->getLogMessage(),
                 'error' => $exception->getMessage(),
                 'trace' => $exception->getTraceAsString(),
-            ]
+            ],
         );
     }
 

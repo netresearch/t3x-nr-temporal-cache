@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Service\Scoping;
 
@@ -15,6 +15,9 @@ use Netresearch\TemporalCache\Domain\Model\TemporalContent;
 use Netresearch\TemporalCache\Domain\Repository\TemporalContentRepositoryInterface;
 use Netresearch\TemporalCache\Service\RefindexService;
 use TYPO3\CMS\Core\Context\Context;
+
+use function array_map;
+use function time;
 
 /**
  * Per-content scoping strategy - flushes only pages where content actually appears.
@@ -53,9 +56,8 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
     public function __construct(
         private readonly RefindexService $refindexService,
         private readonly TemporalContentRepositoryInterface $temporalContentRepository,
-        private readonly ExtensionConfiguration $configuration
-    ) {
-    }
+        private readonly ExtensionConfiguration $configuration,
+    ) {}
 
     /**
      * {@inheritdoc}
@@ -82,9 +84,9 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
         $affectedPages = $this->findAffectedPages($content);
 
         // Convert page IDs to cache tags
-        return \array_map(
+        return array_map(
             fn (int $pageId): string => 'pageId_' . $pageId,
-            $affectedPages
+            $affectedPages,
         );
     }
 
@@ -94,6 +96,7 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
      * This is the core algorithm that achieves precise cache invalidation.
      *
      * @param TemporalContent $content Content element to analyze
+     *
      * @return array<int> Array of affected page UIDs
      */
     private function findAffectedPages(TemporalContent $content): array
@@ -115,7 +118,7 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
             // Use RefindexService to find all pages with this content
             $pageIds = $this->refindexService->findPagesWithContent(
                 $content->uid,
-                $content->languageUid
+                $content->languageUid,
             );
 
             // If no pages found via refindex, fall back to parent page
@@ -143,9 +146,9 @@ class PerContentScopingStrategy implements ScopingStrategyInterface
     public function getNextTransition(Context $context, ?int $pageId = null): ?int
     {
         return $this->temporalContentRepository->getNextTransition(
-            \time(),
+            time(),
             $this->resolveWorkspaceId($context),
-            $this->resolveLanguageId($context)
+            $this->resolveLanguageId($context),
         );
     }
 

@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Service\Backend;
 
@@ -20,6 +20,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\Stub;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function time;
 
 #[CoversClass(TemporalCacheStatisticsService::class)]
 #[UsesClass(TemporalContent::class)]
@@ -37,21 +39,20 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->contentRepository = $this->createStub(TemporalContentRepositoryInterface::class);
+        $this->contentRepository      = $this->createStub(TemporalContentRepositoryInterface::class);
         $this->extensionConfiguration = $this->createStub(ExtensionConfiguration::class);
-        $this->harmonizationService = $this->createStub(HarmonizationService::class);
+        $this->harmonizationService   = $this->createStub(HarmonizationService::class);
 
         $this->subject = new TemporalCacheStatisticsService(
             $this->contentRepository,
             $this->extensionConfiguration,
-            $this->harmonizationService
+            $this->harmonizationService,
         );
     }
 
-    /**     */
     public function testCalculateStatisticsWithNoContentReturnsZeroStatistics(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->stubContentRepository();
         $this->stubHarmonizationEnabled(false);
@@ -68,10 +69,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0, $result['harmonizableCandidates']);
     }
 
-    /**     */
     public function testCalculateStatisticsCountsPageAndContentCorrectly(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $page = $this->createContent(
             uid: 1,
@@ -98,10 +98,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['contentCount']);
     }
 
-    /**     */
     public function testCalculateStatisticsCountsActiveAndFutureContentCorrectly(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $activeContent = $this->createContent(
             uid: 1,
@@ -124,10 +123,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['futureCount']);
     }
 
-    /**     */
     public function testCalculateStatisticsCountsTransitionsCorrectly(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $content = $this->createContent(starttime: $currentTime + 3600);
 
@@ -152,10 +150,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(2, $result['transitionsPerDay']);
     }
 
-    /**     */
     public function testCalculateStatisticsCountsHarmonizableCandidatesWhenEnabled(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $content = $this->createContent(starttime: $currentTime);
 
@@ -172,10 +169,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(1, $result['harmonizableCandidates']);
     }
 
-    /**     */
     public function testCalculateStatisticsDoesNotCountHarmonizableCandidatesWhenDisabled(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $content = $this->createContent(starttime: $currentTime);
 
@@ -187,10 +183,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0, $result['harmonizableCandidates']);
     }
 
-    /**     */
     public function testBuildTimelineReturnsEmptyArrayWhenNoTransitions(): void
     {
-        $currentTime = \time();
+        $currentTime = time();
 
         $this->contentRepository
             ->method('findTransitionsInRange')
@@ -202,7 +197,6 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertCount(0, $result);
     }
 
-    /**     */
     public function testBuildTimelineGroupsTransitionsByDay(): void
     {
         // Anchored at local midday rather than time(): buildTimeline() groups by calendar
@@ -215,9 +209,9 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
 
         $content = $this->createContent(starttime: $currentTime + 3600);
 
-        $day1Time = $currentTime + 3600;
+        $day1Time  = $currentTime + 3600;
         $day1Time2 = $currentTime + 7200;
-        $day2Time = $currentTime + 86400 + 3600;
+        $day2Time  = $currentTime + 86400 + 3600;
 
         $transitions = [
             new TransitionEvent($content, $day1Time, 'start'),
@@ -236,11 +230,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertCount(1, $result[1]['transitions']); // Day 2 has 1 transition
     }
 
-    /**     */
     public function testBuildTimelineRespectsCustomDaysAhead(): void
     {
-        $currentTime = \time();
-        $daysAhead = 14;
+        $currentTime = time();
+        $daysAhead   = 14;
 
         $contentRepository = $this->createMock(TemporalContentRepositoryInterface::class);
         $contentRepository
@@ -250,20 +243,19 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
                 $currentTime,
                 $currentTime + (86400 * $daysAhead),
                 0,
-                0
+                0,
             )
             ->willReturn([]);
 
         $subject = new TemporalCacheStatisticsService(
             $contentRepository,
             $this->extensionConfiguration,
-            $this->harmonizationService
+            $this->harmonizationService,
         );
 
         $subject->buildTimeline($currentTime, $daysAhead);
     }
 
-    /**     */
     public function testGetConfigurationSummaryReturnsAllConfigurationFields(): void
     {
         $this->extensionConfiguration
@@ -295,11 +287,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertTrue($result['debugLogging']);
     }
 
-    /**     */
     public function testCalculateAverageTransitionsPerDayReturnsZeroWhenNoTransitions(): void
     {
-        $startTime = \time();
-        $endTime = $startTime + 86400 * 30;
+        $startTime = time();
+        $endTime   = $startTime + 86400 * 30;
 
         $this->contentRepository
             ->method('countTransitionsPerDay')
@@ -310,11 +301,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(0.0, $result);
     }
 
-    /**     */
     public function testCalculateAverageTransitionsPerDayReturnsCorrectAverage(): void
     {
-        $startTime = \time();
-        $endTime = $startTime + 86400 * 30;
+        $startTime = time();
+        $endTime   = $startTime + 86400 * 30;
 
         $this->contentRepository
             ->method('countTransitionsPerDay')
@@ -329,11 +319,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertSame(20.0, $result); // (10 + 20 + 30) / 3 = 20.0
     }
 
-    /**     */
     public function testGetPeakTransitionDayReturnsNullWhenNoTransitions(): void
     {
-        $startTime = \time();
-        $endTime = $startTime + 86400 * 30;
+        $startTime = time();
+        $endTime   = $startTime + 86400 * 30;
 
         $this->contentRepository
             ->method('countTransitionsPerDay')
@@ -344,11 +333,10 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
         self::assertNull($result);
     }
 
-    /**     */
     public function testGetPeakTransitionDayReturnsHighestDay(): void
     {
-        $startTime = \time();
-        $endTime = $startTime + 86400 * 30;
+        $startTime = time();
+        $endTime   = $startTime + 86400 * 30;
 
         $this->contentRepository
             ->method('countTransitionsPerDay')
@@ -381,14 +369,14 @@ final class TemporalCacheStatisticsServiceTest extends UnitTestCase
             starttime: $starttime,
             endtime: $endtime,
             languageUid: 0,
-            workspaceUid: 0
+            workspaceUid: 0,
         );
     }
 
     /**
-     * @param list<TemporalContent>   $content
-     * @param list<TransitionEvent>   $transitions
-     * @param array<string, int>      $transitionsPerDay
+     * @param list<TemporalContent> $content
+     * @param list<TransitionEvent> $transitions
+     * @param array<string, int>    $transitionsPerDay
      */
     private function stubContentRepository(
         array $content = [],

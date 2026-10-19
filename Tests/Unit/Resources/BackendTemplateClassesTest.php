@@ -1,17 +1,21 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Unit\Resources;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
+use function dirname;
+use function file_get_contents;
+use function substr_count;
 
 /**
  * Reads the backend module templates as source. The functional suite renders them,
@@ -32,8 +36,8 @@ final class BackendTemplateClassesTest extends UnitTestCase
     {
         return [
             'Dashboard' => ['Dashboard.html'],
-            'Content' => ['Content.html'],
-            'Wizard' => ['Wizard.html'],
+            'Content'   => ['Content.html'],
+            'Wizard'    => ['Wizard.html'],
         ];
     }
 
@@ -57,7 +61,7 @@ final class BackendTemplateClassesTest extends UnitTestCase
     {
         self::assertStringContainsString(
             "class=\"btn btn-{f:if(condition: '{filter} == {value}', then: 'primary', else: 'default')}\"",
-            $this->read('Content.html')
+            $this->read('Content.html'),
         );
     }
 
@@ -66,14 +70,14 @@ final class BackendTemplateClassesTest extends UnitTestCase
     {
         self::assertStringContainsString(
             '<f:link.action action="wizard" class="btn btn-default">',
-            $this->read('Dashboard.html')
+            $this->read('Dashboard.html'),
         );
     }
 
     #[Test]
     public function wizardSecondaryActionsAreDefaultButtons(): void
     {
-        self::assertSame(4, \substr_count($this->read('Wizard.html'), 'class="btn btn-default"'));
+        self::assertSame(4, substr_count($this->read('Wizard.html'), 'class="btn btn-default"'));
     }
 
     #[Test]
@@ -83,7 +87,7 @@ final class BackendTemplateClassesTest extends UnitTestCase
         // the functional fixtures do not produce, so the markup is pinned here.
         self::assertMatchesRegularExpression(
             '/class="form-check-input content-checkbox"\s[^>]*aria-label="\{item\.content\.title\}/',
-            $this->read('Content.html')
+            $this->read('Content.html'),
         );
     }
 
@@ -96,11 +100,11 @@ final class BackendTemplateClassesTest extends UnitTestCase
 
         self::assertMatchesRegularExpression(
             '#<span class="form-check form-check-type-toggle">\s*<input type="checkbox" id="select-all" class="form-check-input"#',
-            $source
+            $source,
         );
         self::assertMatchesRegularExpression(
             '#<span class="form-check form-check-type-toggle">\s*<input\s+type="checkbox"\s+class="form-check-input content-checkbox"#',
-            $source
+            $source,
         );
     }
 
@@ -124,7 +128,7 @@ final class BackendTemplateClassesTest extends UnitTestCase
         // same scheme-aware colour, 14.3 has only .text-warning.
         self::assertStringContainsString(
             '<p class="card-text display-4 text-warning text-warning-emphasis">{stats.transitionsNext30Days}</p>',
-            $this->read('Dashboard.html')
+            $this->read('Dashboard.html'),
         );
     }
 
@@ -132,14 +136,14 @@ final class BackendTemplateClassesTest extends UnitTestCase
     public function extensionShipsNoModuleLayoutOfItsOwn(): void
     {
         self::assertFileDoesNotExist(
-            \dirname(__DIR__, 3) . '/Resources/Private/Layouts/Module.html',
-            "an extension Module layout replaces core's and drops the doc header"
+            dirname(__DIR__, 3) . '/Resources/Private/Layouts/Module.html',
+            "an extension Module layout replaces core's and drops the doc header",
         );
     }
 
     private function read(string $template): string
     {
-        $source = \file_get_contents(\dirname(__DIR__, 3) . self::TEMPLATE_DIRECTORY . $template);
+        $source = file_get_contents(dirname(__DIR__, 3) . self::TEMPLATE_DIRECTORY . $template);
         self::assertIsString($source);
 
         return $source;

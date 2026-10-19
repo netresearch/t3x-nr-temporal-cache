@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\EventListener;
 
@@ -16,6 +16,11 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Frontend\Event\ModifyCacheLifetimeForPageEvent;
+
+use function assert;
+use function is_int;
+use function is_numeric;
+use function min;
 
 /**
  * Event listener that dynamically adjusts cache lifetime based on temporal content dependencies.
@@ -40,9 +45,8 @@ final class TemporalCacheLifetime
         private readonly ScopingStrategyInterface $scopingStrategy,
         private readonly TimingStrategyInterface $timingStrategy,
         private readonly Context $context,
-        private readonly LoggerInterface $logger
-    ) {
-    }
+        private readonly LoggerInterface $logger,
+    ) {}
 
     /**
      * Modify page cache lifetime to expire at next temporal content transition.
@@ -68,8 +72,8 @@ final class TemporalCacheLifetime
             if ($lifetime !== null) {
                 // Respect TYPO3's cache configuration hierarchy
                 $renderingInstructions = $event->getRenderingInstructions();
-                $maxLifetime = $this->determineMaxLifetime($renderingInstructions);
-                $cappedLifetime = \min($lifetime, $maxLifetime);
+                $maxLifetime           = $this->determineMaxLifetime($renderingInstructions);
+                $cappedLifetime        = min($lifetime, $maxLifetime);
 
                 // TYPO3 hands in the lifetime it calculated itself (records
                 // expiring earlier, config.cache_period, other listeners).
@@ -77,7 +81,7 @@ final class TemporalCacheLifetime
                 // positive value is a limit (0 would mean "no expiry").
                 $incomingLifetime = $event->getCacheLifetime();
                 if ($incomingLifetime > 0) {
-                    $cappedLifetime = \min($cappedLifetime, $incomingLifetime);
+                    $cappedLifetime = min($cappedLifetime, $incomingLifetime);
                 }
 
                 $event->setCacheLifetime($cappedLifetime);
@@ -86,15 +90,15 @@ final class TemporalCacheLifetime
                     $this->logger->debug(
                         'Temporal cache lifetime set',
                         [
-                            'lifetime' => $cappedLifetime,
-                            'uncapped_lifetime' => $lifetime,
-                            'incoming_lifetime' => $incomingLifetime,
-                            'max_lifetime' => $maxLifetime,
-                            'max_from_typoscript' => $renderingInstructions['cache_period'] ?? null,
+                            'lifetime'                  => $cappedLifetime,
+                            'uncapped_lifetime'         => $lifetime,
+                            'incoming_lifetime'         => $incomingLifetime,
+                            'max_lifetime'              => $maxLifetime,
+                            'max_from_typoscript'       => $renderingInstructions['cache_period'] ?? null,
                             'max_from_extension_config' => $this->extensionConfiguration->getDefaultMaxLifetime(),
-                            'timing_strategy' => $this->timingStrategy->getName(),
-                            'scoping_strategy' => $this->scopingStrategy->getName(),
-                        ]
+                            'timing_strategy'           => $this->timingStrategy->getName(),
+                            'scoping_strategy'          => $this->scopingStrategy->getName(),
+                        ],
                     );
                 }
             }
@@ -103,10 +107,10 @@ final class TemporalCacheLifetime
             $this->logger->error(
                 'Temporal cache lifetime calculation failed',
                 [
-                    'exception' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
+                    'exception'       => $e->getMessage(),
+                    'trace'           => $e->getTraceAsString(),
                     'timing_strategy' => $this->timingStrategy->getName(),
-                ]
+                ],
             );
         }
     }
@@ -120,6 +124,7 @@ final class TemporalCacheLifetime
      * 3. 86400 seconds / 24 hours (TYPO3 default, final fallback)
      *
      * @param array<string|int, mixed> $renderingInstructions TypoScript rendering instructions
+     *
      * @return int Maximum cache lifetime in seconds
      */
     private function determineMaxLifetime(array $renderingInstructions): int
@@ -127,8 +132,8 @@ final class TemporalCacheLifetime
         // 1. Try TypoScript config.cache_period (site-wide configuration)
         if (isset($renderingInstructions['cache_period'])) {
             $cachePeriod = $renderingInstructions['cache_period'];
-            \assert(\is_int($cachePeriod) || \is_numeric($cachePeriod));
-            $cachePeriodInt = (int)$cachePeriod;
+            assert(is_int($cachePeriod) || is_numeric($cachePeriod));
+            $cachePeriodInt = (int) $cachePeriod;
             if ($cachePeriodInt > 0) {
                 return $cachePeriodInt;
             }

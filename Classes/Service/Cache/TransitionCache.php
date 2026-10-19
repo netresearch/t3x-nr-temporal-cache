@@ -1,15 +1,21 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Service\Cache;
 
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function array_key_exists;
+use function count;
+use function serialize;
+use function sprintf;
+use function strlen;
 
 /**
  * Request-level cache for temporal transition queries.
@@ -47,8 +53,9 @@ final class TransitionCache implements SingletonInterface
      * Get cached next transition if available.
      *
      * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $workspaceUid     Workspace UID
+     * @param int $languageUid      Language UID
+     *
      * @return int|null Cached transition timestamp, or null if not cached
      */
     public function getNextTransition(int $currentTimestamp, int $workspaceUid, int $languageUid): ?int
@@ -56,7 +63,7 @@ final class TransitionCache implements SingletonInterface
         $cacheKey = $this->generateNextTransitionKey($currentTimestamp, $workspaceUid, $languageUid);
 
         // Return cached value if exists (including null)
-        if (\array_key_exists($cacheKey, $this->nextTransitionCache)) {
+        if (array_key_exists($cacheKey, $this->nextTransitionCache)) {
             return $this->nextTransitionCache[$cacheKey];
         }
 
@@ -67,32 +74,33 @@ final class TransitionCache implements SingletonInterface
      * Check if next transition is cached.
      *
      * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
+     * @param int $workspaceUid     Workspace UID
+     * @param int $languageUid      Language UID
+     *
      * @return bool True if cached (even if value is null)
      */
     public function hasNextTransition(int $currentTimestamp, int $workspaceUid, int $languageUid): bool
     {
         $cacheKey = $this->generateNextTransitionKey($currentTimestamp, $workspaceUid, $languageUid);
 
-        return \array_key_exists($cacheKey, $this->nextTransitionCache);
+        return array_key_exists($cacheKey, $this->nextTransitionCache);
     }
 
     /**
      * Set cached next transition.
      *
-     * @param int $currentTimestamp Reference timestamp
-     * @param int $workspaceUid Workspace UID
-     * @param int $languageUid Language UID
-     * @param int|null $nextTransition Transition timestamp or null
+     * @param int      $currentTimestamp Reference timestamp
+     * @param int      $workspaceUid     Workspace UID
+     * @param int      $languageUid      Language UID
+     * @param int|null $nextTransition   Transition timestamp or null
      */
     public function setNextTransition(
         int $currentTimestamp,
         int $workspaceUid,
         int $languageUid,
-        ?int $nextTransition
+        ?int $nextTransition,
     ): void {
-        $cacheKey = $this->generateNextTransitionKey($currentTimestamp, $workspaceUid, $languageUid);
+        $cacheKey                             = $this->generateNextTransitionKey($currentTimestamp, $workspaceUid, $languageUid);
         $this->nextTransitionCache[$cacheKey] = $nextTransition;
     }
 
@@ -120,7 +128,7 @@ final class TransitionCache implements SingletonInterface
      */
     private function generateNextTransitionKey(int $currentTimestamp, int $workspaceUid, int $languageUid): string
     {
-        return \sprintf('next_%d_%d_%d', $currentTimestamp, $workspaceUid, $languageUid);
+        return sprintf('next_%d_%d_%d', $currentTimestamp, $workspaceUid, $languageUid);
     }
 
     /**
@@ -131,8 +139,8 @@ final class TransitionCache implements SingletonInterface
     public function getStats(): array
     {
         return [
-            'entries' => \count($this->nextTransitionCache),
-            'memory' => \strlen(\serialize($this->nextTransitionCache)),
+            'entries' => count($this->nextTransitionCache),
+            'memory'  => strlen(serialize($this->nextTransitionCache)),
         ];
     }
 }

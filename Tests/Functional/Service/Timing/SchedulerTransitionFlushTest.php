@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
+
+declare(strict_types=1);
 
 namespace Netresearch\TemporalCache\Tests\Functional\Service\Timing;
 
@@ -25,6 +25,8 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function time;
 
 /**
  * Which page cache entries a transition processed by the scheduler removes.
@@ -77,7 +79,7 @@ final class SchedulerTransitionFlushTest extends FunctionalTestCase
         $pageCache->set('page2', 'cached page 2', ['pageId_2']);
 
         $this->schedulerStrategy(
-            new GlobalScopingStrategy($this->get(TemporalContentRepositoryInterface::class))
+            new GlobalScopingStrategy($this->get(TemporalContentRepositoryInterface::class)),
         )->processTransition($this->transitionOfContentOnPage(1));
 
         self::assertFalse($pageCache->has('page1'));
@@ -91,7 +93,7 @@ final class SchedulerTransitionFlushTest extends FunctionalTestCase
         $pageCache->set('page2', 'cached page 2', ['pageId_2']);
 
         $this->schedulerStrategy(
-            new PerPageScopingStrategy($this->get(TemporalContentRepositoryInterface::class))
+            new PerPageScopingStrategy($this->get(TemporalContentRepositoryInterface::class)),
         )->processTransition($this->transitionOfContentOnPage(1));
 
         self::assertFalse($pageCache->has('page1'));
@@ -110,7 +112,7 @@ final class SchedulerTransitionFlushTest extends FunctionalTestCase
             $this->get(CacheManager::class),
             $this->get(Context::class),
             new NullLogger(),
-            $this->get(ExtensionConfiguration::class)
+            $this->get(ExtensionConfiguration::class),
         );
     }
 
@@ -123,12 +125,12 @@ final class SchedulerTransitionFlushTest extends FunctionalTestCase
                 title: 'Teaser',
                 pid: $pageId,
                 starttime: null,
-                endtime: \time() - 1,
+                endtime: time() - 1,
                 languageUid: 0,
-                workspaceUid: 0
+                workspaceUid: 0,
             ),
-            timestamp: \time() - 1,
-            transitionType: 'end'
+            timestamp: time() - 1,
+            transitionType: 'end',
         );
     }
 }

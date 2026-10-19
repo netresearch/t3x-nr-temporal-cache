@@ -46,7 +46,7 @@ composer ci:test:php:functional # Functional tests against a real database
 
 ## Code style
 
-- PSR-12 / TYPO3 CGL, full native type declarations, readonly properties for immutable dependencies
+- PER-CS 3.0 / Symfony style from the shared PHP-CS-Fixer config, full native type declarations, readonly properties for immutable dependencies
 - `final` unless a unit test doubles the class directly. Every double generates a subclass, PHPUnit cannot subclass a final class, and no bypass-finals bridge sits in `require-dev`. Check all the doubling forms before adding `final` — this suite reaches for `createStub()` far more often than `createMock()`: `grep -rE '(createStub|createMock|getMockBuilder|getAccessibleMock)\(TheClass::class\)' Tests/`. Double an interface where one exists (`ScopingStrategyInterface`, `TimingStrategyInterface`, `TemporalContentRepositoryInterface`) — that leaves the implementation free to stay `final`
 - Non-final for that reason today: `Configuration/ExtensionConfiguration`, `Service/HarmonizationService`, `Service/RefindexService`, the three `Service/Scoping/*ScopingStrategy` and the three `Service/Timing/*TimingStrategy`. `ScopingStrategyFactory` and `TimingStrategyFactory` are non-final too, but no test doubles them and nothing extends them
 - PSR-14 events for extensibility; Context API for workspace/language state

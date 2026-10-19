@@ -1,15 +1,15 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 use Netresearch\TemporalCache\Task\TemporalCacheSchedulerTask;
 
-defined('TYPO3') || die();
+defined('TYPO3') || exit;
 
 // Icon registration moved to Configuration/Icons.php (TYPO3 13 LTS standard)
 
@@ -23,8 +23,8 @@ defined('TYPO3') || die();
  * works on every supported version.
  */
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][TemporalCacheSchedulerTask::class] = [
-    'extension' => 'nr_temporal_cache',
-    'title' => 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:task.processTransitions.title',
+    'extension'   => 'nr_temporal_cache',
+    'title'       => 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:task.processTransitions.title',
     'description' => 'LLL:EXT:nr_temporal_cache/Resources/Private/Language/locallang_mod.xlf:task.processTransitions.description',
-    'icon' => 'temporal-cache-module',
+    'icon'        => 'temporal-cache-module',
 ];

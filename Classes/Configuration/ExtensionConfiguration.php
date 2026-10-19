@@ -1,16 +1,23 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: Netresearch DTT GmbH
  */
 
+declare(strict_types=1);
+
 namespace Netresearch\TemporalCache\Configuration;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 use TYPO3\CMS\Core\SingletonInterface;
+
+use function array_map;
+use function assert;
+use function explode;
+use function is_array;
+use function is_int;
+use function is_string;
 
 /**
  * Central configuration management for temporal cache extension.
@@ -27,12 +34,12 @@ class ExtensionConfiguration implements SingletonInterface
     private array $config;
 
     public function __construct(
-        private readonly ?Typo3ExtensionConfiguration $extensionConfiguration = null
+        private readonly ?Typo3ExtensionConfiguration $extensionConfiguration = null,
     ) {
         $rawConfig = $this->extensionConfiguration?->get(self::EXT_KEY);
-        \assert(\is_array($rawConfig) || $rawConfig === null);
+        assert(is_array($rawConfig) || $rawConfig === null);
         /** @var array<string, mixed> $config */
-        $config = $rawConfig ?? [];
+        $config       = $rawConfig ?? [];
         $this->config = $config;
     }
 
@@ -41,17 +48,19 @@ class ExtensionConfiguration implements SingletonInterface
     public function getScopingStrategy(): string
     {
         $scoping = $this->config['scoping'] ?? [];
-        \assert(\is_array($scoping));
+        assert(is_array($scoping));
         $strategy = $scoping['strategy'] ?? 'global';
-        \assert(\is_string($strategy));
+        assert(is_string($strategy));
+
         return $strategy;
     }
 
     public function useRefindex(): bool
     {
         $scoping = $this->config['scoping'] ?? [];
-        \assert(\is_array($scoping));
-        return (bool)($scoping['use_refindex'] ?? true);
+        assert(is_array($scoping));
+
+        return (bool) ($scoping['use_refindex'] ?? true);
     }
 
     // Timing Configuration
@@ -59,9 +68,10 @@ class ExtensionConfiguration implements SingletonInterface
     public function getTimingStrategy(): string
     {
         $timing = $this->config['timing'] ?? [];
-        \assert(\is_array($timing));
+        assert(is_array($timing));
         $strategy = $timing['strategy'] ?? 'dynamic';
-        \assert(\is_string($strategy));
+        assert(is_string($strategy));
+
         return $strategy;
     }
 
@@ -74,19 +84,19 @@ class ExtensionConfiguration implements SingletonInterface
     public function getTimingRules(): array
     {
         $timing = $this->config['timing'] ?? [];
-        \assert(\is_array($timing));
+        assert(is_array($timing));
         $hybrid = $timing['hybrid'] ?? [];
-        \assert(\is_array($hybrid));
+        assert(is_array($hybrid));
         $pages = $hybrid['pages'] ?? 'dynamic';
-        \assert(\is_string($pages));
+        assert(is_string($pages));
         $content = $hybrid['content'] ?? 'scheduler';
-        \assert(\is_string($content));
+        assert(is_string($content));
 
         // Keyed by TemporalContent::getContentType(), which yields 'page' (singular)
         // for the pages table. The extension configuration key stays 'pages'; mapping
         // it here is what makes timing.hybrid.pages reach HybridTimingStrategy at all.
         return [
-            'page' => $pages,
+            'page'    => $pages,
             'content' => $content,
         ];
     }
@@ -96,8 +106,9 @@ class ExtensionConfiguration implements SingletonInterface
     public function isHarmonizationEnabled(): bool
     {
         $harmonization = $this->config['harmonization'] ?? [];
-        \assert(\is_array($harmonization));
-        return (bool)($harmonization['enabled'] ?? false);
+        assert(is_array($harmonization));
+
+        return (bool) ($harmonization['enabled'] ?? false);
     }
 
     /**
@@ -106,26 +117,29 @@ class ExtensionConfiguration implements SingletonInterface
     public function getHarmonizationSlots(): array
     {
         $harmonization = $this->config['harmonization'] ?? [];
-        \assert(\is_array($harmonization));
+        assert(is_array($harmonization));
         $slots = $harmonization['slots'] ?? '00:00,06:00,12:00,18:00';
-        \assert(\is_string($slots));
-        return \array_map(trim(...), \explode(',', $slots));
+        assert(is_string($slots));
+
+        return array_map(trim(...), explode(',', $slots));
     }
 
     public function getHarmonizationTolerance(): int
     {
         $harmonization = $this->config['harmonization'] ?? [];
-        \assert(\is_array($harmonization));
+        assert(is_array($harmonization));
         $tolerance = $harmonization['tolerance'] ?? 3600;
-        \assert(\is_int($tolerance) || \is_string($tolerance));
-        return (int)$tolerance;
+        assert(is_int($tolerance) || is_string($tolerance));
+
+        return (int) $tolerance;
     }
 
     public function isAutoRoundEnabled(): bool
     {
         $harmonization = $this->config['harmonization'] ?? [];
-        \assert(\is_array($harmonization));
-        return (bool)($harmonization['auto_round'] ?? false);
+        assert(is_array($harmonization));
+
+        return (bool) ($harmonization['auto_round'] ?? false);
     }
 
     // Advanced Configuration
@@ -133,17 +147,19 @@ class ExtensionConfiguration implements SingletonInterface
     public function getDefaultMaxLifetime(): int
     {
         $advanced = $this->config['advanced'] ?? [];
-        \assert(\is_array($advanced));
+        assert(is_array($advanced));
         $lifetime = $advanced['default_max_lifetime'] ?? 86400;
-        \assert(\is_int($lifetime) || \is_string($lifetime));
-        return (int)$lifetime;
+        assert(is_int($lifetime) || is_string($lifetime));
+
+        return (int) $lifetime;
     }
 
     public function isDebugLoggingEnabled(): bool
     {
         $advanced = $this->config['advanced'] ?? [];
-        \assert(\is_array($advanced));
-        return (bool)($advanced['debug_logging'] ?? false);
+        assert(is_array($advanced));
+
+        return (bool) ($advanced['debug_logging'] ?? false);
     }
 
     // Convenience Methods
