@@ -132,6 +132,9 @@ final class TemporalCacheSchedulerTaskRegistrationTest extends FunctionalTestCas
     {
         $task = $this->get(TemporalCacheSchedulerTask::class);
 
+        // The value is this test's own serialize() output, the same round trip the
+        // scheduler performs on the stored task; no external input reaches it.
+        // nosemgrep: php.lang.security.unserialize-use.unserialize-use
         $restoredTask = unserialize(serialize($task));
 
         self::assertInstanceOf(TemporalCacheSchedulerTask::class, $restoredTask);
