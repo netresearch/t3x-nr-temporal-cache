@@ -148,13 +148,18 @@ final class VerifyCommand extends Command
 
         $allIndexesExist = true;
         $results = [];
+        $schemas = [];
 
         foreach (self::REQUIRED_INDEXES as $tableName => $indexes) {
             $connection = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
-                $tableIndexes = $schemaManager->listTableIndexes($tableName);
+                // introspectSchema() and Table::getIndexes() exist in DBAL 3
+                // (TYPO3 v12) and in DBAL 4.4 (TYPO3 v13/v14) without a
+                // deprecation; listTableIndexes() is deprecated in DBAL 4.4.
+                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $tableIndexes = $schema->hasTable($tableName) ? $schema->getTable($tableName)->getIndexes() : [];
             } catch (Exception $e) {
                 $io->error("Failed to check indexes for table '{$tableName}': " . $e->getMessage());
                 return false;
@@ -381,17 +386,21 @@ final class VerifyCommand extends Command
 
         $allFieldsExist = true;
         $results = [];
+        $schemas = [];
 
         foreach ($requiredFields as $tableName => $fields) {
             $connection = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
-                $columns = $schemaManager->listTableColumns($tableName);
-                $columnNames = \array_map(strtolower(...), \array_keys($columns));
+                // See verifyDatabaseIndexes(): listTableColumns() is deprecated
+                // in DBAL 4.4. Table::hasColumn() compares case-insensitively,
+                // as the lowercased column list did.
+                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $tableExists = $schema->hasTable($tableName);
 
                 foreach ($fields as $field) {
-                    $fieldExists = \in_array(\strtolower($field), $columnNames, true);
+                    $fieldExists = $tableExists && $schema->getTable($tableName)->hasColumn($field);
                     $results[] = [
                         $tableName,
                         $field,

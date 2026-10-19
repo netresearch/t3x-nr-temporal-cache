@@ -162,13 +162,18 @@ final class TemporalCacheStatusReport implements StatusProviderInterface
     private function getDatabaseIndexesStatus(): Status
     {
         $missingIndexes = [];
+        $schemas = [];
 
         foreach (self::REQUIRED_INDEXES as $tableName => $fields) {
             $connection = $this->connectionPool->getConnectionForTable($tableName);
             $schemaManager = $connection->createSchemaManager();
 
             try {
-                $tableIndexes = $schemaManager->listTableIndexes($tableName);
+                // introspectSchema() and Table::getIndexes() exist in DBAL 3
+                // (TYPO3 v12) and in DBAL 4.4 (TYPO3 v13/v14) without a
+                // deprecation; listTableIndexes() is deprecated in DBAL 4.4.
+                $schema = $schemas[\spl_object_id($connection)] ??= $schemaManager->introspectSchema();
+                $tableIndexes = $schema->hasTable($tableName) ? $schema->getTable($tableName)->getIndexes() : [];
 
                 foreach ($fields as $field) {
                     if (!$this->checkIndexExists($tableIndexes, [$field])) {

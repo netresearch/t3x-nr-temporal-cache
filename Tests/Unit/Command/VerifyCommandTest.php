@@ -10,8 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\TemporalCache\Tests\Unit\Command;
 
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use Netresearch\TemporalCache\Command\VerifyCommand;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -61,9 +62,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -80,9 +81,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         // Mock invalid configuration
         $this->mockBaseConfiguration('invalid-strategy');
@@ -100,14 +101,14 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
+        $schemaTable = $this->mockSchemaTable();
 
         // No indexes
-        $schemaManager
-            ->method('listTableIndexes')
+        $schemaTable
+            ->method('getIndexes')
             ->willReturn([]);
 
-        $this->mockTableColumns($schemaManager);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -124,9 +125,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -160,9 +161,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -194,9 +195,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -221,9 +222,9 @@ final class VerifyCommandTest extends UnitTestCase
         $this->setupInputDefaults();
         $this->setupOutputDefaults();
 
-        $schemaManager = $this->mockSchemaManager();
-        $this->mockTableIndexes($schemaManager);
-        $this->mockTableColumns($schemaManager);
+        $schemaTable = $this->mockSchemaTable();
+        $this->mockTableIndexes($schemaTable);
+        $this->mockTableColumns($schemaTable);
 
         $this->mockBaseConfiguration('per-page');
 
@@ -273,13 +274,16 @@ final class VerifyCommandTest extends UnitTestCase
     }
 
     /**
-     * Wires connectionPool -> connection -> schema manager and returns the
-     * schema manager stub so the caller can declare its table indexes/columns.
+     * Wires connectionPool -> connection -> schema manager -> introspected
+     * schema -> table and returns the table stub so the caller can declare its
+     * indexes/columns.
      */
-    private function mockSchemaManager(): AbstractSchemaManager&Stub
+    private function mockSchemaTable(): Table&Stub
     {
         $connection = $this->createStub(Connection::class);
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
+        $schema = $this->createStub(Schema::class);
+        $table = $this->createStub(Table::class);
 
         $this->connectionPool
             ->method('getConnectionForTable')
@@ -289,13 +293,25 @@ final class VerifyCommandTest extends UnitTestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        return $schemaManager;
+        $schemaManager
+            ->method('introspectSchema')
+            ->willReturn($schema);
+
+        $schema
+            ->method('hasTable')
+            ->willReturn(true);
+
+        $schema
+            ->method('getTable')
+            ->willReturn($table);
+
+        return $table;
     }
 
     /**
-     * Declares the expected starttime/endtime indexes on the schema manager.
+     * Declares the expected starttime/endtime indexes on the table.
      */
-    private function mockTableIndexes(AbstractSchemaManager&Stub $schemaManager): void
+    private function mockTableIndexes(Table&Stub $table): void
     {
         $starttimeIndex = $this->createStub(Index::class);
         $starttimeIndex->method('getColumns')->willReturn(['starttime']);
@@ -303,28 +319,21 @@ final class VerifyCommandTest extends UnitTestCase
         $endtimeIndex = $this->createStub(Index::class);
         $endtimeIndex->method('getColumns')->willReturn(['endtime']);
 
-        $schemaManager
-            ->method('listTableIndexes')
-            ->willReturn([$starttimeIndex, $endtimeIndex]);
+        $table
+            ->method('getIndexes')
+            ->willReturn(['starttime' => $starttimeIndex, 'endtime' => $endtimeIndex]);
     }
 
     /**
-     * Declares the expected table columns on the schema manager.
+     * Declares the expected table columns on the table.
      */
-    private function mockTableColumns(AbstractSchemaManager&Stub $schemaManager): void
+    private function mockTableColumns(Table&Stub $table): void
     {
-        $col = $this->createStub(Column::class);
+        $columns = ['starttime', 'endtime', 'hidden', 'deleted', 'sys_language_uid', 'pid'];
 
-        $schemaManager
-            ->method('listTableColumns')
-            ->willReturn([
-                'starttime' => $col,
-                'endtime' => $col,
-                'hidden' => $col,
-                'deleted' => $col,
-                'sys_language_uid' => $col,
-                'pid' => $col,
-            ]);
+        $table
+            ->method('hasColumn')
+            ->willReturnCallback(static fn (string $name): bool => \in_array(\strtolower($name), $columns, true));
     }
 
     /**

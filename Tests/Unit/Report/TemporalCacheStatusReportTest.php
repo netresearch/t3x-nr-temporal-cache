@@ -12,6 +12,8 @@ namespace Netresearch\TemporalCache\Tests\Unit\Report;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use Exception;
 use Netresearch\TemporalCache\Configuration\ExtensionConfiguration;
 use Netresearch\TemporalCache\Domain\Model\TemporalContent;
@@ -568,7 +570,7 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
 
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
         $schemaManager
-            ->method('listTableIndexes')
+            ->method('introspectSchema')
             ->willThrowException(new Exception(self::EXCEPTION_MARKER));
 
         $connection = $this->createStub(Connection::class);
@@ -743,11 +745,25 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
     {
         $connection = $this->createStub(Connection::class);
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
+        $schema = $this->createStub(Schema::class);
+        $table = $this->createStub(Table::class);
         $platform = $this->createStub(AbstractPlatform::class);
 
         $connection
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
+
+        $schemaManager
+            ->method('introspectSchema')
+            ->willReturn($schema);
+
+        $schema
+            ->method('hasTable')
+            ->willReturn(true);
+
+        $schema
+            ->method('getTable')
+            ->willReturn($table);
 
         $connection
             ->method('getDatabasePlatform')
@@ -764,12 +780,12 @@ final class TemporalCacheStatusReportTest extends UnitTestCase
                 ->method('getColumns')
                 ->willReturn(['endtime']);
 
-            $schemaManager
-                ->method('listTableIndexes')
-                ->willReturn([$starttimeIndex, $endtimeIndex]);
+            $table
+                ->method('getIndexes')
+                ->willReturn(['starttime' => $starttimeIndex, 'endtime' => $endtimeIndex]);
         } else {
-            $schemaManager
-                ->method('listTableIndexes')
+            $table
+                ->method('getIndexes')
                 ->willReturn([]);
         }
 
