@@ -12,6 +12,29 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-31
+
+### Fixed
+
+- A page keeps a shorter cache lifetime that TYPO3 already calculated. The
+  lifetime listener takes the minimum of its own result and the lifetime
+  passed in with `ModifyCacheLifetimeForPageEvent`, so records that expire
+  before the next temporal transition, or a shorter `config.cache_period`,
+  are no longer overridden.
+- Records of the language -1 ("all languages") are counted for every
+  language. Tables registered through `TemporalMonitorRegistry::registerTable()`
+  that the TCA does not mark as localized or workspace-versioned are queried
+  without the language and workspace conditions, so their transitions are
+  found; per-content scoping flushes the page of records from tables other
+  than `tt_content`.
+- Global scoping under scheduler timing empties the whole page cache. It
+  flushed the tag `pages`, which TYPO3 never sets on page cache entries, so no
+  entry was removed.
+- `temporalcache:verify` and the status report read indexes and columns
+  through `introspectSchema()`, which doctrine/dbal 3 and 4 both provide
+  without a deprecation. A table elsewhere in the database that DBAL cannot
+  introspect now makes these checks report a failure.
+
 ### Changed
 
 - The extension title is the same everywhere: `ext_emconf.php`, the
@@ -20,6 +43,9 @@ git history, so they name the user-facing changes rather than every commit.
   description after the title is shorter: it drops "TYPO3", the Forge
   reference and the strategy names, and keeps the warning that the default
   global scoping expires all page caches on every transition.
+- The `composer.json` description equals the `ext_emconf.php` title and
+  description joined by ` - `, which clears the "Composer Manifest" warning in
+  the TYPO3 14.3 Reports module.
 
 ## [1.0.2] - 2026-10-06
 
@@ -154,7 +180,8 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.2...main
+[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.3...main
+[1.0.3]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v0.9.0...v1.0.0
