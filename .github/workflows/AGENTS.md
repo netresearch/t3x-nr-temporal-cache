@@ -15,6 +15,7 @@ All workflows are thin callers of shared reusables — logic, pinning, and harde
 | `checks.yml` | `netresearch/typo3-ci-workflows` + `netresearch/.github` reusables | security, betterleaks, zizmor, fuzz, license-check, CodeQL, scorecard, dependency-review, pr-quality + local gate job |
 | `harness-verify.yml` | `netresearch/.github/.github/workflows/script-check.yml@main` | Agent-harness consistency (`Build/Scripts/verify-harness.sh`) |
 | `release.yml` | `netresearch/typo3-ci-workflows/.github/workflows/release-typo3-extension.yml@main` | Extension release |
+| `crowdin-translations.yml` | `netresearch/typo3-ci-workflows/.github/workflows/crowdin-translations.yml@main` | Signed pull request from Crowdin's `l10n_main` branch; does nothing without that branch |
 | `auto-merge-deps.yml`, `labeler.yml`, `community.yml`, `check-template-drift.yml` | `netresearch/.github` reusables | Dependency auto-merge, labeling, stale/lock/greetings, template drift |
 
 ## Workflow files
