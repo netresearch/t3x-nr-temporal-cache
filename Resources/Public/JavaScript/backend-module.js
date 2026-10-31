@@ -123,7 +123,7 @@ class TemporalCacheModule {
                     btnClass: 'btn-warning',
                     trigger: () => {
                         Modal.dismiss();
-                        this.executeHarmonization(harmonizeUri, selectedItems);
+                        void this.executeHarmonization(harmonizeUri, selectedItems);
                     }
                 }
             ]
@@ -132,6 +132,9 @@ class TemporalCacheModule {
 
     /**
      * Execute harmonization AJAX call
+     *
+     * A failure is shown as a notification, so the returned promise never
+     * rejects and the caller discards it with `void`.
      */
     async executeHarmonization(uri, selectedItems) {
         try {
@@ -192,7 +195,7 @@ class TemporalCacheModule {
     /**
      * Apply configuration preset
      */
-    async applyPreset(presetKey) {
+    applyPreset(presetKey) {
         Modal.confirm(
             'Apply Preset Configuration',
             `Apply "${presetKey}" preset? This configuration should be applied in Extension Configuration.`,
