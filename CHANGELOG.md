@@ -12,6 +12,16 @@ git history, so they name the user-facing changes rather than every commit.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-11-01
+
+### Changed
+
+- `Resources/Public/JavaScript/backend-module.js` leaves no promise unsettled.
+  The call to `executeHarmonization()` discards its promise with `void`, because
+  the method reports every failure through `Notification`, and `applyPreset()`
+  is no longer declared `async`, because it awaits nothing. The backend module
+  behaves as before.
+
 ## [1.0.3] - 2026-10-31
 
 ### Fixed
@@ -180,7 +190,8 @@ scoping strategies (global / per-page / per-content) and three timing strategies
 (dynamic / scheduler / hybrid), a backend module, CLI commands and a Reports module
 entry, for TYPO3 v12.4 and v13 on PHP 8.1-8.3.
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.3...main
+[Unreleased]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.4...main
+[1.0.4]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/netresearch/t3x-nr-temporal-cache/compare/v1.0.0...v1.0.1
