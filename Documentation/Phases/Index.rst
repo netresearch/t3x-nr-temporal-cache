@@ -10,7 +10,7 @@ Approach, limits and a core solution
 =====================================
 
 .. important::
-    ``ext_emconf.php`` declares version **1.0.3** and state **stable**.
+    ``ext_emconf.php`` declares version **1.0.4** and state **stable**.
 
 .. _phases-overview:
 
