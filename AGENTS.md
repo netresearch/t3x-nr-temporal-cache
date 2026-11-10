@@ -83,6 +83,11 @@ docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 - [ ] No debug code (`var_dump`, `console.log`, ...)
 - [ ] Commit signed with `-S --signoff`, Conventional Commit format
 
+## Changelog
+
+- Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md), [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/): `## [X.Y.Z] - YYYY-MM-DD` with `### Added`, `### Changed`, `### Fixed`, `### Removed`, newest first, below `## [Unreleased]`.
+- The release PR `chore: prepare release vX.Y.Z` writes the version's section. A PR that records its own change puts it under `## [Unreleased]`; most PRs leave it to the release PR.
+
 ## Index of scoped AGENTS.md
 
 - `./Classes/AGENTS.md` — PHP source (strategies, event listener, commands, query patterns)
