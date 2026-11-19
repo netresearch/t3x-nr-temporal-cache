@@ -34,7 +34,7 @@ jobs:
       # single-run jobs use (Code Style, Fractor) and the fallback for Rector,
       # and netresearch/typo3-ci-workflows requires php ^8.2. 8.1 stays in the
       # matrix, so the ^12.4 cells still cover it.
-      php-versions: '["8.2","8.1","8.3","8.4","8.5"]'
+      php-versions: '["8.2","8.1","8.3","8.4","8.5","8.6"]'
       typo3-versions: '["^12.4","^13.4","^14.3"]'
       matrix-exclude: '[{"php":"8.1","typo3":"^13.4"},{"php":"8.1","typo3":"^14.3"},{"php":"8.2","typo3":"^14.3"},{"php":"8.5","typo3":"^12.4"}]'
       run-functional-tests: true
