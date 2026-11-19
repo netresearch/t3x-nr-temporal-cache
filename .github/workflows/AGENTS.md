@@ -11,7 +11,7 @@ All workflows are thin callers of shared reusables — logic, pinning, and harde
 
 | File | Calls | Purpose |
 |------|-------|---------|
-| `ci.yml` | `netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main` | Test matrix PHP 8.1–8.5 × TYPO3 ^12.4/^13.4/^14.3 (with excludes), functional tests on |
+| `ci.yml` | `netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main` | Test matrix PHP 8.1–8.6 × TYPO3 ^12.4/^13.4/^14.3 (with excludes), functional tests on |
 | `checks.yml` | `netresearch/typo3-ci-workflows` + `netresearch/.github` reusables | security, betterleaks, zizmor, fuzz, license-check, CodeQL, scorecard, dependency-review, pr-quality + local gate job |
 | `harness-verify.yml` | `netresearch/.github/.github/workflows/script-check.yml@main` | Agent-harness consistency (`Build/Scripts/verify-harness.sh`) |
 | `release.yml` | `netresearch/typo3-ci-workflows/.github/workflows/release-typo3-extension.yml@main` | Extension release |

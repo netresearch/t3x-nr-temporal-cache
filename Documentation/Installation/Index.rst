@@ -49,11 +49,11 @@ The combinations below are the ones the CI matrix in
      - ✅ Supported
      - PHP 8.5 is excluded from this cell in CI
    * - 13.4 LTS
-     - 8.2 - 8.5
+     - 8.2 - 8.6
      - ✅ Supported
      - PHP 8.1 is excluded from this cell in CI
    * - 14.3 LTS
-     - 8.3 - 8.5
+     - 8.3 - 8.6
      - ✅ Supported
      - PHP 8.1 and 8.2 are excluded from this cell in CI
    * - 11.5

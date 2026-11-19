@@ -344,8 +344,8 @@ Declared support comes from `composer.json` and `ext_emconf.php`; the tested col
 | TYPO3 constraint | Declared PHP | PHP versions tested in CI |
 |------------------|--------------|---------------------------|
 | `^12.4`          | `^8.1`       | 8.1, 8.2, 8.3, 8.4        |
-| `^13.4`          | `^8.1`       | 8.2, 8.3, 8.4, 8.5        |
-| `^14.3`          | `^8.1`       | 8.3, 8.4, 8.5             |
+| `^13.4`          | `^8.1`       | 8.2, 8.3, 8.4, 8.5, 8.6   |
+| `^14.3`          | `^8.1`       | 8.3, 8.4, 8.5, 8.6        |
 
 ## What a core solution would need
 
