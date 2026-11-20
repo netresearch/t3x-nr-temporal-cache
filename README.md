@@ -147,7 +147,7 @@ The extension key `nr_temporal_cache` is registered in TER; version 1.0.0 is pub
 From `composer.json` and `ext_emconf.php`:
 
 - TYPO3 `^12.4 || ^13.4 || ^14.3` (`ext_emconf.php`: 12.4.0-14.3.99)
-- PHP `^8.1` (`ext_emconf.php`: 8.1.0-8.5.99)
+- PHP `^8.1` (`ext_emconf.php`: 8.1.0-8.6.99)
 - `typo3/cms-scheduler` — required, installed with the extension; the scheduler task backs the scheduler and hybrid timing strategies
 - `typo3/cms-reports` — required, installed with the extension; adds a Temporal Cache entry to the Reports module
 
