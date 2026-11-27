@@ -49,6 +49,7 @@
 /DDEV_SETUP.md export-ignore
 /crowdin.yml export-ignore
 /index.html export-ignore
+/changelog.d/ export-ignore
 
 # Agent instructions, at every level of the tree.
 AGENTS.md export-ignore

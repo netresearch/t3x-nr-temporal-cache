@@ -34,7 +34,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.40",
-        "netresearch/typo3-ci-workflows": "^2.0.3",
+        "netresearch/typo3-ci-workflows": "^2.3.1",
         "phpstan/extension-installer": "^1.3",
         "phpstan/phpstan": "^1.10 || ^2.0",
         "phpunit/phpcov": "^9.0 || ^11.0 || ^12.0 || ^13.0",
@@ -87,7 +87,10 @@
     "scripts": {
         "ci:cgl": "php-cs-fixer fix --config=Build/.php-cs-fixer.php",
         "ci:rector": "rector process --config Build/rector.php",
-        "ci:test:php:cgl": "php-cs-fixer fix --config=Build/.php-cs-fixer.php --dry-run --diff",
+        "ci:test:php:cgl": [
+            "@ci:test:changelog",
+            "php-cs-fixer fix --config=Build/.php-cs-fixer.php --dry-run --diff"
+        ],
         "ci:test:php:phpstan": "phpstan analyze --configuration=Build/phpstan.neon --memory-limit=512M",
         "ci:test:php:rector": "rector process --config Build/rector.php --dry-run",
         "ci:test:php:unit": "phpunit -c Build/phpunit/UnitTests.xml",
@@ -97,6 +100,8 @@
         "ci:test:tailor-excludes": "php Build/Scripts/verify-tailor-excludes.php",
         "docs:render": "docker run --rm --pull always -v \"$(pwd):/project\" ghcr.io/typo3-documentation/render-guides:latest --config=Documentation/guides.xml",
         "docs:serve": "php -S localhost:8090 -t Documentation-GENERATED-temp/",
-        "docs:clean": "rm -rf Documentation-GENERATED-temp/"
+        "docs:clean": "rm -rf Documentation-GENERATED-temp/",
+        "changelog:collect": "changelog-fragments collect",
+        "ci:test:changelog": "changelog-fragments check @no_additional_args"
     }
 }

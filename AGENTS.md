@@ -86,7 +86,7 @@ docs/             # Agent-facing docs: ARCHITECTURE.md, exec-plans/
 ## Changelog
 
 - Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md), [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/): `## [X.Y.Z] - YYYY-MM-DD` with `### Added`, `### Changed`, `### Fixed`, `### Removed`, newest first, below `## [Unreleased]`.
-- The release PR `chore: prepare release vX.Y.Z` writes the version's section. A PR that records its own change puts it under `## [Unreleased]`; most PRs leave it to the release PR.
+- The release PR `chore: prepare release vX.Y.Z` runs `composer changelog:collect`, which moves the fragments into `## [Unreleased]`, and then writes the version's section. A PR that records its own change writes it as a fragment `changelog.d/<branch-slug>.<section>.md` ([format](changelog.d/README.md)), checked by `composer ci:test:changelog`, instead of editing `CHANGELOG.md`; most PRs leave it to the release PR.
 
 ## Index of scoped AGENTS.md
 
