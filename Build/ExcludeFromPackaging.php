@@ -52,6 +52,9 @@ return [
         // artifacts with no meaning outside the checkout.
         '.serena',
         'claudedocs',
+        // Changelog fragments: the release PR collects them into CHANGELOG.md,
+        // and only changelog.d/README.md is left at a release.
+        'changelog.d',
         // The rendered manual is published to docs.typo3.org; shipping a copy
         // would double the artifact and go stale against it.
         'Documentation-GENERATED-temp',
